@@ -33,16 +33,34 @@ $ erl -pa erl
 
 ## ToDo
 
-- float
-- variable definition
-- records
-- pattern matching
-- message passing
-- variants
-- polymorphic type
-- standard library
-- installation
-
+- Data types
+  - Float
+  - Reference
+  - Binary
+  - Process
+- Type system
+  - Records
+  - Variants
+  - Polymorphic type
+- Syntax
+  - Variable definition
+  - Pattern matching
+  - Exception handling
+  - Labeled arguments and optional arguments
+  - Message passing
+- Compilation
+  - Optimization
+  - Executable file generation (escript)
+- Library
+  - Standard library
+  - OTP
+- Tools
+  - Interactive shell
+  - Source browsing support
+  - Build tool support (rebar)
+- Build
+  - Installation
+  - Using packaging tools (OPAM, etc.)
 
 ## Syntax
 
