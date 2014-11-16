@@ -1,0 +1,13 @@
+def print_hanoi (from, to_) =
+  print_string ("from " ^ from ^ " to " ^ to_ ^ "\n")
+
+def rec hanoi (n, from, to_, via) =
+  if n = 1 then
+    print_hanoi (from, to_)
+  else
+    hanoi (n - 1, from, via, to_)
+    print_hanoi (from, to_)
+    hanoi (n - 1, via, to_, from)
+  end
+
+def main () = hanoi (3, "A", "B", "C")
