@@ -1,1 +1,7 @@
+# To create an executable file, use -escript option:
+#
+# $ bran -escript helloworld.br
+# $ ./helloworld
+# "Hello, world!"
+
 def main () = print_string "Hello, world!"
