@@ -332,16 +332,12 @@ let f name oc (Prog(data, sdata, fundefs, e)) =
     (Context.top_funs ());
   bprintf oc "]).\n\n";
 
-  (* TODO: float のデータは消す？ *)
-  (*
-  List.iter
-    (fun (Id.L(x), d) ->
-      bprintf oc "%s:\t# %f\n" x d;
-      bprintf oc "\t.long\t0x%lx\n" (gethi d);
-      bprintf oc "\t.long\t0x%lx\n" (getlo d))
-    data;
-   *)
-
+  List.iter (fun (id, d) ->
+               match id with
+               | Id.M _ -> ()
+               | Id.L(x) -> bprintf oc "-define(%s, %s).\n" x
+                              (Erlang.literal_of_float d)) data;
+  bprintf oc "\n";
   List.iter (fun (id, d) ->
                match id with
                | Id.M _ -> ()

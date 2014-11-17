@@ -163,6 +163,7 @@ FILES[] =
 	context
 	emit
 	env
+	erlang
 	fun
 	funArg
 	id
