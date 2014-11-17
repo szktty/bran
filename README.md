@@ -77,6 +77,12 @@ $ erl -pa erl
 - string
 - list (empty lists must be specified type. for example: `([] : int list)`)
 
+### Comment
+
+```
+# comment
+```
+
 ### Variable bindings
 
 (not yet supported)
