@@ -30,6 +30,13 @@ let modpath path =
   | dir, Some base ->
     to_string & dir ^/ (fst & Xfilename.split_extension base) ^ ".erl"
 
+let escript_path path =
+  let open Filepath in
+  match dirbase & of_string os path with
+  | _, None -> failwith "modpath"
+  | dir, Some base ->
+    to_string & dir ^/ (fst & Xfilename.split_extension base)
+
 let parse l =
   Log.verbose "# parsing\n";
   Parser.prog Lexer.token l
@@ -84,18 +91,28 @@ let compile fpath =
     begin try
       compile_ast outbuf t ~fpath;
       close_in inchan;
-      let outfpath = modpath fpath in
+      let outfpath =
+        if !Config.escript then
+          escript_path fpath
+        else
+          modpath fpath
+      in
       let outchan = open_out outfpath in
       Buffer.output_buffer outchan outbuf;
       close_out outchan;
       if not !Config.compile_only then begin
         let open Spotlib.Xunix.Command in
-        let cmd_s = "erlc " ^ outfpath in
-        Log.verbose "# $ %s\n" cmd_s;
-        let cmd = shell cmd_s in
-        match print ~prefix:"# erlc" cmd with
-        | (Unix.WEXITED 0, _) -> Unix.unlink outfpath
-        | _ -> Log.error "compilation failed"
+        if !Config.escript then begin
+          Unix.chmod outfpath 0o755
+        end else begin
+          let cmd_s = "erlc " ^ outfpath in
+          Log.verbose "# $ %s\n" cmd_s;
+          let cmd = shell cmd_s in
+          begin match print ~prefix:"# erlc" cmd with
+            | (Unix.WEXITED 0, _) -> Unix.unlink outfpath
+            | _ -> Log.error "compilation failed"
+          end
+        end
       end
     with
     | Typing.Error (e, t1, t2) ->
@@ -147,6 +164,8 @@ let () =
      ("-dry-run", Arg.Unit (fun () -> Config.dry_run := true), "parse syntax only");
      ("-erl", Arg.String (fun v -> Config.erl_opts := Some v),
       "Erlang compiler (erlc) options");
+     ("-escript", Arg.Unit (fun () -> Config.escript := true),
+      "create an executable file");
      ("-v", Arg.Unit (fun () -> Config.verbose := true), "print verbose messages");
      ("-V", Arg.Unit (fun () -> printf "%s\n" Version.version),
       "print version and exit");
