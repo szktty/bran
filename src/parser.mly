@@ -5,11 +5,20 @@ module L = Location
 
 let addtyp x = (x, Type.gentyp ())
 
-let block es = 
-  let es' = List.filter (fun e -> (Ast.desc e) <> Nop) (List.rev es) in
-  List.fold_left (fun e1 e2 ->
-    Location.with_loc (Ast.loc e1) (Let ((Id.gentmp Type.Unit, Type.Unit), e1, e2)))
-  (Location.with_loc Location.zero Unit) es'
+let combine es =
+  (*let es' = List.filter (fun e -> (Ast.desc e) <> Nop) (List.rev es) in*)
+  List.fold_right (fun e1 e2 ->
+      match Ast.desc e2 with
+      | Nop -> e1
+      | _ ->
+        match Ast.desc e1 with
+        | Nop -> e2
+        | Let (xt, e, _) ->
+          L.with_range e1.L.loc e2.L.loc (Let (xt, e, e2))
+        | _ ->
+          let e3 = (Let ((Id.gentmp Type.Unit, Type.Unit), e1, e2)) in
+          L.with_loc (Ast.loc e1) e3)
+    es (L.with_loc L.zero Nop)
 
 let find_funsig_opt x =
   Log.debug "# find funsig \"%s\":\n" x;
@@ -74,7 +83,7 @@ let bin_exp l op r =
 %token <Location.t> AS
 %token <Location.t> OF
 %token <Location.t> WHERE
-%token <Location.t> VAL
+%token <Location.t> VAR
 %token <Location.t> AND
 %token <Location.t> IN
 %token <Location.t> TO
@@ -129,11 +138,11 @@ prog:
     | attrs EOF { $1 }
 
 attrs:
-    | attrs1 { (block $1, List.hd $1) }
+    | rev_attrs { (combine (List.rev $1), List.hd $1) }
 
-attrs1:
+rev_attrs:
     | attr { [$1] }
-    | attrs1 attr { $2 :: $1 }
+    | rev_attrs attr { $2 :: $1 }
 
 attr:
     | term { L.with_loc $1 Nop }
@@ -203,11 +212,14 @@ tuple_arg_elt:
     | formal_arg { $1 }
 
 body:
-    | stmts { block $1 }
+    | stmts { combine $1 }
 
 stmts:
+    | rev_stmts { List.rev $1 }
+
+rev_stmts:
     | stmt { [$1] }
-    | stmts stmt { $2 :: $1 }
+    | rev_stmts stmt { $2 :: $1 }
 
 stmt:
     | term { L.with_loc $1 Nop }
@@ -234,12 +246,19 @@ exp:
       { L.with_range $1 $2.loc (FNeg $2) }
     | bin_exp { $1 }
     | funcall { $1 }
+    | vardef { $1 }
 | error
     { failwith
 	(Printf.sprintf "parse error near characters %d-%d"
 	   (Parsing.symbol_start ())
 	   (Parsing.symbol_end ())) }
    
+vardef:
+    | VAR IDENT EQ exp
+      { L.with_range $1 $3 (Let (addtyp $2.desc, $4, L.with_loc $1 Nop)) }
+    | VAR IDENT COLON typexp EQ exp
+      { L.with_range $1 $3 (Let (($2.desc, $4), $6, L.with_loc $1 Nop)) }
+
 bin_exp:
     | exp PLUS exp
       { bin_exp $1 BinOp.Add $3 }

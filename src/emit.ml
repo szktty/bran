@@ -54,8 +54,8 @@ let rec shuffle sw xys =
 
 let genvar x =
   match String.get x 0 with
-  | 'P' | 'T' -> x
-  | _ -> "V" ^ x
+  | 'P' | 'T' | '_' -> x
+  | _ -> "_V" ^ x
 
 type dest = Tail | NonTail of Id.t (* 末尾かどうかを表すデータ型 (caml2html: emit_dest) *)
 let rec g oc = function (* 命令列のアセンブリ生成 (caml2html: emit_g) *)
@@ -66,7 +66,7 @@ let rec g oc = function (* 命令列のアセンブリ生成 (caml2html: emit_g) *)
 and g' oc e = (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
   (* 末尾でなかったら計算結果をdestにセット (caml2html: emit_nontail) *)
   match e with
-  | NonTail(_), Nop -> ()
+  | NonTail(_), Nop -> assert false
   | NonTail(x), Set(i) ->
     bprintf oc "\t%s = %d,\n" x i
   | NonTail(x), SetL(Id.L(y)) ->
@@ -88,7 +88,8 @@ and g' oc e = (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
     if V(x) = z' then
       bprintf oc "\t%s + %s\n" y x
     else if x <> y then
-      bprintf oc "\t%s = %s + %s,\n" x y (pp_id_or_imm z')
+      bprintf oc "\t%s = %s + %s,\n" (genvar x) (genvar y)
+        (genvar (pp_id_or_imm z'))
   | NonTail(x), Sub(y, z') ->
     if V(x) = z' then
       bprintf oc "\t%s - %s,\n" x (genvar y)

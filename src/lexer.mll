@@ -138,7 +138,7 @@ rule token = parse
     { REC (to_loc lexbuf) }
 | "def" { DEF (to_loc lexbuf) }
 | "external" { EXTERNAL (to_loc lexbuf) }
-| "val" { VAL (to_loc lexbuf) }
+| "var" { VAR (to_loc lexbuf) }
 | "where" { WHERE (to_loc lexbuf) }
 | "import" { IMPORT (to_loc lexbuf) }
 | "as" { AS (to_loc lexbuf) }
