@@ -6,7 +6,6 @@ module L = Location
 let addtyp x = (x, Type.gentyp ())
 
 let combine es =
-  (*let es' = List.filter (fun e -> (Ast.desc e) <> Nop) (List.rev es) in*)
   List.fold_right (fun e1 e2 ->
       match Ast.desc e2 with
       | Nop -> e1
