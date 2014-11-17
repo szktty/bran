@@ -35,7 +35,6 @@ $ erl -pa erl
 
 - Data types
   - Character
-  - Float
   - Option
   - Reference
   - Exception
