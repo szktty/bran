@@ -43,7 +43,6 @@ $ erl -pa erl
   - Variants
   - Polymorphic type
 - Syntax
-  - Variable definition
   - Pattern matching
   - Exception handling
   - Labeled arguments and optional arguments
@@ -84,8 +83,6 @@ $ erl -pa erl
 ```
 
 ### Variable bindings
-
-(not yet supported)
 
 ```
 var x = 1
