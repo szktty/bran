@@ -34,8 +34,11 @@ $ erl -pa erl
 ## ToDo
 
 - Data types
+  - Character
   - Float
+  - Option
   - Reference
+  - Exception
   - Binary
   - Process
 - Type system
@@ -52,6 +55,7 @@ $ erl -pa erl
   - Executable file generation (escript)
 - Library
   - Standard library
+  - `Obj` module
   - OTP
 - Tools
   - Interactive shell
