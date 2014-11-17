@@ -4,4 +4,4 @@ let literal_of_string s =
 
 let literal_of_float f =
   (* adhoc *)
-  string_of_float f
+  Printf.sprintf "%f" f

@@ -107,11 +107,10 @@ and g' oc e = (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
       if x <> y then bprintf oc "\tmovsd\t%s, %s\n" y x;
       bprintf oc "\txorpd\tmin_caml_fnegd, %s\n" x
   | NonTail(x), FAddD(y, z) ->
-      if x = z then
-        bprintf oc "\taddsd\t%s, %s\n" y x
-      else
-        (if x <> y then bprintf oc "\tmovsd\t%s, %s\n" y x;
-	 bprintf oc "\taddsd\t%s, %s\n" z x)
+    if x = z then (* TODO *)
+      bprintf oc "\taddsd\t%s, %s\n" y x
+    else if x <> y then
+      bprintf oc "\t%s = %s + %s,\n" (genvar x) (genvar y) (genvar z)
   | NonTail(x), FSubD(y, z) ->
       if x = z then (* [XXX] ugly *)
 	let ss = stacksize () in
@@ -119,23 +118,20 @@ and g' oc e = (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
 	if x <> y then bprintf oc "\tmovsd\t%s, %s\n" y x;
 	bprintf oc "\tsubsd\t%d(%s), %s\n" ss reg_sp x
       else
-	(if x <> y then bprintf oc "\tmovsd\t%s, %s\n" y x;
-	 bprintf oc "\tsubsd\t%s, %s\n" z x)
+	(if x <> y then bprintf oc "\t%s = %s - %s,\n" (genvar x) (genvar y) (genvar z))
   | NonTail(x), FMulD(y, z) ->
       if x = z then
         bprintf oc "\tmulsd\t%s, %s\n" y x
-      else
-        (if x <> y then bprintf oc "\tmovsd\t%s, %s\n" y x;
-	 bprintf oc "\tmulsd\t%s, %s\n" z x)
+      else if x <> y then
+        bprintf oc "\t%s = %s * %s,\n" (genvar x) (genvar y) (genvar z)
   | NonTail(x), FDivD(y, z) ->
       if x = z then (* [XXX] ugly *)
 	let ss = stacksize () in
 	bprintf oc "\tmovsd\t%s, %d(%s)\n" z ss reg_sp;
 	if x <> y then bprintf oc "\tmovsd\t%s, %s\n" y x;
 	bprintf oc "\tdivsd\t%d(%s), %s\n" ss reg_sp x
-      else
-	(if x <> y then bprintf oc "\tmovsd\t%s, %s\n" y x;
-	 bprintf oc "\tdivsd\t%s, %s\n" z x)
+    else if x <> y then
+      bprintf oc "\t%s = %s / %s,\n" (genvar x) (genvar y) (genvar z)
   | NonTail(x), SConcat(y, z) ->
     if x = z then
       bprintf oc "\t%s ++ %s,\n" y x
