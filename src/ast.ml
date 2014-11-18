@@ -8,7 +8,7 @@ let rec to_string t =
   let open Printf in
   let lst ts =
     sprintf "%d:[%s]" (List.length ts)
-      (String.concat " " (List.map to_string ts))
+      (Xstring.concat_list " " to_string ts)
   in
   let open AstTypes in
   match desc t with

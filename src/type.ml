@@ -33,22 +33,22 @@ let rec to_string = function
   | String -> "string"
   | Fun f -> fun_to_string f
   | Tuple es ->
-    Printf.sprintf "(%s)" (String.concat " * " (List.map to_string es))
+    Printf.sprintf "(%s)" (Xstring.concat_list " * " to_string es)
   | List e -> Printf.sprintf "%s list" (to_string e)
   | Array _ -> "a" 
   | Var _ -> "v"
   | Module m ->
     Printf.sprintf "module %s : sig %s end" m.mod_name
-      (String.concat "; " (List.map
-                             (fun (x, f) ->
-                                Printf.sprintf "val %s : %s" x (fun_to_string f))
-                             m.mod_funs))
+      (Xstring.concat_list "; "
+         (fun (x, f) ->
+            Printf.sprintf "val %s : %s" x (fun_to_string f))
+         m.mod_funs)
 and fun_to_string f =
   Printf.sprintf "%s%s -> %s%s"
     (match f.fun_ext with
      | None -> ""
      | Some _ -> "external ")
-    (String.concat " -> " (List.map to_string f.fun_args))
+    (Xstring.concat_list " -> " to_string f.fun_args)
     (to_string f.fun_ret)
     (match f.fun_ext with
      | None -> ""

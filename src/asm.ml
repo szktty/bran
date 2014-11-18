@@ -99,7 +99,7 @@ let rec spec_of_typ = function
   | Type.String -> "string()"
   | Type.Fun _ -> "function()"
   | Type.Tuple ts ->
-    Printf.sprintf "{%s}" (String.concat ", " (List.map spec_of_typ ts))
+    Printf.sprintf "{%s}" (Xstring.concat_list ", " spec_of_typ ts)
   | Type.List t -> Printf.sprintf "[%s]" (spec_of_typ t)
   | _ -> "term()"
 
@@ -108,5 +108,5 @@ let spec_of_funarg a =
 
 let erl_spec def =
   Printf.sprintf "(%s) -> %s"
-    (String.concat ", " (List.map spec_of_funarg def.ptn))
+    (Xstring.concat_list ", " spec_of_funarg def.ptn)
     (spec_of_typ def.ret)

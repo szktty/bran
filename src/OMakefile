@@ -182,6 +182,7 @@ FILES[] =
 	typing
 	version
 	virtual
+	xstring
 
 PROGRAM = bran
 # OCAML_LIBS +=

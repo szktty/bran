@@ -1,6 +1,3 @@
-open Spotlib
-open Base
-
 type t = 
   | Var of (Id.t * Type.t)
   | Tuple of Id.t * t list
@@ -12,9 +9,9 @@ let rec typ = function
 let names args =
   let rec f = function
     | Var (x, _) -> [x]
-    | Tuple (x, args') -> x :: (List.concat (List.map f args'))
+    | Tuple (x, args') -> x :: (Spotlib.Xlist.concat_map f args')
   in
-  List.concat & List.map f args
+  Spotlib.Xlist.concat_map f args
 
 let rec vars args =
   List.fold_left (fun accu arg ->

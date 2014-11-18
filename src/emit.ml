@@ -75,9 +75,9 @@ and g' oc e = (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
   | NonTail(x), SetB(b) ->
     bprintf oc "\t%s = %s,\n" x (if b then "true" else "false")
   | NonTail(x), Tuple ys ->
-    bprintf oc "\t%s = {%s},\n" x (String.concat ", " (List.map genvar ys))
+    bprintf oc "\t%s = {%s},\n" x (Xstring.concat_list ", " genvar ys)
   | NonTail(x), List ys ->
-    bprintf oc "\t%s = [%s],\n" x (String.concat ", " (List.map genvar ys))
+    bprintf oc "\t%s = [%s],\n" x (Xstring.concat_list ", " genvar ys)
   | NonTail(x), Mov(y) ->
       if x <> y then bprintf oc "\t%s = %s,\n" x y
     | NonTail(x), Neg(y) ->
@@ -296,11 +296,11 @@ let h oc { name = name; ptn = ptn; args = args; fargs = _; body = e; ret = _ } =
     let rec f = function
     | FunArg.Var (x, _) -> genvar x
     | FunArg.Tuple (_, es) ->
-      sprintf "{%s}" (String.concat ", " & List.map f es)
+      sprintf "{%s}" (Xstring.concat_list ", " f es)
     in
     f ptn
   in
-  bprintf oc "%s(%s) ->\n" x (String.concat ", " & List.map genptn ptn);
+  bprintf oc "%s(%s) ->\n" x (Xstring.concat_list ", " genptn ptn);
   stackset := S.empty;
   stackmap := [];
   g oc (Tail, e);
@@ -327,7 +327,7 @@ let f name oc (Prog(data, sdata, fundefs, e)) =
   if not !Config.escript then begin
     bprintf oc "-module(%s).\n\n" name;
     bprintf oc "-export([";
-    bprintf oc "%s" & String.concat ", " & List.map
+    bprintf oc "%s" & Xstring.concat_list ", "
       (fun (x, x') ->
          let def = find_fundef fundefs x' in
          sprintf "%s/%d" x (List.length def.ptn))

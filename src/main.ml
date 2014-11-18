@@ -4,7 +4,7 @@ open Base
 exception Error
 
 (*let limit = ref 1000*)
-let limit = ref 0
+let limit = ref 1
 
 let rec optimize n e =
   Log.debug "# optimize %d\n" (!limit - n + 1);
