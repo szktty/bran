@@ -40,7 +40,7 @@ and fundef = {
   body : t
 }
 
-let to_string t =
+let rec to_string t =
   let open Printf in
   match t with
   | Unit -> "Unit"
@@ -57,22 +57,28 @@ let to_string t =
   | FMul (x, y) -> sprintf "(%s *. %s)" x y
   | FDiv (x, y) -> sprintf "(%s /. %s)" x y
   | SConcat (x, y) -> sprintf "(SConcat %s %s)" x y
-    | _ -> sprintf "unknown"
+  | IfEq (x, y, e1, e2) ->
+    sprintf "(IfEq %s %s %s %s)" x y (to_string e1) (to_string e2)
+  | IfLE (x, y, e1, e2) ->
+    sprintf "(IfLE %s %s %s %s)" x y (to_string e1) (to_string e2)
+  | Let ((x, t), e1, e2) ->
+    sprintf "(Let (%s, %s) %s %s)" x
+      (Type.to_string t) (to_string e1) (to_string e2)
+  | Var x -> sprintf "$%s" x
+  | Def { name = (x, t); rec_ = rec_ } ->
+    sprintf "(Def %s%s:%s)" (if rec_ then "rec " else "")
+      x (Type.to_string t)
+  | App (x, ys) -> sprintf "(App %s %s)" x (String.concat " " ys)
+  | Tuple xs -> sprintf "(%s)" (String.concat ", " xs)
+  | List xs -> sprintf "[%s]" (String.concat ", " xs)
              (*
-  | IfEq of Id.t * Id.t * t * t (* 比較 + 分岐 (caml2html: knormal_branch) *)
-  | IfLE of Id.t * Id.t * t * t (* 比較 + 分岐 *)
-  | Let of (Id.t * Type.t) * t * t
-  | Var of Id.t
-  | Def of fundef
-  | App of Id.t * Id.t list
-  | Tuple of Id.t list
   | LetTuple of (Id.t * Type.t) list * Id.t * t
-  | List of Id.t list
   | Get of Id.t * Id.t
   | Put of Id.t * Id.t * Id.t
   | ExtArray of Id.t
   | ExtFunApp of Id.t * Id.t list
               *)
+  | _ -> sprintf "unknown"
 
 let rec fv = function (* 式に出現する（自由な）変数 (caml2html: knormal_fv) *)
   | Unit | Bool _ | Int(_) | Float(_) | String _ | ExtArray(_) | Mod_fun _ -> S.empty
