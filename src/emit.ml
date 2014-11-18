@@ -360,6 +360,7 @@ let f name oc (Prog(data, sdata, fundefs, e)) =
   List.iter (fun (x, x') ->
          let def = find_fundef fundefs x' in
          let args = String.concat ", " (tmps (List.length def.ptn)) in
+         bprintf oc "-spec(%s%s).\n" x (Asm.erl_spec def);
          bprintf oc "%s(%s) -> %s(%s).\n" x args x' args)
       (Context.top_funs ());
 

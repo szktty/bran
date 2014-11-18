@@ -90,3 +90,23 @@ let rec concat e1 xt e2 =
   | Let(yt, exp, e1') -> Let(yt, exp, concat e1' xt e2)
 
 let align i = (if i mod 8 = 0 then i else i + 4)
+
+let rec spec_of_typ = function
+  | Type.Unit -> "ok"
+  | Type.Bool -> "boolean()"
+  | Type.Int -> "integer()"
+  | Type.Float -> "float()"
+  | Type.String -> "string()"
+  | Type.Fun _ -> "function()"
+  | Type.Tuple ts ->
+    Printf.sprintf "{%s}" (String.concat ", " (List.map spec_of_typ ts))
+  | Type.List t -> Printf.sprintf "[%s]" (spec_of_typ t)
+  | _ -> "term()"
+
+let spec_of_funarg a =
+  spec_of_typ (FunArg.typ a)
+
+let erl_spec def =
+  Printf.sprintf "(%s) -> %s"
+    (String.concat ", " (List.map spec_of_funarg def.ptn))
+    (spec_of_typ def.ret)

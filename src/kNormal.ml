@@ -207,7 +207,8 @@ let rec g env e =
   | AstTypes.Def { AstTypes.name = (x, t); AstTypes.rec_ = rec_; AstTypes.args = yts; AstTypes.body = e1 } ->
     let env' = M.add x t env in
     let e1', t1 = g (M.add_list (FunArg.vars yts) env') e1 in
-    Context.add_top_typ x (Fun.create [Type.Unit] t1); (* TODO: 引数の型 *)
+    (* FIXME: t1 (return type) is not correct. *)
+    Context.add_top_typ x (Fun.create [Type.Unit] t1); (* TODO: args *)
     Def { name = (x, t); rec_ = rec_; args = yts; body = e1' }, t1
   | AstTypes.App({L.desc = AstTypes.Var(f)}, e2s)
     when not (M.mem f env) && not (Context.mem_top_typ f) -> (* 外部関数の呼び出し (caml2html: knormal_extfunapp) *)
