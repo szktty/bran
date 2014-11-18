@@ -164,8 +164,6 @@ FILES[] =
 	emit
 	env
 	erlang
-	fun
-	funArg
 	id
 	kNormal
 	lexer

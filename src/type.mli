@@ -1,17 +1,25 @@
 exception Parse_error of Location.t * string
 
-type t =
-  | Unit
-  | Bool
-  | Int
+type t = 
+  | Var of tyvar 
+  | Field of t * t
+  | App of tycon * t list 
+  | Poly of tyvar list * t
+  | Meta of t option ref
+and tycon = 
+  | Unit 
+  | Bool 
+  | Int 
   | Float
-  | String
-  | Fun of fun_ (* arguments are uncurried *)
-  | Tuple of t list
-  | List of t
-  | Array of t
-  | Var of t option ref
-  | Module of module_
+  | Arrow 
+  | Tuple
+  | Record of Id.t * Id.t list
+  | Variant of Id.t * constr list
+  | TyFun of tyvar list * t
+  | NameTycon of Id.t * tycon option ref
+and tyvar = Id.t
+and metavar = Id.t
+and constr = Id.t * t list
 and module_ = {
   mod_name : string;
   mod_erl : string;
@@ -25,7 +33,17 @@ and fun_ = {
   fun_ret : t;
 }
 
-val to_string : t -> string
-val fun_to_string : fun_ -> string
+val newtyvar : unit -> Id.t
+val newmetavar : unit -> t option ref
 
-val gentyp : unit -> t
+val string_of_t : t -> Id.t
+val string_of_tycon : tycon -> Id.t
+val string_of_constr : constr -> string
+val ocaml_of : t -> Id.t
+
+val equal : t -> t -> bool
+val vars : tycon -> (Id.t * t) list
+val types : tycon -> (Id.t * t) list
+
+val prefix : t -> Id.t
+val name : t -> Id.t

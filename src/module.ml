@@ -12,7 +12,7 @@ let create ?(erl="") x fs =
   m
 
 let of_typ = function
-  | Type.Module m -> m
+  (*| Type.Module m -> m*)
   | _ -> assert false
 
 let find_opt t fx =

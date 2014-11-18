@@ -1,3 +1,4 @@
+(*
 open Type
 
 let lib m f = Printf.sprintf "bran_lib_%s:%s" m f
@@ -29,3 +30,6 @@ let erlang =
 let init () =
   let ms = [pervasives; erlang] in
   List.iter Context.add_module ms
+ *)
+
+let init () = ()
