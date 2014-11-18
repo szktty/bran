@@ -45,7 +45,7 @@ let rec fv = function
   | Var(x) -> S.singleton x
   | MakeCls((x, t), { entry = l; actual_fv = ys }, e) ->
     S.remove x (S.union (S.of_list ys) (fv e))
-  | AppCls(x, ys) -> Printf.printf "appcls %s\n" x;S.of_list (x :: ys)
+  | AppCls(x, ys) -> S.of_list (x :: ys)
   | AppDir(_, xs) | Tuple(xs) | List xs -> S.of_list xs
   | LetTuple(xts, y, e) -> S.add y (S.diff (fv e) (S.of_list (List.map fst xts)))
   | Put(x, y, z) -> S.of_list [x; y; z]
