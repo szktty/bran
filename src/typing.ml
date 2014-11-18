@@ -8,6 +8,7 @@ exception Error of t * Type.t * Type.t
 exception Top_level_error of Type.t
 
 let extenv = ref M.empty
+let topenv = ref M.empty
 
 (* for pretty printing (and type normalization) *)
 let rec deref_typ = function (* 型変数を中身でおきかえる関数 (caml2html: typing_deref) *)
@@ -159,6 +160,7 @@ let rec g env e = (* 型推論ルーチン (caml2html: typing_g) *)
 	g (M.add x t env) e2
     | Var(x) when M.mem x env -> M.find x env (* 変数の型推論 (caml2html: typing_var) *)
     | Var(x) when M.mem x !extenv -> M.find x !extenv
+    | Var(x) when M.mem x !topenv -> M.find x !topenv
     | Var(x) -> (* 外部変数の型推論 (caml2html: typing_extvar) *)
       Log.debug "# free variable \"%s\" assumed as external.\n" x;
       M.iter (fun k _ -> Log.debug "# env key = \"%s\"\n" k) env;
@@ -183,8 +185,9 @@ let rec g env e = (* 型推論ルーチン (caml2html: typing_g) *)
       | Some m -> g (M.add_list (Module.fun_typs m) env) e
       end
     | Def { name = (x, t); args = yts; body = body } ->
-      let env' = M.add x t env in
-      let ret = g (M.add_list (FunArg.vars yts) env') body in
+      (* top level function *)
+      topenv := M.add x t !topenv;
+      let ret = g (M.add_list (FunArg.vars yts) !topenv) body in
       unify t Fun.(to_typ & create (List.map FunArg.typ yts) ret);
       Type.Unit
 
@@ -226,7 +229,8 @@ let rec g env e = (* 型推論ルーチン (caml2html: typing_g) *)
 
 let f e =
   extenv := M.empty;
-  begin try unify Type.Unit (g (Env.create ()) e) with
+  topenv := Env.create ();
+  begin try unify Type.Unit (g !topenv e) with
   | Unify (_, t) -> raise (Top_level_error t)
   end;
   extenv := M.map deref_typ !extenv;
