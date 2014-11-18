@@ -68,6 +68,7 @@ let rec to_string t =
   | Def { name = (x, t); rec_ = rec_ } ->
     sprintf "(Def %s%s:%s)" (if rec_ then "rec " else "")
       x (Type.to_string t)
+  | Mod_fun f -> Fun.to_string f
   | App (x, ys) -> sprintf "(App %s %s)" x (String.concat " " ys)
   | Tuple xs -> sprintf "(%s)" (String.concat ", " xs)
   | List xs -> sprintf "[%s]" (String.concat ", " xs)

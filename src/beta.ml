@@ -2,7 +2,6 @@ let find x env = try M.find x env with Not_found -> x (* 置換のための関数 (caml2
 
 let rec g env e = (* β簡約ルーチン本体 (caml2html: beta_g) *)
   let open KNormal in
-  Printf.printf "# beta: g - %s\n" (to_string e);
   match e with
   | Unit -> Unit
   | Bool b -> Bool b
@@ -33,7 +32,7 @@ let rec g env e = (* β簡約ルーチン本体 (caml2html: beta_g) *)
       LetRec({ name = xt; args = yts; body = g env e1 }, g env e2)
                               *)
   | Def { name = xt; rec_ = rec_; args = yts; body = e1 } ->
-      Def { name = xt; rec_ = rec_; args = yts; body = g env e1 }
+    Def { name = xt; rec_ = rec_; args = yts; body = g env e1 }
   | Var(x) -> Var(find x env) (* 変数を置換 (caml2html: beta_var) *)
   | Mod_fun(x) -> Mod_fun(x)
   | Tuple(xs) -> Tuple(List.map (fun x -> find x env) xs)

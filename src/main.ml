@@ -3,18 +3,18 @@ open Base
 
 exception Error
 
-(*let limit = ref 1000*)
-let limit = ref 0
+let limit = ref 1000
 
 let rec optimize n e =
-  Log.debug "# optimize %d\n" (!limit - n + 1);
   if n = 0 then
     e
   else
     let e' = Beta.f e in
-    if e = e' then
+      (*
+    if e = e' then (* TODO: (=) operator raises Out_of_memory exception *)
       e
     else
+       *)
       optimize (n - 1) e'
 
 let modname path =
