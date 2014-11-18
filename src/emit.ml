@@ -1,6 +1,5 @@
-open Spotlib
+open Spotlib.Base
 open Asm
-open Base
 open Printf
 
   (*
