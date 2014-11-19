@@ -70,6 +70,8 @@ let constr_pattern_args = function PtTuple(xs) -> xs | x -> [x]
 %right prec_unary_minus
 %left prec_app
 
+%nonassoc UIDENT LPAREN LSQUARE_BRANKET INT IDENT BOOL BEGIN
+
 /* 開始記号の定義 */
 %type <Syntax.def list> f
 %start f
@@ -77,14 +79,16 @@ let constr_pattern_args = function PtTuple(xs) -> xs | x -> [x]
 %%
 
 f: 
-| definitions { $1 }
+| definitions EOF { $1 }
 ;
+
 definitions:
 | /* empty */
     { [] }
 | definition definitions 
     { $1 :: $2 }
 ;
+
 definition:
 | LET IDENT EQUAL seq_expr
     %prec prec_let
@@ -261,6 +265,7 @@ pattern:
     { PtBool($1) }
 | INT
     { PtInt($1) }
+(* TODO: FLOAT *)
 | IDENT
     { PtVar($1, Type.Meta(Type.newmetavar ())) }
 | tuple_pattern
