@@ -38,7 +38,7 @@ let constr_pattern_args = function PtTuple(xs) -> xs | x -> [x]
 %token MATCH
 %token WITH
 %token RIGHT_ARROW
-%token SEMICOLON
+%token SEMI
 %token COLON
 %token LPAREN
 %token RPAREN
@@ -46,8 +46,8 @@ let constr_pattern_args = function PtTuple(xs) -> xs | x -> [x]
 %token END
 %token LBRACE
 %token RBRACE
-%token LSQUARE_BRANKET
-%token RSQUARE_BRANKET
+%token LBRACK
+%token RBRACK
 %token DOT
 %token COMMA
 %token PIPE
@@ -55,11 +55,9 @@ let constr_pattern_args = function PtTuple(xs) -> xs | x -> [x]
 %token EOF
 
 /* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) */
-%right prec_let
-%right prec_match
-%right SEMICOLON
+%right SEMI
 %right prec_if
-%right LESS_MINUS
+%nonassoc tuple_ tuple_guard
 %left COMMA
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %right LAND
@@ -70,7 +68,10 @@ let constr_pattern_args = function PtTuple(xs) -> xs | x -> [x]
 %right prec_unary_minus
 %left prec_app
 
-%nonassoc UIDENT LPAREN LSQUARE_BRANKET INT IDENT BOOL BEGIN
+%nonassoc app
+%nonassoc guard
+%nonassoc PIPE
+%nonassoc UIDENT LPAREN LBRACK INT IDENT BOOL BEGIN RPAREN END
 
 /* 開始記号の定義 */
 %type <Syntax.def list> f
@@ -91,13 +92,10 @@ definitions:
 
 definition:
 | LET IDENT EQUAL seq_expr
-    %prec prec_let
     { VarDef(add_type $2, $4) }
 | LET LPAREN RPAREN EQUAL seq_expr
-    %prec prec_let
     { VarDef((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), $5) }
 | LET REC fundef
-    %prec prec_let
     { RecDef($3) }
 | TYPE typedef    
     { $2 }
@@ -125,7 +123,7 @@ simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2
     { add_type (Constr($1, [])) }
 | simple_expr DOT IDENT
     { add_type (Field($1, $3)) }
-| LSQUARE_BRANKET list RSQUARE_BRANKET
+| LBRACK list RBRACK
     { List.fold_right (fun x xs -> add_type (Constr("Cons", [x; xs]))) $2 (add_type (Constr("Nil", []))) }
 ;
 expr: /* 一般の式 (caml2html: parser_expr) */
@@ -163,7 +161,7 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { add_type (LE($1, $3)) }
 | expr GREATER_EQUAL expr
     { add_type (LE($3, $1)) }
-| tuple
+| tuple %prec tuple_
     { add_type (Tuple(List.rev $1)) }
 | IF expr THEN expr ELSE expr
     %prec prec_if
@@ -176,13 +174,10 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 | LBRACE fields RBRACE
     { add_type (Record($2)) }
 | LET IDENT EQUAL seq_expr IN seq_expr
-    %prec prec_let
     { add_type (LetVar(add_type $2, $4, $6)) }
 | LET REC fundef IN seq_expr
-    %prec prec_let
     { add_type (LetRec($3, $5)) }
 | MATCH expr WITH pattern_matching
-    %prec prec_match
     { add_type (Match($2, $4)) }
 | error
     { failwith
@@ -192,9 +187,9 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 ;
 
 seq_expr: 
-| expr
+| expr %prec app
     { $1 }
-| expr SEMICOLON seq_expr
+| expr SEMI seq_expr
     { add_type (LetVar((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), $1, $3)) }
 ;    
 
@@ -219,10 +214,8 @@ formal_args:
 
 actual_args:
 | actual_args simple_expr
-    %prec prec_app
     { $1 @ [$2] }
 | simple_expr
-    %prec prec_app
     { [$1] }
 ;
 fields:
@@ -232,7 +225,7 @@ fields:
 fields_tail:
 | /* empty */
     { [] }
-| SEMICOLON field fields_tail
+| SEMI field fields_tail
     { $2 :: $3 }
 ;
 field:
@@ -245,7 +238,7 @@ pattern_matching:
     { ($2, $4) :: $5 }
 ;
 pattern_matching_tail:
-| /* empty */ 
+| /* empty */ %prec guard
     { [] }
 | PIPE pattern_matching
     { $2 }
@@ -268,7 +261,7 @@ pattern:
 (* TODO: FLOAT *)
 | IDENT
     { PtVar($1, Type.Meta(Type.newmetavar ())) }
-| tuple_pattern
+| tuple_pattern %prec tuple_guard
     { PtTuple(List.rev $1) }
 | LBRACE field_patterns RBRACE
     { PtRecord(List.rev $2) }
@@ -278,7 +271,7 @@ pattern:
     { PtConstr($1, constr_pattern_args $2) }
 | pattern CONS pattern
     { PtConstr("Cons", [$1; $3]) }
-| LSQUARE_BRANKET list_pattern RSQUARE_BRANKET
+| LBRACK list_pattern RBRACK
     { List.fold_right (fun x xs -> (PtConstr("Cons", [x; xs]))) $2 (PtConstr("Nil", [])) }
 ;
 
@@ -290,9 +283,9 @@ tuple_pattern:
 ;
 
 field_patterns:
-| field_patterns SEMICOLON field_pattern
+| field_patterns SEMI field_pattern
     { $3 :: $1 }
-| field_pattern SEMICOLON field_pattern
+| field_pattern SEMI field_pattern
     { [$3; $1] }
 ;
 
@@ -340,7 +333,7 @@ field_decls:
 field_decls_tail:
 | /* empty */
     { [] }
-| SEMICOLON field_decl field_decls_tail
+| SEMI field_decl field_decls_tail
     { $2 :: $3 }
 ;
 field_decl:
@@ -382,7 +375,7 @@ list:
 tail: 
 | 
     { [] }
-| SEMICOLON expr tail
+| SEMI expr tail
     { $2 :: $3 }
 ;
 list_pattern: 
@@ -394,7 +387,7 @@ list_pattern:
 tail_pattern: 
 | 
     { [] }
-| SEMICOLON pattern tail_pattern
+| SEMI pattern tail_pattern
     { $2 :: $3 }
     
     
