@@ -1,4 +1,7 @@
-type 'a t = Location.t * 'a
+type 'a t = {
+  loc : Location.t;
+  desc : 'a;
+}
 
 val create : Location.t -> 'a -> 'a t
 val range : Location.t -> Location.t -> 'a -> 'a t

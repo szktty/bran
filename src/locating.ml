@@ -1,12 +1,15 @@
-type 'a t = Location.t * 'a
+type 'a t = {
+  loc : Location.t;
+  desc : 'a;
+}
 
-let create loc desc = (loc, desc)
+let create loc desc = { loc; desc }
 
 let range start_loc end_loc desc =
   create (Location.union start_loc end_loc) desc
 
-let loc (l, _) = l
-let desc (_, x) = x
+let loc lx = lx.loc
+let desc lx = lx.desc
 
-let set ((l, x) : 'a t) f =
-  create l (f x)
+let set lx f =
+  create lx.loc (f lx.desc)
