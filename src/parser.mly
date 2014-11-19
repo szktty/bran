@@ -53,6 +53,7 @@ let constr_pattern_args = function PtTuple(xs) -> xs | x -> [x]
 %token COMMA
 %token PIPE
 %token QUATE
+%token NL (* newline *)
 %token EOF
 
 /* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) */
@@ -85,11 +86,16 @@ f:
 ;
 
 definitions:
-| /* empty */
-    { [] }
-| definition definitions 
-    { $1 :: $2 }
-;
+    | (* empty *)
+      { [] }
+    | rev_definitions
+      { List.rev $1 }
+
+rev_definitions:
+    | definition
+      { [$1] }
+    | rev_definitions definition
+      { $2 :: $1 }
 
 definition:
 | VAR IDENT EQUAL seq_expr
@@ -100,6 +106,8 @@ definition:
     { RecDef($3) }
 | TYPE typedef    
     { $2 }
+| NL
+    { VarDef((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), (Unit, Type.App(Type.Unit, []))) }
 
 simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2html: parser_simple) */
 | LPAREN expr RPAREN
