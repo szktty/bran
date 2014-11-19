@@ -168,6 +168,7 @@ FILES[] =
 	kNormal
 	l
 	#lexer
+	locating
 	location
 	log
 	m
