@@ -1,414 +1,395 @@
 %{
-open AstTypes
-
-module L = Location
-
-let addtyp x = (x, Type.gentyp ())
-
-let combine es =
-  List.fold_right (fun e1 e2 ->
-      match Ast.desc e2 with
-      | Nop -> e1
-      | _ ->
-        match Ast.desc e1 with
-        | Nop -> e2
-        | Let (xt, e, _) ->
-          L.with_range e1.L.loc e2.L.loc (Let (xt, e, e2))
-        | _ ->
-          let e3 = (Let ((Id.gentmp Type.Unit, Type.Unit), e1, e2)) in
-          L.with_loc (Ast.loc e1) e3)
-    es (L.with_loc L.zero Nop)
-
-let find_funsig_opt x =
-  Log.debug "# find funsig \"%s\":\n" x;
-  match Context.current_module () with
-  | None ->
-    Log.debug "#   not found module\n";
-    None
-  | Some m ->
-    begin try
-      let (x, f) = List.find (fun (x', _) -> x = x') m.mod_funs in
-      Log.debug "#   found: %s\n" (Fun.to_string f);
-      Some (x, Type.Fun f)
-    with Not_found ->
-      Log.debug "#   not found funsig\n";
-      None
-    end
-
-let find_funsig x =
-  match find_funsig_opt x with
-  | None -> addtyp x
-  | Some xt -> xt
-
-let sigdef_error loc t =
-  raise (Type.Parse_error (loc,
-    Printf.sprintf "type must be function: %s" (Type.to_string t)))
-
-let bin_exp l op r =
-  L.with_range l.L.loc r.L.loc (Bin (l, op, r))
+(* parserが利用する変数、関数、型などの定義 *)
+open Syntax
+let add_type x = (x, Type.Meta(Type.newmetavar ()))
+let constr_args = function Tuple(xs), _ -> xs | x, t -> [(x, t)]
+let constr_pattern_args = function PtTuple(xs) -> xs | x -> [x]
 
 %}
 
-%token <bool Location.loc> BOOL
-%token <int Location.loc> INT
-%token <float Location.loc> FLOAT
-%token <string Location.loc> STRING
-%token <Location.t> NOT
-%token <Location.t> MINUS
-%token <Location.t> PLUS
-%token <Location.t> MINUS_DOT
-%token <Location.t> PLUS_DOT
-%token <Location.t> AST_DOT
-%token <Location.t> SLASH_DOT
-%token <Location.t> EQ
-%token <Location.t> LESS_GREATER
-%token <Location.t> LESS_EQ
-%token <Location.t> GREATER_EQ
-%token <Location.t> LESS
-%token <Location.t> GREATER
-%token <Location.t> IF
-%token <Location.t> THEN
-%token <Location.t> ELSE
-%token <Location.t> ELSEIF
-%token <Id.t Location.loc> IDENT
-%token <Id.t Location.loc> UIDENT
-%token <Location.t> LET
-%token <Location.t> DEF
-%token <Location.t> DONE
-%token <Location.t> END
-%token <Location.t> EXTERNAL
-%token <Location.t> FUN
-%token <Location.t> IMPORT
-%token <Location.t> AS
-%token <Location.t> OF
-%token <Location.t> WHERE
-%token <Location.t> VAR
-%token <Location.t> AND
-%token <Location.t> IN
-%token <Location.t> TO
-%token <Location.t> WITH
-%token <Location.t> REC
-%token <Location.t> TYPE
-%token <Location.t> MODULE
-%token <Location.t> DEFER
-%token <Location.t> RAISE
-%token <Location.t> TRY
-%token <Location.t> MATCH
-%token <Location.t> FOR
-%token <Location.t> WHILE
-%token <Location.t> COLON
-%token <Location.t> COMMA
-%token <Location.t> DOT
-%token <Location.t> LESS_MINUS
-%token <Location.t> SEMI
-%token <Location.t> BAR
-%token <Location.t> UP
-%token <Location.t> RARROW
-%token <Location.t> LPAREN
-%token <Location.t> RPAREN
-%token <Location.t> LBRACK
-%token <Location.t> RBRACK
-%token <Location.t> LBRACE
-%token <Location.t> RBRACE
-%token <Location.t> NL
-%token <Location.t> EOF
+/* 字句を表すデータ型の定義 (caml2html: parser_token) */
+%token <bool> BOOL
+%token <int> INT
+%token <float> FLOAT
+%token NOT
+%token MINUS
+%token PLUS
+%token AST
+%token SLASH
+%token CONS
+%token LAND
+%token LOR
+%token EQUAL
+%token LESS_GREATER
+%token LESS_EQUAL
+%token GREATER_EQUAL
+%token LESS
+%token GREATER
+%token IF
+%token THEN
+%token ELSE
+%token <Id.t> IDENT
+%token <Id.t> UIDENT
+%token LET
+%token IN
+%token REC
+%token TYPE
+%token OF
+%token MATCH
+%token WITH
+%token RIGHT_ARROW
+%token SEMICOLON
+%token COLON
+%token LPAREN
+%token RPAREN
+%token BEGIN
+%token END
+%token LBRACE
+%token RBRACE
+%token LSQUARE_BRANKET
+%token RSQUARE_BRANKET
+%token DOT
+%token COMMA
+%token PIPE
+%token QUATE
+%token EOF
 
-/* ͥ���̤�associativity��������㤤������⤤���ء� (caml2html: parser_prior) */
+/* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) */
 %right prec_let
-%right SEMI
-%right NL
+%right prec_match
+%right SEMICOLON
 %right prec_if
 %right LESS_MINUS
 %left COMMA
-%left EQ LESS_GREATER LESS GREATER LESS_EQ GREATER_EQ
-%left PLUS MINUS PLUS_DOT MINUS_DOT
-%left AST_DOT SLASH_DOT UP
+%left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
+%right LAND
+%right LOR
+%right CONS
+%left PLUS MINUS
+%left AST SLASH
 %right prec_unary_minus
 %left prec_app
-%left DOT
 
-/* ���ϵ������� */
-%type <Ast.t * Ast.t> prog
-%start prog
+/* 開始記号の定義 */
+%type <Syntax.def list> f
+%start f
 
 %%
 
-prog:
-    | attrs EOF { $1 }
+f: 
+| definitions { $1 }
+;
+definitions:
+| /* empty */
+    { [] }
+| definition definitions 
+    { $1 :: $2 }
+;
+definition:
+| LET IDENT EQUAL seq_expr
+    %prec prec_let
+    { VarDef(add_type $2, $4) }
+| LET LPAREN RPAREN EQUAL seq_expr
+    %prec prec_let
+    { VarDef((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), $5) }
+| LET REC fundef
+    %prec prec_let
+    { RecDef($3) }
+| TYPE typedef    
+    { $2 }
 
-attrs:
-    | rev_attrs { (combine (List.rev $1), List.hd $1) }
-
-rev_attrs:
-    | attr { [$1] }
-    | rev_attrs attr { $2 :: $1 }
-
-attr:
-    | term { L.with_loc $1 Nop }
-    | fundef { $1 }
-    | sigdef { $1 }
-
-term:
-    | NL { $1 }
-    | SEMI { $1 }
-
-fundef:
-    | DEF IDENT formal_args EQ body
-      { L.with_range $1 $4
-          (Def { AstTypes.name = find_funsig $2.desc;
-                 rec_ = false; args = $3; body = $5 }) }
-    | DEF IDENT formal_args COLON typexp EQ body
-      { match find_funsig_opt $2.desc with
-        | Some (_, t) ->
-          raise (Type.Parse_error ($1,
-            Printf.sprintf "signature already defined: %s" (Type.to_string t)))
-        | None ->
-          L.with_range $1 $4
-          (Def { AstTypes.name = ($2.desc, $5);
-                 rec_ = false; args = $3; body = $7 }) }
-    | DEF REC IDENT formal_args EQ body
-      { L.with_range $1 $5
-          (Def { AstTypes.name = find_funsig $3.desc;
-                 rec_ = true; args = $4; body = $6 }) }
-    | DEF REC IDENT formal_args COLON typexp EQ body
-      { match find_funsig_opt $3.desc with
-        | Some (_, t) ->
-          raise (Type.Parse_error ($1,
-            Printf.sprintf "signature already defined: %s" (Type.to_string t)))
-        | None ->
-          L.with_range $1 $5
-          (Def { AstTypes.name = ($3.desc, $6);
-                 rec_ = true; args = $4; body = $8 }) }
-
-formal_args:
-    | formal_arg formal_args
-      { $1 :: $2 }
-    | formal_arg
-      { [$1] }
-
-formal_arg:
-    | pattern { $1 }
-    | LPAREN pattern RPAREN { $2 }
-
-pattern:
-    | IDENT { FunArg.Var (addtyp $1.desc) }
-    | LPAREN IDENT COLON typexp RPAREN { FunArg.Var ($2.desc, $4) }
-    | LPAREN RPAREN { FunArg.Var (Id.wildcard, Type.Unit) }
-    | tuple_arg { $1 }
-
-tuple_arg:
-    | LPAREN tuple_arg_elt COMMA tuple_arg_elts RPAREN
-      { FunArg.Tuple (Id.wildcard, $2 :: $4) }
-
-tuple_arg_elts:
-    | rev_tuple_arg_elts { List.rev $1 }
-
-rev_tuple_arg_elts:
-    | tuple_arg_elt { [$1] }
-    | rev_tuple_arg_elts COMMA tuple_arg_elt { $3 :: $1 }
-
-tuple_arg_elt:
-    | formal_arg { $1 }
-
-body:
-    | stmts { combine $1 }
-
-stmts:
-    | rev_stmts { List.rev $1 }
-
-rev_stmts:
-    | stmt { [$1] }
-    | rev_stmts stmt { $2 :: $1 }
-
-stmt:
-    | term { L.with_loc $1 Nop }
-    | exp term { $1 }
-    | if_exp { $1 }
-
-if_exp:
-    | IF exp THEN body END
-      { L.with_range $1 $5 (If ($2, $4, L.with_loc $3 Unit)) }
-    | IF exp THEN body ELSE body END
-      { L.with_range $1 $7 (If ($2, $4, $6)) }
-
-exp:
-    | primary
-      { $1 }
-    | NOT exp %prec prec_app
-      { L.with_range $1 $2.loc (Not $2) }
-    | MINUS exp %prec prec_unary_minus
-      { L.with_range $1 $2.loc
-        (match $2.desc with
-        | Float(f) -> Float(-.f) (* -1.23�ʤɤϷ����顼�ǤϤʤ��Τ��̰��� *)
-        | _ -> Neg $2) }
-    | MINUS_DOT exp %prec prec_unary_minus
-      { L.with_range $1 $2.loc (FNeg $2) }
-    | bin_exp { $1 }
-    | funcall { $1 }
-    | vardef { $1 }
+simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2html: parser_simple) */
+| LPAREN expr RPAREN
+    { $2 }
+| BEGIN expr END
+    { $2 }
+| LPAREN seq_expr RPAREN
+    { $2 }
+| BEGIN seq_expr END
+    { $2 }
+| LPAREN RPAREN
+    { add_type Unit }
+| BEGIN END
+    { add_type Unit }
+| BOOL
+    { add_type (Bool($1)) }
+| INT
+    { add_type (Int($1)) }
+| IDENT
+    { add_type (Var($1)) }
+| UIDENT
+    { add_type (Constr($1, [])) }
+| simple_expr DOT IDENT
+    { add_type (Field($1, $3)) }
+| LSQUARE_BRANKET list RSQUARE_BRANKET
+    { List.fold_right (fun x xs -> add_type (Constr("Cons", [x; xs]))) $2 (add_type (Constr("Nil", []))) }
+;
+expr: /* 一般の式 (caml2html: parser_expr) */
+| simple_expr
+    { $1 }
+| NOT expr
+    %prec prec_app
+    { add_type (Not($2)) }
+| MINUS expr
+    %prec prec_unary_minus
+    { add_type (Neg($2)) }
+| expr PLUS expr /* 足し算を構文解析するルール (caml2html: parser_add) */
+    { add_type (Add($1, $3)) }
+| expr MINUS expr
+    { add_type (Sub($1, $3)) }
+| expr AST expr
+    { add_type (Mul($1, $3)) }
+| expr SLASH expr
+    { add_type (Div($1, $3)) }
+| expr CONS expr
+    { add_type (Constr("Cons", [$1; $3])) }
+| expr LAND expr
+    { add_type (And($1, $3)) }
+| expr LOR expr
+    { add_type (Or($1, $3)) }
+| expr EQUAL expr
+    { add_type (Eq($1, $3)) }
+| expr LESS_GREATER expr
+    { add_type (Not(add_type (Eq($1, $3)))) }
+| expr LESS expr
+    { add_type (Not(add_type (LE($3, $1)))) }
+| expr GREATER expr
+    { add_type (Not(add_type (LE($1, $3)))) }
+| expr LESS_EQUAL expr
+    { add_type (LE($1, $3)) }
+| expr GREATER_EQUAL expr
+    { add_type (LE($3, $1)) }
+| tuple
+    { add_type (Tuple(List.rev $1)) }
+| IF expr THEN expr ELSE expr
+    %prec prec_if
+    { add_type (If($2, $4, $6)) }
+| expr actual_args
+    %prec prec_app
+    { add_type (App($1, $2)) }
+| UIDENT simple_expr
+    { add_type (Constr($1, constr_args $2)) }
+| LBRACE fields RBRACE
+    { add_type (Record($2)) }
+| LET IDENT EQUAL seq_expr IN seq_expr
+    %prec prec_let
+    { add_type (LetVar(add_type $2, $4, $6)) }
+| LET REC fundef IN seq_expr
+    %prec prec_let
+    { add_type (LetRec($3, $5)) }
+| MATCH expr WITH pattern_matching
+    %prec prec_match
+    { add_type (Match($2, $4)) }
 | error
     { failwith
 	(Printf.sprintf "parse error near characters %d-%d"
 	   (Parsing.symbol_start ())
 	   (Parsing.symbol_end ())) }
-   
-vardef:
-    | VAR IDENT EQ exp
-      { L.with_range $1 $3 (Let (addtyp $2.desc, $4, L.with_loc $1 Nop)) }
-    | VAR IDENT COLON typexp EQ exp
-      { L.with_range $1 $3 (Let (($2.desc, $4), $6, L.with_loc $1 Nop)) }
+;
 
-bin_exp:
-    | exp PLUS exp
-      { bin_exp $1 BinOp.Add $3 }
-    | exp MINUS exp
-      { bin_exp $1 BinOp.Sub $3 }
-    | exp PLUS_DOT exp
-      { bin_exp $1 BinOp.FAdd $3 }
-    | exp MINUS_DOT exp
-      { bin_exp $1 BinOp.FSub $3 }
-    | exp AST_DOT exp
-      { bin_exp $1 BinOp.FMul $3 }
-    | exp SLASH_DOT exp
-      { bin_exp $1 BinOp.FDiv $3 }
-    | exp UP exp
-      { bin_exp $1 BinOp.SConcat $3 }
-    | exp EQ exp
-      { bin_exp $1 BinOp.Eq $3 }
-    | exp LESS_GREATER exp
-      { L.with_range $1.L.loc $3.L.loc (Not (bin_exp $1 BinOp.Eq $3)) }
-    | exp LESS exp
-      { bin_exp $1 BinOp.LT $3 }
-    | exp GREATER exp
-      { bin_exp $1 BinOp.GT $3 }
-    | exp LESS_EQ exp
-      { bin_exp $1 BinOp.LE $3 }
-    | exp GREATER_EQ exp 
-      { bin_exp $1 BinOp.GE $3 }
-
-funcall:
-    | primary actual_args
-      { L.replace $1 (fun _ _ -> App ($1, $2)) }
-
-actual_args:
-    | actual_args actual_arg
-      { $1 @ [$2] }
-    | actual_arg
-      { [$1] }
-
-actual_arg:
-    | primary { $1 }
-
-primary:
-    | LPAREN exp RPAREN
-      { L.with_range $1 $3 $2.desc }
-    | LPAREN exp COLON typexp RPAREN
-      { L.with_range $1 $5 (Typed ($2, $4)) }
-    | LPAREN RPAREN
-      { L.with_range $1 $2 Unit }
-    | BOOL
-      { L.replace $1 (fun _ d -> Bool d) }
-    | INT
-      { L.replace $1 (fun _ d -> Int d) }
-    | FLOAT
-      { L.replace $1 (fun _ d -> Float d) }
-    | STRING
-      { L.replace $1 (fun _ d -> String d) }
-    | var
-      { $1 }
-    | primary DOT LPAREN exp RPAREN
-      { L.with_range $1.loc $5 (Get ($1, $4)) }
-    | tuple
-      { $1 }
-    | list
-      { $1 }
-
-var:
-    | IDENT
-      { L.replace $1 (fun _ d -> Var d) }
-    | UIDENT DOT var
-      { L.replace $1 (fun _ d -> Local (d, $3)) }
+seq_expr: 
+| expr
+    { $1 }
+| expr SEMICOLON seq_expr
+    { add_type (LetVar((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), $1, $3)) }
+;    
 
 tuple:
-    | LPAREN tuple_elt COMMA tuple_elts RPAREN
-      { L.with_range $1 $5 (Tuple ($2 :: $4)) }
+| tuple COMMA expr
+    { $3 :: $1 }
+| expr COMMA expr
+    { [$3; $1] }
+;
 
-tuple_elts:
-    | rev_tuple_elts { List.rev $1 }
+fundef:
+| IDENT formal_args EQUAL seq_expr
+    { { name = add_type $1; args = $2; body = $4 } }
+;
 
-rev_tuple_elts:
-    | tuple_elt { [$1] }
-    | tuple_elts COMMA tuple_elt { $3 :: $1 }
+formal_args:
+| IDENT formal_args
+    { add_type $1 :: $2 }
+| IDENT
+    { [add_type $1] }
+;
 
-tuple_elt:
-    | exp { $1 }
+actual_args:
+| actual_args simple_expr
+    %prec prec_app
+    { $1 @ [$2] }
+| simple_expr
+    %prec prec_app
+    { [$1] }
+;
+fields:
+| field fields_tail
+    { $1 :: $2 }
+;
+fields_tail:
+| /* empty */
+    { [] }
+| SEMICOLON field fields_tail
+    { $2 :: $3 }
+;
+field:
+| IDENT EQUAL expr
+    { ($1, $3) }
+;
 
-list:
-    | LBRACK RBRACK
-      { L.with_range $1 $2 (List []) }
-    | LBRACK list_elts RBRACK
-      { L.with_range $1 $3 (List $2) }
+pattern_matching:
+| opt_pipe pattern RIGHT_ARROW seq_expr pattern_matching_tail
+    { ($2, $4) :: $5 }
+;
+pattern_matching_tail:
+| /* empty */ 
+    { [] }
+| PIPE pattern_matching
+    { $2 }
+;
+opt_pipe:
+| /* empty */ 
+    {  }
+| PIPE
+    {  }
+;
+pattern:
+| LPAREN pattern RPAREN
+    { $2 }
+| BEGIN pattern END
+    { $2 }
+| BOOL
+    { PtBool($1) }
+| INT
+    { PtInt($1) }
+| IDENT
+    { PtVar($1, Type.Meta(Type.newmetavar ())) }
+| tuple_pattern
+    { PtTuple(List.rev $1) }
+| LBRACE field_patterns RBRACE
+    { PtRecord(List.rev $2) }
+| UIDENT 
+    { PtConstr($1, []) }
+| UIDENT pattern
+    { PtConstr($1, constr_pattern_args $2) }
+| pattern CONS pattern
+    { PtConstr("Cons", [$1; $3]) }
+| LSQUARE_BRANKET list_pattern RSQUARE_BRANKET
+    { List.fold_right (fun x xs -> (PtConstr("Cons", [x; xs]))) $2 (PtConstr("Nil", [])) }
+;
 
-list_elts:
-    | rev_list_elts { List.rev $1 }
+tuple_pattern:
+| tuple_pattern COMMA pattern
+    { $3 :: $1 }
+| pattern COMMA pattern
+    { [$3; $1] }
+;
 
-rev_list_elts:
-    | list_elt { [$1] }
-    | list_elts COMMA list_elt { $3 :: $1 }
+field_patterns:
+| field_patterns SEMICOLON field_pattern
+    { $3 :: $1 }
+| field_pattern SEMICOLON field_pattern
+    { [$3; $1] }
+;
 
-list_elt:
-    | exp { $1 }
+field_pattern:
+| IDENT EQUAL pattern
+    { ($1, $3) }
+;
 
-sigdef:
-    | DEF IDENT COLON typexp
-      { let f = match $4 with
-        | Type.Fun f -> f
-        | _ -> sigdef_error $1 $4
-        in
-        L.with_range $1 $1 (SigDef ($2.desc, f))
-      }
-    | EXTERNAL IDENT COLON typexp EQ STRING
-      { let f = match $4 with
-        | Type.Fun f -> { f with fun_ext = Some $6.desc }
-        | _ -> sigdef_error $1 $4
-        in
-        L.with_range $1 $6.loc (SigDef ($2.desc, f))
-      }
-
-typexp:
-    | rev_typexp_elts
-      { if List.length $1 = 1 then
-          List.hd $1
-        else
-          let hd = List.hd $1 in
-          let tl = List.tl $1 in
-          Type.Fun { Type.fun_mod = None; fun_ext = None;
-          fun_name = None; fun_args = List.rev tl; fun_ret = hd }
-      }
-
-rev_typexp_elts:
-    | typexp_elt { [$1] }
-    | rev_typexp_elts RARROW typexp_elt { $3 :: $1 }
-
-typexp_elt:
-    | typexp_elt_base { $1 }
-    | typexp_elt_base IDENT
-      { match $2.desc with
-        (* TODO: option, ref *)
-        | "list" -> Type.List $1
-        | s -> raise (Type.Parse_error ($2.loc,
-            (Printf.sprintf "type \"%s\" does not support" s)))
-      }
-
-typexp_elt_base:
-    | IDENT
-      { match $1.desc with
-        | "unit" -> Type.Unit
-        | "bool" -> Type.Bool
-        | "int" -> Printf.printf "typexp int\n";Type.Int
-        | "float" -> Type.Float
-        | "string" -> Type.String
-        | s -> raise (Type.Parse_error ($1.loc,
-            (Printf.sprintf "type \"%s\" does not support" s)))
-      }
-    | LPAREN typexp RPAREN { $2 }
+typedef:
+| type_params IDENT EQUAL IDENT
+    { TypeDef($2, Type.TyFun($1, (Type.App(Type.NameTycon($4, ref None), [])))) }
+| type_params IDENT EQUAL LBRACE field_decls RBRACE
+    { TypeDef($2, Type.TyFun($1, (Type.App(Type.Record($2, List.map fst $5), List.map snd $5)))) }
+| type_params IDENT EQUAL variant_decls
+    { TypeDef($2, Type.TyFun($1, (Type.App(Type.Variant($2, $4), [])))) }
+;
+type_params:
+| /* empty */
+    { [] }
+| type_param type_params_tail
+    { $1 :: $2 }
+;
+type_param:
+| QUATE IDENT
+    { $2 }
+;
+type_params_tail:
+| /* empty */
+    { [] }
+| COMMA type_param type_params_tail
+    { $2 :: $3 }
+;
+type_expr:
+| IDENT
+    { Type.App(Type.NameTycon($1, ref None), []) }
+| QUATE IDENT
+    { Type.Var($2) }
+| type_expr IDENT
+    { Type.App(Type.NameTycon($2, ref None), [$1]) }
+;
+field_decls:
+| field_decl field_decls_tail
+    { $1 :: $2 }
+;
+field_decls_tail:
+| /* empty */
+    { [] }
+| SEMICOLON field_decl field_decls_tail
+    { $2 :: $3 }
+;
+field_decl:
+| IDENT COLON type_expr
+    { ($1, $3) }
+;
+variant_decls:
+| variant_decl variant_decls_tail
+    { $1 :: $2 }
+;
+variant_decls_tail:
+| /* empty */
+    { [] }
+| PIPE variant_decl variant_decls_tail
+    { $2 :: $3 }
+;
+variant_decl:
+| UIDENT variant_var_decls
+    { ($1, $2) }
+;
+variant_var_decls:
+| /* empty */
+    { [] }
+| OF type_expr variant_var_decls_tail
+    { $2::$3 }
+;
+variant_var_decls_tail:
+| /* empty */
+    { [] }
+| AST type_expr variant_var_decls_tail
+    { $2::$3 }
+;
+list: 
+| /* empty */
+    { [] }
+| expr tail
+    { $1 :: $2 }
+;
+tail: 
+| 
+    { [] }
+| SEMICOLON expr tail
+    { $2 :: $3 }
+;
+list_pattern: 
+| /* empty */
+    { [] }
+| pattern tail_pattern
+    { $1 :: $2 }
+;
+tail_pattern: 
+| 
+    { [] }
+| SEMICOLON pattern tail_pattern
+    { $2 :: $3 }
+    
+    

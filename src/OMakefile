@@ -173,7 +173,7 @@ FILES[] =
 	m
 	main
 	#module
-	#parser
+	parser
 	position
 	s
 	#sig
