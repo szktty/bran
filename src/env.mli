@@ -1,5 +1,8 @@
-type t = Type.t M.t
-
-val create : unit -> t
-
-val import : t -> Module.t -> t
+type t = { venv : Type.t M.t; tenv : Type.t M.t; tycons : Type.tycon M.t; }
+val predeftypes : (string * Type.tycon) list
+val predeffuns : 'a list
+val empty : t ref
+val extenv : t ref
+val add_var : t -> M.key -> Type.t -> t
+val exists_tycon : t -> M.key -> bool
+val find_tycon : t -> M.key -> Type.tycon

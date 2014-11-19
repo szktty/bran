@@ -1,139 +1,274 @@
 type closure = { entry : Id.l; actual_fv : Id.t list }
-type t = (* ¥¯¥í¡¼¥¸¥ãÊÑ´¹¸å¤Î¼° (caml2html: closure_t) *)
+type t = (* ã‚¯ãƒ­ãƒ¼ã‚¸ãƒ£å¤‰æ›å¾Œã®å¼ (caml2html: closure_t) *)
+    term * Type.t
+and term =
   | Unit
+  | WrapBody of Id.t * Type.t
+  | UnwrapBody of Id.t * Type.t
+  | Exp of et
+  | If of et * t * t
+  | Match of Id.t * (pattern * t) list
+  | Let of (Id.t * Type.t) * t * t
+  | MakeCls of (Id.t * Type.t) * closure * t
+and et =
+    expr * Type.t
+and expr = 
   | Bool of bool
   | Int of int
-  | Float of float
-  | String of string
-  | Neg of Id.t
-  | Add of Id.t * Id.t
-  | Sub of Id.t * Id.t
-  | FNeg of Id.t
-  | FAdd of Id.t * Id.t
-  | FSub of Id.t * Id.t
-  | FMul of Id.t * Id.t
-  | FDiv of Id.t * Id.t
-  | SConcat of Id.t * Id.t
-  | IfEq of Id.t * Id.t * t * t
-  | IfLE of Id.t * Id.t * t * t
-  | Let of (Id.t * Type.t) * t * t
+  | Record of (Id.t * et) list
+  | Field of et * Id.t
+  | Tuple of et list
+  | Not of et
+  | And of et * et
+  | Or of et * et
+  | Neg of et
+  | Add of et * et
+  | Sub of et * et
+  | Mul of et * et
+  | Div of et * et
+  | Eq of et * et
+  | LE of et * et
   | Var of Id.t
-  | Mod_fun of Fun.t
-  | MakeCls of (Id.t * Type.t) * closure * t
-  | AppCls of Id.t * Id.t list
-  | AppDir of Id.l * Id.t list
-  | Tuple of Id.t list
-  | LetTuple of (Id.t * Type.t) list * Id.t * t
-  | List of Id.t list
-  | Get of Id.t * Id.t
-  | Put of Id.t * Id.t * Id.t
-  | ExtArray of Id.l
-type fundef = {
-  name : Id.l * Type.t;
-  args : FunArg.t list;
-  formal_fv : (Id.t * Type.t) list;
-  body : t }
-type prog = Prog of fundef list * t
+  | Constr of Id.t * et list
+  | AppCls of et * et list
+  | AppDir of Id.l * et list
+and pattern =
+  | PtBool of bool
+  | PtInt of int
+  | PtVar of Id.t * Type.t
+  | PtTuple of pattern list
+  | PtRecord of (Id.t * pattern) list
+  | PtConstr of Id.t * pattern list
+type fundef = { name : Id.l * Type.t;
+		args : (Id.t * Type.t) list;
+		formal_fv : (Id.t * Type.t) list;
+		body : t }
+and def =
+  | TypeDef of Id.t * Type.tycon
+  | VarDef of (Id.t * Type.t) * t
+  | FunDef of fundef
+type prog = Prog of def list
 
-let rec fv = function
-  | Unit | Bool _ | Int(_) | Float(_) | String _ | ExtArray(_) | Mod_fun _ -> S.empty
-  | Neg(x) | FNeg(x) -> S.singleton x
-  | Add(x, y) | Sub(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | SConcat (x, y) | Get(x, y) -> S.of_list [x; y]
-  | IfEq(x, y, e1, e2)| IfLE(x, y, e1, e2) ->
-    S.add x (S.add y (S.union (fv e1) (fv e2)))
-  | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
+let rec string_of_pattern =
+  function
+  | PtBool(b) -> "PtBool(" ^ (string_of_bool b) ^ ")"
+  | PtInt(n) -> "PtInt(" ^ (string_of_int n) ^ ")"
+  | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.string_of_t t) ^ ")"
+  | PtTuple(ps) -> "PtTuple([" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
+  | PtRecord(xps) -> "PtRecord([" ^ (String.concat "; " (List.map (fun (x, p) -> x ^ ", " ^ (string_of_pattern p)) xps)) ^ "])"
+  | PtConstr(x, ps) -> "PtConstr(" ^ x ^ ", [" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
+
+let rec string_of_typed_expr (e, t) = (string_of_expr e) ^ " : " ^ (Type.string_of_t t)
+
+and string_of_expr = 
+  function
+  | Bool(b) -> string_of_bool b
+  | Int(n) -> string_of_int n
+  | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
+  | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
+  | Tuple(es) -> "(" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
+  | Not(e) -> "not " ^ (string_of_typed_expr e)
+  | And(e1, e2) -> (string_of_typed_expr e1) ^ " && " ^ (string_of_typed_expr e2)
+  | Or(e1, e2) -> (string_of_typed_expr e1) ^ " || " ^ (string_of_typed_expr e2)
+  | Neg(e) -> "-" ^ (string_of_typed_expr e)
+  | Add(e1, e2) -> (string_of_typed_expr e1) ^ " + " ^ (string_of_typed_expr e2)
+  | Sub(e1, e2) -> (string_of_typed_expr e1) ^ " - " ^ (string_of_typed_expr e2)
+  | Mul(e1, e2) -> (string_of_typed_expr e1) ^ " * " ^ (string_of_typed_expr e2)
+  | Div(e1, e2) -> (string_of_typed_expr e1) ^ " / " ^ (string_of_typed_expr e2)
+  | Eq(e1, e2) -> (string_of_typed_expr e1) ^ " = " ^ (string_of_typed_expr e2)
+  | LE(e1, e2) -> (string_of_typed_expr e1) ^ " <= " ^ (string_of_typed_expr e2) 
+  | Var(x) -> "Var(" ^ x ^ ")"
+  | Constr(x, es) -> "Constr(" ^ x ^ ", [" ^ (String.concat "; " (List.map string_of_typed_expr es)) ^ "])"
+  | AppCls(e, args) -> "AppCls(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat "; " (List.map string_of_typed_expr args)) ^ "])"
+  | AppDir(Id.L(x), args) -> "AppDir(" ^ x ^ ", [" ^ (String.concat " " (List.map string_of_typed_expr args)) ^ "])"
+      
+let rec string_of_typed_term (e, t) = (string_of_term e) ^ " : " ^ (Type.string_of_t t)
+
+and string_of_term = 
+  function
+  | Unit -> "Unit"
+  | WrapBody(x, t) -> "WrapBody(" ^ x ^ ", " ^ (Type.string_of_t t) ^ ")"
+  | UnwrapBody(x, t) -> "UnwrapBody(" ^ x ^ ", " ^ (Type.string_of_t t) ^ ")"
+  | Exp(e) -> "Exp(" ^ (string_of_typed_expr e) ^ ")"
+  | If(e1, e2, e3) -> "If(" ^ (string_of_typed_expr e1) ^ " then " ^ (string_of_typed_term e2) ^ " else " ^ (string_of_typed_term e3) ^ ")"
+  | Match(x, pes) -> "Match(" ^ x ^ ", [" ^ (String.concat "; " (List.map (fun (p, e) -> (string_of_pattern p) ^ " -> " ^ (string_of_typed_term e)) pes)) ^ "])"
+  | Let((x, t), e1, e2) -> "Let(" ^ x ^ " : " ^ (Type.string_of_t t) ^ " = " ^ (string_of_typed_term e1) ^ " in " ^ (string_of_typed_term e2) ^ ")"
+  | MakeCls((x, t), { entry = Id.L(l); actual_fv = ys }, e) -> "MakeCls(" ^ x ^ " : " ^ (Type.string_of_t t) ^ " = " ^ l ^ ", [" ^ (String.concat ", " ys) ^ "] in " ^ (string_of_typed_term e) ^ ")"
+
+let string_of_typed_id (x, t) = x ^ " : " ^ (Type.string_of_t t)
+      
+let string_of_fundef { name = (Id.L(x), t); args = yts; formal_fv = zts; body = e } =
+  "{ name = " ^ x ^ ", args = [" ^ (String.concat ", " (List.map string_of_typed_id yts)) ^ "], formal_fv = [" ^ (String.concat ", " (List.map string_of_typed_id zts)) ^ "], body = " ^ (string_of_typed_term e) ^ "}"
+    
+let string_of_def = 
+  function
+  | TypeDef(x, t) -> "TypeDef(" ^ x ^ ", " ^ (Type.string_of_tycon t) ^ ")"
+  | VarDef((x, t), e) -> "VarDef((" ^ x ^ ", " ^ (Type.string_of_t t) ^ "), " ^ (string_of_typed_term e) ^ ")"
+  | FunDef(fundef) -> "FunDef(" ^ (string_of_fundef fundef) ^ ")"
+
+let rec vars_of_pattern = 
+  function
+  | PtBool _ | PtInt _ -> S.empty
+  | PtVar(x, _) -> S.singleton x
+  | PtTuple(ps) | PtConstr(_, ps) -> List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty ps
+  | PtRecord(xps) -> List.fold_left (fun s (_, p) -> S.union s (vars_of_pattern p)) S.empty xps
+      
+let rec fv_of_expr (e, _) = 
+  match e with
+  | Bool(_) | Int(_) -> S.empty
+  | Record(xes) -> List.fold_left (fun s (_, e) -> S.union s (fv_of_expr e)) S.empty xes
+  | Field(e, _) -> fv_of_expr e
+  | Tuple(es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
+  | Not(e) | Neg(e) -> fv_of_expr e
+  | And(e1, e2) | Or(e1, e2) 
+  | Add(e1, e2) | Sub(e1, e2) | Mul(e1, e2) | Div(e1, e2) | Eq(e1, e2) | LE(e1, e2) -> S.union (fv_of_expr e1) (fv_of_expr e2)
   | Var(x) -> S.singleton x
-  | MakeCls((x, t), { entry = l; actual_fv = ys }, e) ->
-    S.remove x (S.union (S.of_list ys) (fv e))
-  | AppCls(x, ys) -> S.of_list (x :: ys)
-  | AppDir(_, xs) | Tuple(xs) | List xs -> S.of_list xs
-  | LetTuple(xts, y, e) -> S.add y (S.diff (fv e) (S.of_list (List.map fst xts)))
-  | Put(x, y, z) -> S.of_list [x; y; z]
+  | Constr(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
+  | AppCls(e, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty (e :: es)
+  | AppDir(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
+      
+let rec fv (e, _) = 
+  match e with
+  | Unit | WrapBody _ | UnwrapBody _ -> S.empty
+  | Exp(e) -> fv_of_expr e
+  | If(e, e1, e2) -> S.union (fv_of_expr e) (S.union (fv e1) (fv e2))
+  | Match(x, pes) -> (List.fold_left (fun s (p, e) -> S.diff (S.union s (fv e)) (vars_of_pattern p)) S.empty pes)
+  | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
+  | MakeCls((x, t), { entry = l; actual_fv = ys }, e) -> S.remove x (S.union (S.of_list ys) (fv e))
+      
+let toplevel : def list ref = ref []
 
-let toplevel : fundef list ref = ref []
+let ids_of_defs defs = 
+  List.fold_left 
+    (fun ids def -> 
+      match def with
+      | VarDef((x, _), _) 
+      | FunDef{ name = (Id.L(x), _); formal_fv = [] } -> x :: ids (* è‡ªç”±å¤‰æ•°ãŒãªã„ã‚‚ã®ã¯ç›´æŽ¥å‘¼ã³å‡ºã›ã‚‹ãŸã‚ã‚°ãƒ­ãƒ¼ãƒãƒ«ãªIDã¨ã—ã¦è¿”ã™ *)
+      | TypeDef _ | FunDef _ -> ids (* è‡ªç”±å¤‰æ•°ãŒã‚ã‚‹ã‚‚ã®ã¯ã‚¯ãƒ­ãƒ¼ã‚¸ãƒ£å‘¼ã³å‡ºã—çµŒç”±ã§ã®é©å¿œã¨ãªã‚‹ *)
+    ) [] defs
+    
+let rec pattern env = 
 
-let rec g env known = function (* ¥¯¥í¡¼¥¸¥ãÊÑ´¹¥ë¡¼¥Á¥óËÜÂÎ (caml2html: closure_g) *)
-  | KNormal.Unit -> Unit
-  | KNormal.Bool b -> Bool b
-  | KNormal.Int(i) -> Int(i)
-  | KNormal.Float(d) -> Float(d)
-  | KNormal.String s -> String s
-  | KNormal.Neg(x) -> Neg(x)
-  | KNormal.Add(x, y) -> Add(x, y)
-  | KNormal.Sub(x, y) -> Sub(x, y)
-  | KNormal.FNeg(x) -> FNeg(x)
-  | KNormal.FAdd(x, y) -> FAdd(x, y)
-  | KNormal.FSub(x, y) -> FSub(x, y)
-  | KNormal.FMul(x, y) -> FMul(x, y)
-  | KNormal.FDiv(x, y) -> FDiv(x, y)
-  | KNormal.SConcat (x, y) -> SConcat (x, y)
-  | KNormal.IfEq(x, y, e1, e2) -> IfEq(x, y, g env known e1, g env known e2)
-  | KNormal.IfLE(x, y, e1, e2) -> IfLE(x, y, g env known e1, g env known e2)
-  | KNormal.Let((x, t), e1, e2) -> Let((x, t), g env known e1, g (M.add x t env) known e2)
-  | KNormal.Var(x) -> Var(x)
-  | KNormal.Mod_fun f -> Mod_fun f
-  | KNormal.Def { KNormal.name = (x, t); KNormal.args = yts; KNormal.body = e1 } -> (* ´Ø¿ôÄêµÁ¤Î¾ì¹ç (caml2html: closure_letrec) *)
-      (* ´Ø¿ôÄêµÁlet rec x y1 ... yn = e1 in e2¤Î¾ì¹ç¤Ï¡¢
-	 x¤Ë¼«Í³ÊÑ¿ô¤¬¤Ê¤¤(closure¤ò²ð¤µ¤ºdirect¤Ë¸Æ¤Ó½Ð¤»¤ë)
-	 ¤È²¾Äê¤·¡¢known¤ËÄÉ²Ã¤·¤Æe1¤ò¥¯¥í¡¼¥¸¥ãÊÑ´¹¤·¤Æ¤ß¤ë *)
-    let toplevel_backup = !toplevel in
-    let env' = M.add x t env in
-    let known' = S.add x known in
-    let e1' = g (M.add_list (FunArg.vars yts) env') known' e1 in
-    (* ËÜÅö¤Ë¼«Í³ÊÑ¿ô¤¬¤Ê¤«¤Ã¤¿¤«¡¢ÊÑ´¹·ë²Ìe1'¤ò³ÎÇ§¤¹¤ë *)
-    (* Ãí°Õ: e1'¤Ëx¼«¿È¤¬ÊÑ¿ô¤È¤·¤Æ½Ð¸½¤¹¤ë¾ì¹ç¤Ïclosure¤¬É¬Í×!
-    (thanks to nuevo-namasute and azounoman; test/cls-bug2.ml»²¾È) *)
-    let zs = S.diff (fv e1') (S.of_list (FunArg.names yts)) in
-    let known', e1' =
-      if S.is_empty zs then
-        known', e1'
-      else begin
-        (* ÂÌÌÜ¤À¤Ã¤¿¤é¾õÂÖ(toplevel¤ÎÃÍ)¤òÌá¤·¤Æ¡¢¥¯¥í¡¼¥¸¥ãÊÑ´¹¤ò¤ä¤êÄ¾¤¹ *)
-        Log.debug "# free variable(s) %s found in function `%s'\n" (Id.pp_list (S.elements zs)) x;
-        Log.debug "# function `%s' cannot be directly applied in fact\n" x;
-        toplevel := toplevel_backup;
-        let e1' = g (M.add_list (FunArg.vars yts) env') known e1 in
-        known, e1'
-      end
-     in
-     let zs = S.elements (S.diff (fv e1') (S.add x (S.of_list (FunArg.names yts)))) in (* ¼«Í³ÊÑ¿ô¤Î¥ê¥¹¥È *)
-     let zts = List.map
-                 (* ¤³¤³¤Ç¼«Í³ÊÑ¿ôz¤Î·¿¤ò°ú¤¯¤¿¤á¤Ë°ú¿ôenv¤¬É¬Í× *)
-                 (fun z -> if M.mem z env' then (z, M.find z env')
-                  else (z, Fun.to_typ (Context.find_top_typ z))) zs in 
-     toplevel := { name = (Id.L(x), t); args = yts; formal_fv = zts; body = e1' } :: !toplevel; (* ¥È¥Ã¥×¥ì¥Ù¥ë´Ø¿ô¤òÄÉ²Ã *)
+  function
+  | KNormal.PtBool(b) -> env, PtBool(b)
+  | KNormal.PtInt(n) -> env, PtInt(n)
+  | KNormal.PtVar(x, t) -> M.add x t env, PtVar(x, t)
+  | KNormal.PtTuple(ps) -> 
+      let env, ps' = List.fold_left 
+        (fun (env, ps) p -> 
+          let env', p' = pattern env p in 
+          env', p' :: ps) 
+        (env, []) ps in
+      env, PtTuple(List.rev ps')
+  | KNormal.PtField(xps) -> 
+      let env, xps' = List.fold_left 
+        (fun (env, xps) (x, p) -> 
+          let env', p' = pattern env p in 
+          env', (x, p') :: xps) 
+        (env, []) xps in
+      env, PtRecord(List.rev xps')
+  | KNormal.PtConstr(x, ps) -> 
+      let env, ps' = List.fold_left 
+        (fun (env, ps) p -> 
+          let env', p' = pattern env p in 
+          env', p' :: ps) 
+        (env, []) ps in
+      env, PtConstr(x, List.rev ps')
 
-     MakeCls ((x, t), { entry = Id.L(x); actual_fv = zs }, Unit)
-      (*
-      let e2' = g env' known' e2 in
-      if S.mem x (fv e2') then (* x¤¬ÊÑ¿ô¤È¤·¤Æe2'¤Ë½Ð¸½¤¹¤ë¤« *)
-    MakeCls((x, t), { entry = Id.L(x); actual_fv = zs }, e2') (* ½Ð¸½¤·¤Æ¤¤¤¿¤éºï½ü¤·¤Ê¤¤ *)
-      else
-    (Format.eprintf "eliminating closure(s) %s@." x;
-     e2') (* ½Ð¸½¤·¤Ê¤±¤ì¤ÐMakeCls¤òºï½ü *)
-       *)
-  | KNormal.App(x, ys) when S.mem x known -> (* ´Ø¿ôÅ¬ÍÑ¤Î¾ì¹ç (caml2html: closure_app) *)
-    Log.debug "# directly applying %s\n" x;
-    AppDir(Id.L(x), ys)
-  | KNormal.App(x, xs) ->
-    if M.mem x env then
-      (* external function *)
-      match M.find x env with
-      | Type.Fun ({ fun_mod = Some _ } as f) -> AppDir(Id.M (Fun.erl_sig f), xs)
-      | e -> AppCls(x, xs)
-    else begin
-      Log.debug "# closure applying %s\n" x;
-      AppCls(x, xs)
-    end
-  | KNormal.Tuple(xs) -> Tuple(xs)
-  | KNormal.List xs -> List xs
-  | KNormal.LetTuple(xts, y, e) -> LetTuple(xts, y, g (M.add_list xts env) known e)
-  | KNormal.Get(x, y) -> Get(x, y)
-  | KNormal.Put(x, y, z) -> Put(x, y, z)
-  | KNormal.ExtArray(x) -> ExtArray(Id.L(x))
-  | KNormal.ExtFunApp(x, ys) -> AppDir(Id.L("bran_pervasives:" ^ x), ys)
+let rec h env known (expr, ty) = 
+  let () = Log.debug "Closure.h %s\n" (KNormal.string_of_expr expr) in
+  let e' =
+    match expr with
+    | KNormal.Bool(b) -> Bool(b)
+    | KNormal.Int(i) -> Int(i)
+    | KNormal.Record(xes) -> Record(List.map (fun (x, e) -> x, h env known e) xes)
+    | KNormal.Field(e, x) -> Field(h env known e, x)
+    | KNormal.Tuple(es) -> Tuple(List.map (h env known) es)
+    | KNormal.Not(e) -> Not(h env known e)
+    | KNormal.Neg(e) -> Neg(h env known e)
+    | KNormal.And(e1, e2) -> And(h env known e1, h env known e2)
+    | KNormal.Or(e1, e2)  -> Or(h env known e1, h env known e2)
+    | KNormal.Add(e1, e2) -> Add(h env known e1, h env known e2)
+    | KNormal.Sub(e1, e2) -> Sub(h env known e1, h env known e2)
+    | KNormal.Mul(e1, e2) -> Mul(h env known e1, h env known e2)
+    | KNormal.Div(e1, e2) -> Div(h env known e1, h env known e2)
+    | KNormal.Eq(e1, e2)  -> Eq(h env known e1, h env known e2)
+    | KNormal.LE(e1, e2)  -> LE(h env known e1, h env known e2)
+    | KNormal.Var(x) -> Var(x)
+    | KNormal.Constr(x, es) -> Constr(x, List.map (h env known) es)
+    | KNormal.App((KNormal.Var(x), ft), ys) when S.mem x known -> (* é–¢æ•°é©ç”¨ã®å ´åˆ (caml2html: closure_app) *)
+        Log.debug "directly applying %s@." x;
+        AppDir(Id.L(x), List.map (h env known) ys)
+    | KNormal.App(e, es) -> 
+        AppCls(h env known e, List.map (h env known) es)
+    | KNormal.ExtFunApp(x, ys) -> 
+        AppDir(Id.L(x), List.map (h env known) ys) in
+  (e', ty)
+  
+let rec g venv known (expr, ty) = (* ã‚¯ãƒ­ãƒ¼ã‚¸ãƒ£å¤‰æ›ãƒ«ãƒ¼ãƒãƒ³æœ¬ä½“ (caml2html: closure_g) *)
+  let () = Log.debug "Closure.g %s\n" (KNormal.string_of_term expr) in
+  let expr' = 
+    match expr with 
+    | KNormal.Unit -> Unit
+    | KNormal.WrapBody(x, t) -> WrapBody(x, t)
+    | KNormal.UnwrapBody(x, t) -> UnwrapBody(x, t)
+    | KNormal.Exp(e) -> Exp(h venv known e)
+    | KNormal.If(e, e1, e2) -> If(h venv known e, g venv known e1, g venv known e2)
+    | KNormal.Match(x, pes) -> Match(x, (List.map (fun (p, e) -> let env', p' = pattern venv p in p', (g env' known e)) pes))
+    | KNormal.Let((x, t), e1, e2) -> Let((x, t), g venv known e1, g (M.add x t venv) known e2)
+    | KNormal.LetRec({ KNormal.name = (x, ty_f); KNormal.args = yts; KNormal.body = e1 }, e2) -> (* é–¢æ•°å®šç¾©ã®å ´åˆ (caml2html: closure_letrec) *)
+        (* é–¢æ•°å®šç¾©let rec x y1 ... yn = e1 in e2ã®å ´åˆã¯ã€
+	       xã«è‡ªç”±å¤‰æ•°ãŒãªã„(closureã‚’ä»‹ã•ãšdirectã«å‘¼ã³å‡ºã›ã‚‹)
+	       ã¨ä»®å®šã—ã€knownã«è¿½åŠ ã—ã¦e1ã‚’ã‚¯ãƒ­ãƒ¼ã‚¸ãƒ£å¤‰æ›ã—ã¦ã¿ã‚‹ *)
+        let toplevel_backup = !toplevel in
+        let venv' = M.add x ty_f venv in
+        let known' = S.add x known in
+        let e1' = g (M.add_list yts venv') known' e1 in
+        (* æœ¬å½“ã«è‡ªç”±å¤‰æ•°ãŒãªã‹ã£ãŸã‹ã€å¤‰æ›çµæžœe1'ã‚’ç¢ºèªã™ã‚‹ *)
+        (* æ³¨æ„: e1'ã«xè‡ªèº«ãŒå¤‰æ•°ã¨ã—ã¦å‡ºç¾ã™ã‚‹å ´åˆã¯closureãŒå¿…è¦!
+           (thanks to nuevo-namasute and azounoman; test/cls-bug2.mlå‚ç…§) *)
+        let zs = S.diff (fv e1') (S.of_list ((List.map fst yts) @ (ids_of_defs !toplevel))) in
+        let known', e1' =
+	      if S.is_empty zs then (Log.debug "function %s doesn't have free variables.\n" x; known', e1')
+          (* é§„ç›®ã ã£ãŸã‚‰çŠ¶æ…‹(toplevelã®å€¤)ã‚’æˆ»ã—ã¦ã€ã‚¯ãƒ­ãƒ¼ã‚¸ãƒ£å¤‰æ›ã‚’ã‚„ã‚Šç›´ã™ *)
+          else (Log.debug "free variable(s) %s found in function %s@.\n" (Id.pp_list (S.elements zs)) x;
+	            Log.debug "function %s cannot be directly applied in fact@.\n" x;
+	            toplevel := toplevel_backup;
+	            let e1' = g (M.add_list yts venv') known e1 in
+	            known, e1') in
+        let zs = S.elements (S.diff (fv e1') (S.add x (S.of_list ((List.map fst yts) @ (ids_of_defs !toplevel))))) in
+        let zts = List.map (fun z -> z, M.find z venv') zs in (* ã“ã“ã§è‡ªç”±å¤‰æ•°zã®åž‹ã‚’å¼•ããŸã‚ã«å¼•æ•°venvãŒå¿…è¦ *)
+        toplevel := FunDef{ name = (Id.L(x), ty_f); args = yts; formal_fv = zts; body = e1' } :: !toplevel; (* ãƒˆãƒƒãƒ—ãƒ¬ãƒ™ãƒ«é–¢æ•°ã‚’è¿½åŠ  *)
+        let e2' = g venv' known' e2 in
+        if S.mem x (fv e2') then (* xãŒå¤‰æ•°ã¨ã—ã¦e2'ã«å‡ºç¾ã™ã‚‹ã‹ã€‚ãŸã ã—ã€è‡ªç”±å¤‰æ•°ãŒãªã„ã¨ãã¯ã‚¯ãƒ­ãƒ¼ã‚¸ãƒ£ã‚’ã¤ãã‚‰ãšé–¢æ•°ãƒã‚¤ãƒ³ãƒˆã¨ã—ã¦ä½¿ç”¨ã™ã‚‹ *)
+	    MakeCls((x, ty_f), { entry = Id.L(x); actual_fv = zs }, e2') (* å‡ºç¾ã—ã¦ã„ãŸã‚‰å‰Šé™¤ã—ãªã„ *)
+        else (Log.debug "eliminating closure(s) %s@.\n" x;
+	          fst e2') (* å‡ºç¾ã—ãªã‘ã‚Œã°MakeClsã‚’å‰Šé™¤ *) in
+  (expr', ty)
+    
+let f' { Env.venv = venv } e = 
+  let venv = M.union venv !Env.extenv.Env.venv in
+  let known = M.fold (fun x _ known -> S.add x known) venv S.empty in
+  g venv known e
 
-let f e =
+let f defs =
   toplevel := [];
-  let e' = g (Env.create ()) S.empty e in
-  Prog(List.rev !toplevel, e')
+  ignore (KNormal.fold
+            (fun ({ Env.venv = venv; tenv = tenv } as env, defs) def ->
+              let env', def' = 
+                match def with 
+                | KNormal.TypeDef(x, t) -> 
+                    { env with 
+                      Env.venv = M.add_list (Type.vars t) venv; 
+                      Env.tenv = M.add_list (Type.types t) tenv }, 
+                  TypeDef(x, t)
+                | KNormal.VarDef((x, t), e) -> 
+                    Env.add_var env x t, (VarDef((x, t), f' env e))
+                | KNormal.RecDef({ KNormal.name = (x, ty_f); args = yts; body = e1 }) ->
+                    let env' = Env.add_var env x ty_f in
+                    env', (FunDef({ name = (Id.L(x), ty_f); args = yts; formal_fv = []; body = f' env' e1 })) in
+              toplevel := def' :: !toplevel;
+              (env', def' :: defs))
+            !Env.empty defs);
+  Prog(List.rev !toplevel)
+    

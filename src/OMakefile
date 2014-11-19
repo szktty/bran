@@ -153,33 +153,36 @@ MENHIR_ENABLED = true
 
 FILES[] =
 	alpha
-	asm
-	ast
-	beta
-	binOp
-	builtin
+	#asm
+	#ast
+	#beta
+	#binOp
+	#builtin
 	closure
 	config
-	context
-	emit
+	#context
+	#emit
 	env
 	erlang
 	id
 	kNormal
-	lexer
+	l
+	#lexer
 	location
 	log
 	m
 	main
-	module
-	parser
+	#module
+	#parser
 	position
 	s
-	sig
+	#sig
+	syntax
 	type
 	typing
 	version
-	virtual
+	#virtual
+	wrap
 	xstring
 
 PROGRAM = bran

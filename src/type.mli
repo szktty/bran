@@ -1,5 +1,3 @@
-exception Parse_error of Location.t * string
-
 type t = 
   | Var of tyvar 
   | Field of t * t
@@ -10,7 +8,6 @@ and tycon =
   | Unit 
   | Bool 
   | Int 
-  | Float
   | Arrow 
   | Tuple
   | Record of Id.t * Id.t list
@@ -20,18 +17,6 @@ and tycon =
 and tyvar = Id.t
 and metavar = Id.t
 and constr = Id.t * t list
-and module_ = {
-  mod_name : string;
-  mod_erl : string;
-  mutable mod_funs : (string * fun_) list;
-}
-and fun_ = {
-  fun_mod : module_ option;
-  fun_ext : string option;
-  fun_name : string option;
-  fun_args : t list;
-  fun_ret : t;
-}
 
 val newtyvar : unit -> Id.t
 val newmetavar : unit -> t option ref
@@ -47,3 +32,4 @@ val types : tycon -> (Id.t * t) list
 
 val prefix : t -> Id.t
 val name : t -> Id.t
+

@@ -1,5 +1,3 @@
-exception Parse_error of Location.t * string
-
 type t = (* MinCamlの型を表現するデータ型 (caml2html: type_t) *)
   | Var of tyvar
   | Field of t * t (* レコードの型 * フィールドの型 *)
@@ -10,7 +8,6 @@ and tycon =
   | Unit
   | Bool
   | Int
-  | Float
   | Arrow
   | Tuple
   | Record of Id.t * Id.t list (* 型名とフィールド識別子のリスト。型名はあとで名前引きやすいようにするため *)
@@ -20,18 +17,6 @@ and tycon =
 and tyvar = Id.t
 and metavar = Id.t
 and constr = Id.t * t list
-and module_ = {
-  mod_name : string;
-  mod_erl : string;
-  mutable mod_funs : (string * fun_) list;
-}
-and fun_ = {
-  fun_mod : module_ option;
-  fun_ext : string option;
-  fun_name : string option;
-  fun_args : t list;
-  fun_ret : t;
-}
 
 let counter = ref 0
 let newtyvar () = 
@@ -54,7 +39,6 @@ and string_of_tycon reached =
   | Unit -> "Unit"
   | Bool -> "Bool"
   | Int -> "Int"
-  | Float -> "Float"
   | Arrow -> "Arrow"
   | Tuple -> "Tuple"
   | Record(x, fs) -> "Record(" ^ x ^ ", {" ^ (String.concat ", " fs) ^ "})"
@@ -80,14 +64,13 @@ let rec prefix =
   | Field(_, t) -> prefix t
   | App(tycon, _) -> prefix_of_tycon tycon
   | Poly(_, t) -> prefix t
-  | t -> Log.debug "# t = %s\n" (string_of_t t); assert false
+  | t -> Log.debug "t = %s\n" (string_of_t t); assert false
       
 and prefix_of_tycon = 
   function
   | Unit -> "u"
   | Bool -> "b"
   | Int -> "n"
-  | Float -> "f"
   | Arrow -> "pfn"
   | Tuple -> "t"
   | Record _ -> "st"
@@ -138,7 +121,7 @@ let rec equal t1 t2 =
       
 (* 型環境 venv に追加する識別子と型のリスト *)
 let vars t =
-  let () = Log.debug "# Types.vars %s\n" (string_of_tycon t) in
+  Log.debug "# Types.vars %s\n" (string_of_tycon t);
   match t with
   | TyFun(xs, (App(Variant(x, constrs), _) as t)) -> 
       List.map 
@@ -149,7 +132,7 @@ let vars t =
 
 (* 型環境 tenv に追加する識別子と型のリスト *)
 let types t =
-  let () = Log.debug "# Types.types %s\n" (string_of_tycon t) in
+  Log.debug "# Types.types %s\n" (string_of_tycon t);
   match t with
   | TyFun(xs, (App(Record(x, fs), ys) as t)) -> (List.combine fs (List.map (fun y -> (Poly(xs, Field(t, y))))  ys))
   | _ -> []
@@ -159,12 +142,13 @@ let rec name t =
   | App(Unit, []) -> "unit"
   | App(Bool, []) -> "bool"
   | App(Int, []) -> "int"
-  | App(Float, []) -> "float"
   | App(Arrow, ts) -> "fun_of_" ^ (String.concat "_" (List.map name ts))
   | App(Tuple, ts) -> "tuple_of_" ^ (String.concat "_" (List.map name ts))
   | App(Record(x, _), _) -> x
   | App(Variant(x, _), _) -> x
   | Field(_, t) -> name t
   | App(TyFun([], t), []) -> name t
-  | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _) | App(Float, _) | App(TyFun _, _) -> assert false (* impossible *)
+  | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _) | App(TyFun _, _) -> assert false (* impossible *)
   | App(NameTycon(x, _), _) -> x
+
+

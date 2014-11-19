@@ -5,6 +5,7 @@ exception Error
 
 let limit = ref 1000
 
+(*
 let rec optimize n e =
   if n = 0 then
     e
@@ -16,6 +17,7 @@ let rec optimize n e =
     else
        *)
       optimize (n - 1) e'
+ *)
 
 let modname path =
   let open Filepath in
@@ -37,28 +39,34 @@ let escript_path path =
   | dir, Some base ->
     to_string & dir ^/ (fst & Xfilename.split_extension base)
 
+(*
 let parse l =
   Log.verbose "# parsing\n";
   Parser.prog Lexer.token l
 
 let compile_ast outbuf t ~(fpath:string) =
   let mname = modname fpath in
-  Log.debug "# %s\n" (Ast.to_string t);
+  (*Log.debug "# %s\n" (Ast.to_string t);*)
   Log.verbose "# typing\n";
   let typing = Typing.f t in
   Log.verbose "# kNormal\n";
   let kNormal = KNormal.f typing in
   Log.verbose "# alpha\n";
   let alpha = Alpha.f kNormal in
+(*
   Log.verbose "# optimization %d\n" !limit;
   let opt = optimize !limit alpha in
+ *)
   Log.verbose "# closure\n";
-  let cl = Closure.f opt in
+  let _cl = Closure.f alpha in
+   ()
+    (*
   Log.verbose "# virtual\n";
   let v = Virtual.f cl in
   Log.verbose "# emit\n";
   Emit.f mname outbuf v;
   Context.finish_module ()
+     *)
 
 let print_error fpath loc =
   let start_line = Location.start_line loc + 1 in
@@ -83,7 +91,7 @@ let compile fpath =
   in
   let outbuf = Buffer.create 128 in
   let mname = modname fpath in
-  Context.init_module (String.capitalize mname);
+  (* Context.init_module (String.capitalize mname); *)
   try
     let (t, last) = parse (Lexing.from_channel inchan) in
     if !Config.dry_run then
@@ -145,13 +153,14 @@ let load_sig fpath =
   in
   try
     let (t, _) = parse (Lexing.from_channel inchan) in
-    close_in inchan;
-    Sig.load (String.capitalize & modname fpath) t
+    close_in inchan
+    (*Sig.load (String.capitalize & modname fpath) t*)
   with
     | Lexer.Error (loc, msg) -> err loc msg
     | Type.Parse_error (loc, msg) -> err loc msg
-    | Sig.Error (loc, msg) -> err loc msg
+    (*| Sig.Error (loc, msg) -> err loc msg*)
     | e -> raise e
+ *)
 
 (* entry point *)
 let () =
@@ -175,10 +184,10 @@ let () =
   try
     List.iter
       (fun f ->
-         Builtin.init ();
+         (*Builtin.init ();*)
          match Xfilename.split_extension f with
-         | (_, ".br") -> ignore (compile f)
-         | (_, ".bri") -> ignore (load_sig f)
+         | (_, ".br") -> () (*ignore (compile f)*)
+         | (_, ".bri") -> () (*ignore (load_sig f)*)
          | (_, ext) -> Log.error "unknown file extension - %s\n" ext)
       !files
   with
