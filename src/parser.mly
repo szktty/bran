@@ -30,7 +30,8 @@ let constr_pattern_args = function PtTuple(xs) -> xs | x -> [x]
 %token ELSE
 %token <Id.t> IDENT
 %token <Id.t> UIDENT
-%token LET
+%token DEF
+%token VAR
 %token IN
 %token REC
 %token TYPE
@@ -91,11 +92,11 @@ definitions:
 ;
 
 definition:
-| LET IDENT EQUAL seq_expr
+| VAR IDENT EQUAL seq_expr
     { VarDef(add_type $2, $4) }
-| LET LPAREN RPAREN EQUAL seq_expr
+| VAR LPAREN RPAREN EQUAL seq_expr
     { VarDef((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), $5) }
-| LET REC fundef
+| DEF REC fundef
     { RecDef($3) }
 | TYPE typedef    
     { $2 }
@@ -173,9 +174,9 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { add_type (Constr($1, constr_args $2)) }
 | LBRACE fields RBRACE
     { add_type (Record($2)) }
-| LET IDENT EQUAL seq_expr IN seq_expr
+| VAR IDENT EQUAL seq_expr IN seq_expr
     { add_type (LetVar(add_type $2, $4, $6)) }
-| LET REC fundef IN seq_expr
+| DEF REC fundef IN seq_expr
     { add_type (LetRec($3, $5)) }
 | MATCH expr WITH pattern_matching
     { add_type (Match($2, $4)) }
