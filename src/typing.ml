@@ -267,16 +267,16 @@ and deref_expr ({ Env.venv = venv } as env) = function
   | WrapBody(x, t) -> WrapBody(x, deref_type env t)
   | UnwrapBody(x, t) -> UnwrapBody(x, deref_type env t)
 
-let deref_def env =
-  function 
-  | TypeDef(x, t) -> 
-      TypeDef(x, deref_tycon env t)
-  | VarDef((x, t), et) -> 
-      VarDef((x, deref_type env t), deref_typed_expr env et)
-  | RecDef({ name = (x, ty_f); args = yts; body = et }) -> 
-      RecDef({ name = (x, deref_type env ty_f); 
-               args = List.map (fun (y, t) -> y, deref_type env t) yts; 
-               body = deref_typed_expr env et })
+let deref_def env def =
+  set def (match def.desc with
+      | TypeDef(x, t) -> 
+        TypeDef(x, deref_tycon env t)
+      | VarDef((x, t), et) -> 
+        VarDef((x, deref_type env t), deref_typed_expr env et)
+      | RecDef({ name = (x, ty_f); args = yts; body = et }) -> 
+        RecDef({ name = (x, deref_type env ty_f); 
+                 args = List.map (fun (y, t) -> y, deref_type env t) yts; 
+                 body = deref_typed_expr env et }))
 
 let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p =
   Log.debug "Typing.pattern (%s)\n" (string_of_pattern p);
@@ -519,7 +519,7 @@ let f defs =
   let _, defs' = 
     List.fold_left (fun ({ Env.venv = venv; tenv = tenv; tycons = tycons } as env, defs) def ->
       let env', def' = 
-        match def with
+        match def.desc with
         | TypeDef(x, t) -> 
             { Env.venv = M.add_list (Type.vars t) venv;
               Env.tenv = M.add_list (Type.types t) tenv;
@@ -538,7 +538,8 @@ let f defs =
             RecDef({ name = (x, t''); 
                      args = yts;
                      body = set et et' }) in
-      env', def' :: defs) (!Env.empty, []) defs in
+      env', (set def def') :: defs) (!Env.empty, []) defs
+  in
 
   (* deref_def の中で未解決なメタ変数を型変数に置き換えてしまうので、すべての式の型推論が終わってから deref を呼ぶこと *)
   let { Env.venv = venv; tenv = tenv; tycons = tycons } as env = !Env.empty in

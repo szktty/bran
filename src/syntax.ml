@@ -34,7 +34,8 @@ and pattern_desc =
   | PtRecord of (Id.t * pattern) list
   | PtConstr of Id.t * pattern list
 and fundef = { name : Id.t * Type.t; args : (Id.t * Type.t) list; body : t }
-and def =
+and def = def_desc Locating.t
+and def_desc =
   | TypeDef of Id.t * Type.tycon
   | VarDef of (Id.t * Type.t) * t
   | RecDef of fundef
@@ -82,7 +83,8 @@ and string_of_expr =
 let string_of_fundef { name = (x, t); args = yts; body = e } =
   x ^ " " ^ (String.concat " " (List.map (fun (y, t) -> y) yts)) ^ " : " ^ (Type.string_of_t t) ^ " = " ^ (string_of_typed_expr e) 
 
-let string_of_def = function
+let string_of_def { Locating.desc = def } =
+  match def with
   | TypeDef(x, t) -> "TypeDef(" ^ x ^ ", " ^ (Type.string_of_tycon t) ^ ")"
   | VarDef((x, t), e) -> "VarDef((" ^ x ^ ", " ^ (Type.string_of_t t) ^ "), " ^ (string_of_typed_expr e)
   | RecDef(fundef) -> "RecDef(" ^ (string_of_fundef fundef) ^ ")"
@@ -91,7 +93,7 @@ let fold f defs =
   let _, defs' = 
     List.fold_left
       (fun ({ Env.venv = venv; tenv = tenv; tycons = tycons } as env, defs) def -> 
-        match def with
+        match Locating.desc def with
         | TypeDef(x, t) -> 
             { Env.venv = M.add_list (Type.vars t) venv;
               Env.tenv = M.add_list (Type.types t) tenv;

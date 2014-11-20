@@ -34,7 +34,8 @@ and pattern_desc =
   | PtRecord of (Id.t * pattern) list
   | PtConstr of Id.t * pattern list
 and fundef = { name : Id.t * Type.t; args : (Id.t * Type.t) list; body : t; }
-and def =
+and def = def_desc Locating.t
+and def_desc =
     TypeDef of Id.t * Type.tycon
   | VarDef of (Id.t * Type.t) * t
   | RecDef of fundef
