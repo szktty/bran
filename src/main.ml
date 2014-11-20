@@ -71,8 +71,20 @@ let typing prog =
                   Printf.sprintf "Type mismatch: actual %s, expected %s"
                     (Type.name t2) (Type.name t1)))
 
+let knormal prog =
+  Log.verbose "# K-Normalization\n";
+  KNormal.f prog
+
+let alpha prog =
+  Log.verbose "# Alpha conversion\n";
+  Alpha.f prog
+
+let closure prog =
+  Log.verbose "# Closure conversion\n";
+  Closure.f prog
+
 let parse_test fpath =
-  let _ = typing & parse fpath in
+  let _ = closure & alpha & knormal & typing & parse fpath in
   ()
 
 (*
