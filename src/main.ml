@@ -1,13 +1,7 @@
 open Spotlib
 open Base
 
-type errmsg = {
-  fpath : string;
-  loc : Location.t;
-  msg : string;
-}
-
-exception Error of errmsg
+exception Error of Location.t * string
 
 let limit = ref 1000
 
@@ -65,21 +59,20 @@ let parse fpath =
     Printf.printf "# %s\n" (String.concat ";\n " (List.map Syntax.string_of_def prog));
     prog
   with
-  | Syntax.Syntax_error loc ->
-    raise (Error { fpath; loc; msg = "Syntax error" })
+  | Syntax.Syntax_error loc -> raise (Error (loc, "Syntax error"))
 
-let typing fpath prog =
+let typing prog =
   Log.verbose "# typing\n";
   try
     Typing.f prog
   with
   | Typing.Error (e, t1, t2) ->
-    raise (Error { fpath; loc = e.loc;
-                   msg = Printf.sprintf "type mismatch: actual %s, expected %s"
-                       (Type.name t2) (Type.name t1) })
+    raise (Error (e.loc,
+                  Printf.sprintf "Type mismatch: actual %s, expected %s"
+                    (Type.name t2) (Type.name t1)))
 
 let parse_test fpath =
-  let _ = typing fpath & parse fpath in
+  let _ = typing & parse fpath in
   ()
 
 (*
@@ -212,17 +205,19 @@ let () =
     ]
     (fun s -> files := !files @ [s])
     (sprintf "Usage: %s [options] file" Sys.argv.(0));
-  try
-    List.iter
-      (fun f ->
+
+  List.iter
+    (fun fpath ->
+       try
          (*Builtin.init ();*)
-         match Xfilename.split_extension f with
-         | (_, ".br") -> parse_test f (*ignore (compile f)*)
+         match Xfilename.split_extension fpath with
+         | (_, ".br") -> parse_test fpath (*ignore (compile f)*)
          | (_, ".bri") -> () (*ignore (load_sig f)*)
-         | (_, ext) -> Log.error "unknown file extension - %s\n" ext)
-      !files
-  with
-  | Error e ->
-    print_error e.fpath e.loc;
-    Log.error "%s" e.msg
-  | e -> raise e
+         | (_, ext) -> Log.error "Unknown file extension %s\n" ext
+       with
+       | Error (loc, msg) ->
+         print_error fpath loc;
+         Log.error "%s\n" msg;
+         exit 1
+       | e -> raise e)
+    !files
