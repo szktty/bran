@@ -1,6 +1,8 @@
 (* give names to intermediate values (K-normalization) *)
 (* 変換後のコードをなるべくオリジナルに近いものにするため、実際にはほとんどK正規形にはしない。 *)
 
+open Locating
+
 type t = (* K正規化後の式 (caml2html: knormal_t) *)
     term * Type.t
 and term =
@@ -108,7 +110,7 @@ let rec insert_let (e, t) k = (* letを挿入する補助関数 (caml2html: knor
 
 let rec pattern env p = 
   let () = Log.debug "KNormal.pattern %s\n" (Syntax.string_of_pattern p) in
-  match p with
+  match p.desc with
   | Syntax.PtBool(b) -> env, (PtBool(b))
   | Syntax.PtInt(n) -> env, (PtInt(n))
   | Syntax.PtVar(x, t) -> Env.add_var env x t, (PtVar(x, t))
@@ -122,7 +124,7 @@ let rec pattern env p =
       let env, ps' = List.fold_left (fun (env, ps) p -> let env', p' = pattern env p in env', p' :: ps) (env, []) (List.rev ps) in
       env, PtConstr(x, ps')
         
-let rec g ({ Env.venv = venv; tenv = tenv } as env) (e, t) = (* K正規化ルーチン本体 (caml2html: knormal_g) *)
+let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* K正規化ルーチン本体 (caml2html: knormal_g) *)
   let _ = Log.debug "kNormal.g %s\n" (Syntax.string_of_expr e) in  
 
   let insert_lets es k =
@@ -143,7 +145,8 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e, t) = (* K正規化ルー
     | Syntax.Bool(b) -> Exp(Bool(b), t)
     | Syntax.Int(n) -> Exp(Int(n), t)
     | Syntax.Record(xes) ->
-        insert_lets (List.map snd xes) (fun ets' -> Exp(Record(List.combine (List.map fst xes) ets'), t))
+      insert_lets (List.map snd xes)
+        (fun ets' -> Exp(Record(List.combine (List.map fst xes) ets'), t))
     | Syntax.Field(e, x) -> insert_let (g env e) (fun e' -> Exp(Field(e', x), t))
     | Syntax.Tuple(es) -> insert_lets es (fun es' -> Exp(Tuple(es'), t))
     | Syntax.Not(e) -> insert_let (g env e) (fun e' -> Exp(Not(e'), t))
@@ -159,7 +162,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e, t) = (* K正規化ルー
     | Syntax.Eq(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Eq(e1', e2'), t))
     | Syntax.LE(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(LE(e1', e2'), t))
     | Syntax.If(e1, e2, e3) -> insert_let (g env e1) (fun e1' -> If(e1', (g env e2), (g env e3)))
-    | Syntax.Match((Syntax.Var(x), _), pes) ->
+    | Syntax.Match({ desc = (Syntax.Var(x), _) }, pes) ->
         let pes' = List.map 
           (fun (p, e) -> 
             let env', p' = pattern env p in
@@ -186,7 +189,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e, t) = (* K正規化ルー
         let e2' = g { env with Env.venv = venv' } e2 in
         let e1' = g { env with Env.venv = M.add_list yts venv' } e1 in
         LetRec({ name = (x, t); args = yts; body = e1' }, e2')
-    | Syntax.App((Syntax.Var(f), _), e2s) when not (M.mem f venv) -> (* 外部関数の呼び出し (caml2html: knormal_extfunapp) *)
+    | Syntax.App({ desc = (Syntax.Var(f), _) }, e2s) when not (M.mem f venv) -> (* 外部関数の呼び出し (caml2html: knormal_extfunapp) *)
         let rec bind xs = (* "xs" are identifiers for the arguments *)
           function 
           | [] -> Exp(ExtFunApp(f, xs), t)
@@ -229,7 +232,7 @@ let f' env e = g env e
 
 let f = 
   Syntax.fold (fun (env, defs) def -> 
-    match def with
+    match def.desc with
     | Syntax.TypeDef(x, t) -> TypeDef(x, t) :: defs
     | Syntax.VarDef((x, t), e) -> VarDef((x, t), f' env e) :: defs
     | Syntax.RecDef({ Syntax.name = (x, t); args = yts; body = e }) -> 

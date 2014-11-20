@@ -24,9 +24,13 @@ let range_from_list es desc =
 %token <string Locating.t> STRING
 %token <Location.t> NOT
 %token <Location.t> MINUS
+%token <Location.t> MINUS_DOT
 %token <Location.t> PLUS
+%token <Location.t> PLUS_DOT
 %token <Location.t> AST
+%token <Location.t> AST_DOT
 %token <Location.t> SLASH
+%token <Location.t> SLASH_DOT
 %token <Location.t> CONS
 %token <Location.t> LAND
 %token <Location.t> LOR
@@ -43,19 +47,34 @@ let range_from_list es desc =
 %token <Id.t Locating.t> UIDENT
 %token <Location.t> DEF
 %token <Location.t> VAR
+%token <Location.t> EXTERNAL
+%token <Location.t> IMPORT
+%token <Location.t> MODULE
+%token <Location.t> AS
 %token <Location.t> IN
 %token <Location.t> REC
 %token <Location.t> TYPE
 %token <Location.t> OF
+%token <Location.t> TO
 %token <Location.t> MATCH
 %token <Location.t> WITH
-%token <Location.t> RIGHT_ARROW
+%token <Location.t> AND
+%token <Location.t> OR
+%token <Location.t> LARROW (* <- *)
+%token <Location.t> RARROW (* -> *)
+%token <Location.t> UARROW (* ^ *)
 %token <Location.t> SEMI
 %token <Location.t> COLON
 %token <Location.t> LPAREN
 %token <Location.t> RPAREN
 %token <Location.t> BEGIN
 %token <Location.t> END
+%token <Location.t> DONE
+%token <Location.t> FOR
+%token <Location.t> WHILE
+%token <Location.t> DEFER
+%token <Location.t> RAISE
+%token <Location.t> TRY
 %token <Location.t> LBRACE
 %token <Location.t> RBRACE
 %token <Location.t> LBRACK
@@ -87,12 +106,12 @@ let range_from_list es desc =
 %nonassoc UIDENT LPAREN LBRACK INT IDENT BOOL BEGIN RPAREN END
 
 /* 開始記号の定義 */
-%type <Syntax.def list> f
-%start f
+%type <Syntax.def list> prog
+%start prog
 
 %%
 
-f: 
+prog: 
 | definitions EOF { $1 }
 ;
 
@@ -257,7 +276,7 @@ field:
 ;
 
 pattern_matching:
-| opt_pipe pattern RIGHT_ARROW seq_expr pattern_matching_tail
+| opt_pipe pattern RARROW seq_expr pattern_matching_tail
     { ($2, $4) :: $5 }
 ;
 pattern_matching_tail:

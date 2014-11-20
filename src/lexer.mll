@@ -2,8 +2,6 @@
 open Lexing
 open Parser
 
-module L = Location
-
 exception Error of Location.t * string
 
 let next_line lexbuf =
@@ -25,14 +23,14 @@ let end_pos lexbuf =
   revise_pos (lexeme_end_p lexbuf) lexbuf
 
 let to_loc lexbuf =
-  L.create (start_pos lexbuf) (end_pos lexbuf)
+  Location.create (start_pos lexbuf) (end_pos lexbuf)
 
 let to_word lexbuf =
-  L.with_loc (to_loc lexbuf) (lexeme lexbuf)
+  Locating.create (to_loc lexbuf) (lexeme lexbuf)
 
 let strlit_to_word lexbuf read =
-  L.with_loc
-    (L.create (start_pos lexbuf) (end_pos lexbuf))
+  Locating.create
+    (Location.create (start_pos lexbuf) (end_pos lexbuf))
     (read (Buffer.create 17) lexbuf)
 
 }
@@ -85,15 +83,15 @@ rule token = parse
 | '}'
     { RBRACE (to_loc lexbuf) }
 | "true"
-    { BOOL (L.with_loc (to_loc lexbuf) true) }
+    { BOOL (Locating.create (to_loc lexbuf) true) }
 | "false"
-    { BOOL (L.with_loc (to_loc lexbuf) false) }
+    { BOOL (Locating.create (to_loc lexbuf) false) }
 | "not"
     { NOT (to_loc lexbuf) }
 | digit+ (* 整数を字句解析するルール (caml2html: lexer_int) *)
-    { INT (L.with_loc (to_loc lexbuf) (int_of_string (Lexing.lexeme lexbuf))) }
+    { INT (Locating.create (to_loc lexbuf) (int_of_string (Lexing.lexeme lexbuf))) }
 | digit+ ('.' digit*)? (['e' 'E'] ['+' '-']? digit+)?
-    { FLOAT (L.with_loc (to_loc lexbuf) (float_of_string (Lexing.lexeme lexbuf))) }
+    { FLOAT (Locating.create (to_loc lexbuf) (float_of_string (Lexing.lexeme lexbuf))) }
 | '-' (* -.より後回しにしなくても良い? 最長一致? *)
     { MINUS (to_loc lexbuf) }
 | '+' (* +.より後回しにしなくても良い? 最長一致? *)
@@ -107,19 +105,19 @@ rule token = parse
 | "/."
     { SLASH_DOT (to_loc lexbuf) }
 | '='
-    { EQ (to_loc lexbuf) }
+    { EQUAL (to_loc lexbuf) }
 | "<>"
     { LESS_GREATER (to_loc lexbuf) }
 | "<="
-    { LESS_EQ (to_loc lexbuf) }
+    { LESS_EQUAL (to_loc lexbuf) }
 | ">="
-    { GREATER_EQ (to_loc lexbuf) }
+    { GREATER_EQUAL (to_loc lexbuf) }
 | '<'
     { LESS (to_loc lexbuf) }
 | '>'
     { GREATER (to_loc lexbuf) }
 | '^'
-    { UP (to_loc lexbuf) }
+    { UARROW (to_loc lexbuf) }
 | "->"
     { RARROW (to_loc lexbuf) }
 | "if"
@@ -128,10 +126,6 @@ rule token = parse
     { THEN (to_loc lexbuf) }
 | "else"
     { ELSE (to_loc lexbuf) }
-| "elseif"
-    { ELSEIF (to_loc lexbuf) }
-| "let"
-    { LET (to_loc lexbuf) }
 | "in"
     { IN (to_loc lexbuf) }
 | "rec"
@@ -139,7 +133,6 @@ rule token = parse
 | "def" { DEF (to_loc lexbuf) }
 | "external" { EXTERNAL (to_loc lexbuf) }
 | "var" { VAR (to_loc lexbuf) }
-| "where" { WHERE (to_loc lexbuf) }
 | "import" { IMPORT (to_loc lexbuf) }
 | "as" { AS (to_loc lexbuf) }
 | "of" { OF (to_loc lexbuf) }
@@ -159,11 +152,12 @@ rule token = parse
 | ','
     { COMMA (to_loc lexbuf) }
 | '_'
-    { IDENT (L.with_loc (to_loc lexbuf) (Id.gentmp Type.Unit)) }
+    { IDENT (Locating.create (to_loc lexbuf)
+        (Id.gentmp (Type.prefix (Type.App(Type.Unit, []))))) }
 | '.'
     { DOT (to_loc lexbuf) }
 | "<-"
-    { LESS_MINUS (to_loc lexbuf) }
+    { LARROW (to_loc lexbuf) }
 | ':'
     { COLON (to_loc lexbuf) }
 | ';'

@@ -39,6 +39,12 @@ let escript_path path =
   | dir, Some base ->
     to_string & dir ^/ (fst & Xfilename.split_extension base)
 
+let parse_test fpath =
+  Log.verbose "# parsing test\n";
+  let inchan = open_in fpath in
+  let _ = Parser.prog Lexer.token (Lexing.from_channel inchan) in
+  ()
+
 (*
 let parse l =
   Log.verbose "# parsing\n";
@@ -186,7 +192,7 @@ let () =
       (fun f ->
          (*Builtin.init ();*)
          match Xfilename.split_extension f with
-         | (_, ".br") -> () (*ignore (compile f)*)
+         | (_, ".br") -> parse_test f (*ignore (compile f)*)
          | (_, ".bri") -> () (*ignore (load_sig f)*)
          | (_, ext) -> Log.error "unknown file extension - %s\n" ext)
       !files
