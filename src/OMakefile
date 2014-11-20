@@ -183,7 +183,6 @@ FILES[] =
 	typing
 	version
 	#virtual
-	wrap
 	xstring
 
 PROGRAM = bran
