@@ -1,5 +1,5 @@
 exception Unify of Type.t * Type.t
-exception Error of Syntax.expr * Type.t * Type.t
+exception Error of Syntax.expr Locating.t * Type.t * Type.t
 val subst : Env.t -> Type.t M.t -> Type.t -> Type.t
 val occur : Type.t option ref -> Type.t -> bool
 val unify : Env.t -> Type.t -> Type.t -> unit

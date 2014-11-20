@@ -2,9 +2,10 @@
 
 open Syntax
 open Locating
+open Spotlib.Base
 
 exception Unify of Type.t * Type.t
-exception Error of expr * Type.t * Type.t
+exception Error of expr Locating.t * Type.t * Type.t
     
 let rec subst ({ Env.tycons = tycons } as env) tyvars reached t =
   Log.debug "# Typing.subst %s\n" (Type.string_of_t t);
@@ -504,8 +505,8 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
     unify env ty ty';
     expr', ty'
   with Unify(t1, t2) -> 
-    let _ = Printf.eprintf "Typing.g error %s : %s and %s\n" (string_of_expr expr) (Type.string_of_t t1) (Type.string_of_t t2) in
-    raise (Error(deref_expr env expr, deref_type env t1, deref_type env t2))
+    raise (Error(create e.loc & deref_expr env expr,
+                 deref_type env t1, deref_type env t2))
 
 let f' env (et, ty) = 
   try 

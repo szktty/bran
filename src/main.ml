@@ -1,7 +1,13 @@
 open Spotlib
 open Base
 
-exception Error
+type errmsg = {
+  fpath : string;
+  loc : Location.t;
+  msg : string;
+}
+
+exception Error of errmsg
 
 let limit = ref 1000
 
@@ -51,16 +57,30 @@ let print_error fpath loc =
     Printf.printf "File \"%s\", between line and characters %d:%d-%d:%d:\n"
       fpath start_line end_line start_col end_col
 
-let parse_test fpath =
-  Log.verbose "# parsing test\n";
+let parse fpath =
+  Log.verbose "# parsing\n";
   let inchan = open_in fpath in
   try
     let prog = Parser.prog Lexer.token (Lexing.from_channel inchan) in
-    Printf.printf "# %s\n" (String.concat ";\n " (List.map Syntax.string_of_def prog))
+    Printf.printf "# %s\n" (String.concat ";\n " (List.map Syntax.string_of_def prog));
+    prog
   with
-    | Syntax.Syntax_error loc ->
-      print_error fpath loc;
-      Printf.printf "Error: Syntax error\n"
+  | Syntax.Syntax_error loc ->
+    raise (Error { fpath; loc; msg = "Syntax error" })
+
+let typing fpath prog =
+  Log.verbose "# typing\n";
+  try
+    Typing.f prog
+  with
+  | Typing.Error (e, t1, t2) ->
+    raise (Error { fpath; loc = e.loc;
+                   msg = Printf.sprintf "type mismatch: actual %s, expected %s"
+                       (Type.name t2) (Type.name t1) })
+
+let parse_test fpath =
+  let _ = typing fpath & parse fpath in
+  ()
 
 (*
 let parse l =
@@ -202,5 +222,7 @@ let () =
          | (_, ext) -> Log.error "unknown file extension - %s\n" ext)
       !files
   with
-  | Error -> ()
+  | Error e ->
+    print_error e.fpath e.loc;
+    Log.error "%s" e.msg
   | e -> raise e
