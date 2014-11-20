@@ -1,7 +1,8 @@
 (* type inference/reconstruction *)
 
 open Syntax
-  
+open Locating
+
 exception Unify of Type.t * Type.t
 exception Error of expr * Type.t * Type.t
     
@@ -80,7 +81,7 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
         raise (Unify(t1, t2)) in
   unify' ty1 ty2
     
-let _test_unify =
+let test_unify =
   assert ((unify !Env.empty (Type.App(Type.Int, [])) (Type.App(Type.Int, []))) = ())
     
 (*        
@@ -211,27 +212,33 @@ let deref_type env ty =
   let t', _ = deref_type env M.empty ty in
   t'
 
-let rec deref_pattern env p =
-  match p with
+let rec deref_pattern env lp =
+  let (d, env) = match desc lp with
   | PtBool _ | PtInt _ as p -> p, env
   | PtVar(x, t) -> PtVar(x, deref_type env t), Env.add_var env x t
   | PtTuple(ps) -> 
-      let ps', env' = List.fold_right (fun p (ps, env) -> let p', env' = deref_pattern env p in p' :: ps, env') ps ([], env) in
-      PtTuple(ps'), env'
+    let ps', env' = List.fold_right
+        (fun p (ps, env) ->
+           let p', env' = deref_pattern env p in
+           p' :: ps, env')
+        ps ([], env) in
+    PtTuple(ps'), env'
   | PtRecord(xps) -> 
       let xps', env' = List.fold_right (fun (x, p) (xps, env) -> let p', env' = deref_pattern env p in (x, p') :: xps, env') xps ([], env) in
       PtRecord(xps'), env'
   | PtConstr(x, ps) -> 
       let ps', env' = List.fold_right (fun p (ps, env) -> let p', env' = deref_pattern env p in p' :: ps, env') ps ([], env) in
       PtConstr(x, ps'), env'
+  in
+  set lp d, env
 
 let deref_id_type env (x, ty) = (x, deref_type env ty)
 
-let rec deref_typed_expr ({ Env.venv = venv } as env) (e, t) = 
-  (deref_expr env e, deref_type env t)
+let rec deref_typed_expr ({ Env.venv = venv } as env) le =
+  let (e, t) = desc le in
+  set le (deref_expr env e, deref_type env t)
 
-and deref_expr ({ Env.venv = venv } as env) e = 
-  match e with
+and deref_expr ({ Env.venv = venv } as env) = function
   | Int _ | Bool _ | Unit | Var _ as e -> e
   | Record(xes) -> Record(List.map (fun (x, e) -> x, deref_typed_expr env e) xes)
   | Field(e, x) -> Field(deref_typed_expr env e, x)
@@ -272,8 +279,8 @@ let deref_def env =
                body = deref_typed_expr env et })
 
 let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p =
-  let _ = Log.debug "Typing.pattern (%s)\n" (string_of_pattern p) in
-  match p with
+  Log.debug "Typing.pattern (%s)\n" (string_of_pattern p);
+  match desc p with
   | PtBool(b) -> env, Type.App(Type.Bool, [])
   | PtInt(n) -> env, Type.App(Type.Int, [])
   | PtVar(x, t') -> Env.add_var env x t', t'
@@ -317,8 +324,9 @@ let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p =
         | t -> Printf.eprintf "invalid type : %s\n" (Type.string_of_t t); assert false
       end
         
-let rec g ({ Env.venv = venv; tenv = tenv } as env) (expr, ty) = (* 型推論ルーチン (caml2html: typing_g) *)
-  let _ = Log.debug "Typing.g %s\n" (string_of_expr expr) in
+let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン (caml2html: typing_g) *)
+  let expr, ty = desc e in
+  Log.debug "Typing.g %s\n" (string_of_expr expr);
   try
     let expr', ty' =
       match expr with
@@ -326,94 +334,107 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (expr, ty) = (* 型推論ル
       | Bool(_) -> expr, Type.App(Type.Bool, [])
       | Int(_) -> expr, Type.App(Type.Int, [])
       | Record(xets) -> 
-          let xets', ts' = List.fold_left 
-            (fun (xets, ts) (x, e) -> let e', t' = g env e in (x, (e', t')) :: xets, t' :: ts) ([], []) (List.rev xets) in 
-          begin
-            match M.find (fst (List.hd xets)) tenv with
-            | Type.Poly(xs, Type.Field(t, _)) -> 
-                let t' = instantiate env (Type.Poly(xs, t)) in
-                begin
-                  match t' with
-                  | Type.App(Type.Record(_, _), ts) ->
-                      List.iter2 (unify env) ts ts';
-                      Record(xets'), t'
-                  | t -> Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t); assert false
-                end
-            | t -> Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t); assert false
-          end
+        let xets', ts' = List.fold_left 
+            (fun (xets, ts) (x, e) ->
+               let e', t' = g env e in
+               (x, { e with desc = (e', t') }) :: xets, t' :: ts)
+            ([], []) (List.rev xets)
+        in 
+        begin match M.find (fst (List.hd xets)) tenv with
+          | Type.Poly(xs, Type.Field(t, _)) -> 
+            let t' = instantiate env (Type.Poly(xs, t)) in
+            begin
+              match t' with
+              | Type.App(Type.Record(_, _), ts) ->
+                List.iter2 (unify env) ts ts';
+                Record(xets'), t'
+              | t ->
+                Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t);
+                assert false
+            end
+          | t ->
+            Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t);
+            assert false
+        end
       | Field(et, x) ->
           let _, ty_rec' as et' = g env et in
           let ty_f = instantiate env (M.find x tenv) in
           let ty_f' = Type.Meta(Type.newmetavar ()) in
           unify env ty_f (Type.Field(ty_rec', ty_f'));
-          Field(et', x), ty_f'
+          Field({ e with desc = et' }, x), ty_f'
       | Tuple(ets) ->
-          let ets', ts' = List.fold_left (fun (ets, ts) e -> let e', t' = g env e in (e', t') :: ets, t' :: ts) ([], []) (List.rev ets) in
-          Tuple(ets'), Type.App(Type.Tuple, ts')
+        let ets', ts' =
+          List.fold_left
+            (fun (ets, ts) e ->
+               let e', t' = g env e in
+               (set e (e', t')) :: ets, t' :: ts)
+            ([], []) (List.rev ets)
+        in
+        Tuple(ets'), Type.App(Type.Tuple, ts')
       | Not(et) ->
-          let e', t' = g env et in
-          unify env (Type.App(Type.Bool, [])) t';
-          Not(e', t'), Type.App(Type.Bool, [])
+        let e', t' = g env et in
+        unify env (Type.App(Type.Bool, [])) t';
+        Not (set et (e', t')), Type.App(Type.Bool, [])
       | And(et1, et2) ->
-          let e1', t1' = g env et1 in
-          let e2', t2' = g env et2 in
-          unify env (Type.App(Type.Bool, [])) t1';
-          unify env (Type.App(Type.Bool, [])) t2';
-          And((e1', t1'), (e2', t2')), Type.App(Type.Bool, [])
+        let e1', t1' = g env et1 in
+        let e2', t2' = g env et2 in
+        unify env (Type.App(Type.Bool, [])) t1';
+        unify env (Type.App(Type.Bool, [])) t2';
+        And (set et1 (e1', t1'), set et2 (e2', t2')), Type.App(Type.Bool, [])
       | Or(et1, et2) ->
-          let e1', t1' = g env et1 in
-          let e2', t2' = g env et2 in
-          unify env (Type.App(Type.Bool, [])) t1';
-          unify env (Type.App(Type.Bool, [])) t2';
-          Or((e1', t1'), (e2', t2')), Type.App(Type.Bool, [])
+        let e1', t1' = g env et1 in
+        let e2', t2' = g env et2 in
+        unify env (Type.App(Type.Bool, [])) t1';
+        unify env (Type.App(Type.Bool, [])) t2';
+        Or (set et1 (e1', t1'), set et2 (e2', t2')), Type.App(Type.Bool, [])
       | Neg(e) ->
-          let e', t' = g env e in
-          unify env (Type.App(Type.Int, [])) t';
-          Neg(e', t'), Type.App(Type.Int, [])
+        let e', t' = g env e in
+        unify env (Type.App(Type.Int, [])) t';
+        Neg (set e (e', t')), Type.App(Type.Int, [])
       | Add(et1, et2) ->
-          let e1', t1' = g env et1 in
-          let e2', t2' = g env et2 in
-          unify env (Type.App(Type.Int, [])) t1';
-          unify env (Type.App(Type.Int, [])) t2';
-          Add((e1', t1'), (e2', t2')), Type.App(Type.Int, [])
+        let e1', t1' = g env et1 in
+        let e2', t2' = g env et2 in
+        unify env (Type.App(Type.Int, [])) t1';
+        unify env (Type.App(Type.Int, [])) t2';
+        Add (set et1 (e1', t1'), set et2 (e2', t2')), Type.App(Type.Int, [])
       | Sub(et1, et2) ->
-          let e1', t1' = g env et1 in
-          let e2', t2' = g env et2 in
-          unify env (Type.App(Type.Int, [])) t1';
-          unify env (Type.App(Type.Int, [])) t2';
-          Sub((e1', t1'), (e2', t2')), Type.App(Type.Int, [])
+        let e1', t1' = g env et1 in
+        let e2', t2' = g env et2 in
+        unify env (Type.App(Type.Int, [])) t1';
+        unify env (Type.App(Type.Int, [])) t2';
+        Sub(set et1 (e1', t1'), set et2 (e2', t2')), Type.App(Type.Int, [])
       | Mul(et1, et2) -> 
-          let e1', t1' = g env et1 in
-          let e2', t2' = g env et2 in
-          unify env (Type.App(Type.Int, [])) t1';
-          unify env (Type.App(Type.Int, [])) t2';
-          Mul((e1', t1'), (e2', t2')), Type.App(Type.Int, [])
+        let e1', t1' = g env et1 in
+        let e2', t2' = g env et2 in
+        unify env (Type.App(Type.Int, [])) t1';
+        unify env (Type.App(Type.Int, [])) t2';
+        Mul(set et1 (e1', t1'), set et2 (e2', t2')), Type.App(Type.Int, [])
       | Div(et1, et2) ->
-          let e1', t1' = g env et1 in
-          let e2', t2' = g env et2 in
-          unify env (Type.App(Type.Int, [])) t1';
-          unify env (Type.App(Type.Int, [])) t2';
-          Div((e1', t1'), (e2', t2')), Type.App(Type.Int, [])
+        let e1', t1' = g env et1 in
+        let e2', t2' = g env et2 in
+        unify env (Type.App(Type.Int, [])) t1';
+        unify env (Type.App(Type.Int, [])) t2';
+        Div(set et1 (e1', t1'), set et2 (e2', t2')), Type.App(Type.Int, [])
       | Eq(et1, et2) ->
-          let e1', t1' = g env et1 in
-          let e2', t2' = g env et2 in
-          unify env t1' t2';
-          Eq((e1', t1'), (e2', t2')), Type.App(Type.Bool, [])
+        let e1', t1' = g env et1 in
+        let e2', t2' = g env et2 in
+        unify env t1' t2';
+        Eq(set et1 (e1', t1'), set et2 (e2', t2')), Type.App(Type.Bool, [])
       | LE(et1, et2) ->
-          let e1', t1' = g env et1 in
-          let e2', t2' = g env et2 in
-          unify env t1' t2';
-          (* OCamlはLEは多相だけど、一旦Intにしておく。多相にすると、生成されるC言語ではポインタ同士の演算になるから *)
-          unify env (Type.App(Type.Int, [])) t1';
-          unify env (Type.App(Type.Int, [])) t2';
-          LE((e1', t1'), (e2', t2')), Type.App(Type.Bool, [])
+        let e1', t1' = g env et1 in
+        let e2', t2' = g env et2 in
+        unify env t1' t2';
+        (* OCamlはLEは多相だけど、一旦Intにしておく。多相にすると、生成されるC言語ではポインタ同士の演算になるから *)
+        unify env (Type.App(Type.Int, [])) t1';
+        unify env (Type.App(Type.Int, [])) t2';
+        LE(set et1 (e1', t1'), set et2 (e2', t2')), Type.App(Type.Bool, [])
       | If(et1, et2, e3) ->
           let e1', t1' = g env et1 in
           unify env t1' (Type.App(Type.Bool, []));
           let e2', t2' = g env et2 in
           let e3', t3' = g env e3 in
           unify env t2' t3';
-          If((e1', t1'), (e2', t2'), (e3', t3')), t2'
+          If(set et1 (e1', t1'), set et2 (e2', t2'), set e3 (e3', t3')), t2'
       | Match(et, pets) ->
           let e', ty_e' = g env et in
           let pets', ts' = List.fold_left 
@@ -421,16 +442,16 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (expr, ty) = (* 型推論ル
               let env', t' = pattern env p in
               unify env ty_e' t';
               let e', t' = g env' e in
-              (p, (e', t')) :: pets, t' :: ts) ([], []) (List.rev pets) in
+              (p, set e (e', t')) :: pets, t' :: ts) ([], []) (List.rev pets) in
           let t1' = List.hd ts' in
           List.iter (unify env t1') (List.tl ts');
-          Match((e', ty_e'), pets'), t1'
+          Match(set et (e', ty_e'), pets'), t1'
       | LetVar((x, t), et1, et2) -> (* letの型推論 (caml2html: typing_let) *)
           let e1', t1' = g env et1 in
           let t1' = generalize env t1' in (* 副作用は未サポートなので、Tiger本のp.335にある代入の判定はなし *)
           unify env t t1';
           let e2', t2' = g (Env.add_var env x t1') et2 in
-          LetVar((x, t1'), (e1', t1'), (e2', t2')), t2'
+          LetVar((x, t1'), set et1 (e1', t1'), set et2 (e2', t2')), t2'
       | Var(x) when M.mem x venv -> 
           expr, instantiate env (M.find x venv) (* 変数の型推論 (caml2html: typing_var) *)
       | Var(x) when M.mem x !Env.extenv.Env.venv -> 
@@ -443,14 +464,20 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (expr, ty) = (* 型推論ル
       | Constr(x, []) -> 
           expr, instantiate env (M.find x venv)
       | Constr(x, ets) -> 
-          let ets', ts' = List.fold_left (fun (ets, ts) e -> let e', t' = g env e in (e', t') :: ets, t' :: ts) ([], []) (List.rev ets) in
-          begin
-            match instantiate env (M.find x venv) with
-            | Type.App(Type.Arrow, ys) -> 
-                List.iter2 (unify env) ts' (L.init ys);
-                Constr(x, ets'), (L.last ys)
-            | t -> Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t); assert false
-          end
+        let ets', ts' =
+          List.fold_left
+            (fun (ets, ts) e ->
+               let e', t' = g env e in
+               set e (e', t') :: ets, t' :: ts)
+            ([], []) (List.rev ets)
+        in
+        begin
+          match instantiate env (M.find x venv) with
+          | Type.App(Type.Arrow, ys) -> 
+            List.iter2 (unify env) ts' (L.init ys);
+            Constr(x, ets'), (L.last ys)
+          | t -> Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t); assert false
+        end
       | LetRec({ name = (x, ty_f); args = yts; body = et1 }, et2) -> (* let recの型推論 (caml2html: typing_letrec) *)
           let t2 = Type.Meta(Type.newmetavar()) in
           let ty_f' = Type.App(Type.Arrow, ((List.map snd yts) @ [t2])) in
@@ -459,13 +486,19 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (expr, ty) = (* 型推論ル
           unify env t2 t1';
           let t'' = generalize env ty_f' in
           let e2', t2' = g (Env.add_var env x t'') et2 in
-          LetRec({ name = (x, t''); args = yts; body = (e1', t1') }, (e2', t2')), t2'
+          LetRec({ name = (x, t''); args = yts; body = set et1 (e1', t1') }, set et2 (e2', t2')), t2'
       | App(et, ets) -> (* 関数適用の型推論 (caml2html: typing_app) *)
           let e', t' = g env et in
-          let ets', ts' = List.fold_left (fun (ets, ts) e -> let e', t' = g env e in (e', t') :: ets, t' :: ts) ([], []) (List.rev ets) in
+          let ets', ts' =
+            List.fold_left
+              (fun (ets, ts) e ->
+                 let e', t' = g env e in
+                 set e (e', t') :: ets, t' :: ts)
+              ([], []) (List.rev ets)
+          in
           let result = Type.Meta(Type.newmetavar ()) in
           unify env t' (Type.App(Type.Arrow, ts' @ [result]));
-          App((e', t'), ets'), result
+          App(set et (e', t'), ets'), result
       | WrapBody(_, t) -> expr, t
       | UnwrapBody(_, t) -> expr, t in
     unify env ty ty';
@@ -494,7 +527,7 @@ let f defs =
           TypeDef(x, t)
         | VarDef((x, t), et) -> 
             let et' = f' env (et, t) in
-            Env.add_var env x t, VarDef((x, t), et')
+            Env.add_var env x t, VarDef((x, t), set et et')
         | RecDef({ name = (x, ty_f); args = yts; body = et }) -> 
             let ty_r = Type.Meta(Type.newmetavar()) in
             let ty_f' = Type.App(Type.Arrow, ((List.map snd yts) @ [ty_r])) in
@@ -504,7 +537,7 @@ let f defs =
             { env with Env.venv = M.add x t'' venv }, 
             RecDef({ name = (x, t''); 
                      args = yts;
-                     body = et' }) in
+                     body = set et et' }) in
       env', def' :: defs) (!Env.empty, []) defs in
 
   (* deref_def の中で未解決なメタ変数を型変数に置き換えてしまうので、すべての式の型推論が終わってから deref を呼ぶこと *)

@@ -1,5 +1,4 @@
-type t = (* uCamlの構文を表現するデータ型 (caml2html: syntax_t) *)
-    expr * Type.t 
+type t = (expr * Type.t) Locating.t
 and expr = 
   | Unit
   | Bool of bool
@@ -26,7 +25,8 @@ and expr =
   | App of t * t list
   | WrapBody of Id.t * Type.t (* ラップ関数のbody. 外部で定義される扱い。最終的にはc.mlで中身が生成される *)
   | UnwrapBody of Id.t * Type.t 
-and pattern =
+and pattern = pattern_desc Locating.t
+and pattern_desc =
   | PtBool of bool
   | PtInt of int
   | PtVar of Id.t * Type.t
@@ -39,8 +39,8 @@ and def =
   | VarDef of (Id.t * Type.t) * t
   | RecDef of fundef
 
-let rec string_of_pattern =
-  function
+let rec string_of_pattern { Locating.desc = p } =
+  match p with
   | PtBool(b) -> "PtBool(" ^ (string_of_bool b) ^ ")"
   | PtInt(n) -> "PtInt(" ^ (string_of_int n) ^ ")"
   | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.string_of_t t) ^ ")"
@@ -48,14 +48,15 @@ let rec string_of_pattern =
   | PtRecord(xps) -> "PtRecord([" ^ (String.concat "; " (List.map (fun (x, p) -> x ^ ", " ^ (string_of_pattern p)) xps)) ^ "])"
   | PtConstr(x, ps) -> "PtConstr(" ^ x ^ ", [" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
 
-let rec string_of_typed_expr (e, t) = (string_of_expr e) ^ " : " ^ (Type.string_of_t t)
+let rec string_of_typed_expr { Locating.desc = (e, t) } =
+  (string_of_expr e) ^ " : " ^ (Type.string_of_t t)
 
 and string_of_expr = 
   function
   | Unit -> "Unit"
   | Bool(b) -> "Bool(" ^ (string_of_bool b) ^ ")"
   | Int(n) -> "Int(" ^ (string_of_int n) ^ ")"
-  | Record(xs) -> "Record(" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xs)) ^ ")"
+  | Record(xs) -> "Record(" ^ (Xstring.concat_list "; " (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xs) ^ ")"
   | Field(e, x) -> "Field(" ^ (string_of_typed_expr e) ^ ", " ^ x ^ ")"
   | Tuple(es) -> "Tuple([" ^ (String.concat "; " (List.map string_of_typed_expr es)) ^ "])"
   | Not(e) -> "Not(" ^ (string_of_typed_expr e) ^ ")"

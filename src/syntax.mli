@@ -1,4 +1,4 @@
-type t = expr * Type.t
+type t = (expr * Type.t) Locating.t
 and expr =
     Unit
   | Bool of bool
@@ -25,7 +25,8 @@ and expr =
   | App of t * t list
   | WrapBody of Id.t * Type.t
   | UnwrapBody of Id.t * Type.t
-and pattern =
+and pattern = pattern_desc Locating.t
+and pattern_desc =
     PtBool of bool
   | PtInt of int
   | PtVar of Id.t * Type.t
