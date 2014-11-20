@@ -11,5 +11,4 @@ let range start_loc end_loc desc =
 let loc lx = lx.loc
 let desc lx = lx.desc
 
-let set lx f =
-  create lx.loc (f lx.desc)
+let set lx x = { lx with desc = x }

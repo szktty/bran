@@ -9,4 +9,4 @@ val range : Location.t -> Location.t -> 'a -> 'a t
 val loc : 'a t -> Location.t
 val desc : 'a t -> 'a
 
-val set : 'a t -> ('a -> 'b) -> 'b t
+val set : 'a t -> 'b -> 'b t
