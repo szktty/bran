@@ -1,3 +1,5 @@
+exception Syntax_error of Location.t
+
 type t = (expr * Type.t) Locating.t
 and expr =
     Unit

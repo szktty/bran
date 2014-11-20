@@ -132,12 +132,18 @@ definition:
     { range $1 $4.loc (VarDef(add_type $2.desc, $4)) }
 | VAR LPAREN RPAREN EQUAL seq_expr
     { range $1 $4 (VarDef((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), $5)) }
+| DEF fundef
+    { create $1 (RecDef $2) }
 | DEF REC fundef
     { create $1 (RecDef $3) }
 | TYPE typedef    
     { create $1 $2 }
 | NL
     { create $1 (VarDef((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), create $1 (Unit, Type.App(Type.Unit, [])))) }
+| error
+    { raise (Syntax_error (Location.create
+                             (Position.of_lexing_pos $startpos)
+                             (Position.of_lexing_pos $endpos))) }
 
 simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2html: parser_simple) */
 | LPAREN expr RPAREN
@@ -221,12 +227,6 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1 $5.loc (add_type (LetRec($3, $5))) }
 | MATCH expr WITH pattern_matching
     { create $1 (add_type (Match($2, $4))) }
-| error
-    { failwith
-	(Printf.sprintf "parse error near characters %d-%d"
-	   (Parsing.symbol_start ())
-	   (Parsing.symbol_end ())) }
-;
 
 seq_expr: 
 | expr %prec app

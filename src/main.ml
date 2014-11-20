@@ -39,11 +39,28 @@ let escript_path path =
   | dir, Some base ->
     to_string & dir ^/ (fst & Xfilename.split_extension base)
 
+let print_error fpath loc =
+  let start_line = Location.start_line loc + 1 in
+  let end_line = Location.end_line loc + 1 in
+  let start_col = Location.start_col loc + 1 in
+  let end_col = Location.end_col loc in
+  if start_line = end_line then
+    Printf.printf "File \"%s\", line %d, characters %d-%d:\n"
+      fpath start_line start_col end_col
+  else
+    Printf.printf "File \"%s\", between line and characters %d:%d-%d:%d:\n"
+      fpath start_line end_line start_col end_col
+
 let parse_test fpath =
   Log.verbose "# parsing test\n";
   let inchan = open_in fpath in
-  let _ = Parser.prog Lexer.token (Lexing.from_channel inchan) in
-  ()
+  try
+    let prog = Parser.prog Lexer.token (Lexing.from_channel inchan) in
+    Printf.printf "# %s\n" (String.concat ";\n " (List.map Syntax.string_of_def prog))
+  with
+    | Syntax.Syntax_error loc ->
+      print_error fpath loc;
+      Printf.printf "Error: Syntax error\n"
 
 (*
 let parse l =
@@ -73,18 +90,6 @@ let compile_ast outbuf t ~(fpath:string) =
   Emit.f mname outbuf v;
   Context.finish_module ()
      *)
-
-let print_error fpath loc =
-  let start_line = Location.start_line loc + 1 in
-  let end_line = Location.end_line loc + 1 in
-  let start_col = Location.start_col loc + 1 in
-  let end_col = Location.end_col loc in
-  if start_line = end_line then
-    Printf.printf "File \"%s\", line %d, characters %d-%d:\n"
-      fpath start_line start_col end_col
-  else
-    Printf.printf "File \"%s\", between line and characters %d:%d-%d:%d:\n"
-      fpath start_line end_line start_col end_col
 
 let compile fpath = 
   Log.verbose "# compiling \"%s\"...\n" fpath;
