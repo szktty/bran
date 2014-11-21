@@ -33,3 +33,4 @@ val types : tycon -> (Id.t * t) list
 val prefix : t -> Id.t
 val name : t -> Id.t
 
+val app_unit : t (* App (Unit, []) *)

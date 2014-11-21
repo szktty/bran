@@ -151,4 +151,4 @@ let rec name t =
   | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _) | App(TyFun _, _) -> assert false (* impossible *)
   | App(NameTycon(x, _), _) -> x
 
-
+let app_unit = App (Unit, [])

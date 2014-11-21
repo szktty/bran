@@ -15,6 +15,17 @@ let constr_pattern_args = function
 
 let range_from_list es desc =
   range (List.hd es).loc (Spotlib.Xlist.last es).loc desc
+
+let rev_combine = function
+  | [] -> create Location.zero (Unit, Type.app_unit)
+  | init :: stmts ->
+    List.fold_left (fun s1 s2 ->
+        range s2.loc s1.loc
+          (add_type
+             (LetVar((Id.gentmp (Type.prefix Type.app_unit),
+                      Type.app_unit), s2, s1))))
+    init stmts
+
 %}
 
 /* 字句を表すデータ型の定義 (caml2html: parser_token) */
@@ -87,8 +98,7 @@ let range_from_list es desc =
 %token <Location.t> EOF
 
 /* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) */
-%right SEMI
-%right prec_if
+%right SEMI NL
 %nonassoc tuple_ tuple_guard
 %left COMMA
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
@@ -211,9 +221,7 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1.loc $3.loc (add_type (LE($3, $1))) }
 | tuple %prec tuple_
     { range_from_list $1 (add_type (Tuple (List.rev $1))) }
-| IF expr THEN expr ELSE expr
-    %prec prec_if
-    { range $1 $6.loc (add_type (If($2, $4, $6))) }
+| if_exp { $1 }
 | expr actual_args
     %prec prec_app
     { range $1.loc (Spotlib.Xlist.last $2).loc (add_type (App($1, $2))) }
@@ -228,12 +236,35 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 | MATCH expr WITH pattern_matching
     { create $1 (add_type (Match($2, $4))) }
 
+if_exp:
+    | IF expr THEN block ELSE block END
+    { range $1 $6.loc (add_type (If($2, $4, $6))) }
+
+block:
+    | rev_stmts { rev_combine $1 }
+
+rev_stmts:
+    | stmt { [$1] }
+    | rev_stmts terms stmt { $3 :: $1 }
+
+stmt:
+    | expr { $1 }
+
+(* TODO: replace with block *)
 seq_expr: 
 | expr %prec app
     { $1 }
-| expr SEMI seq_expr
+| expr terms seq_expr
     { range $1.loc $3.loc (add_type (LetVar((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), $1, $3))) }
 ;    
+
+terms:
+    | term {}
+    | terms term {}
+
+term:
+    | SEMI {}
+    | NL {}
 
 tuple:
 | tuple COMMA expr
