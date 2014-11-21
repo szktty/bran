@@ -161,7 +161,7 @@ FILES[] =
 	closure
 	config
 	#context
-	#emit
+	emit
 	env
 	erlang
 	id

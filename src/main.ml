@@ -83,8 +83,28 @@ let closure prog =
   Log.verbose "# Closure conversion\n";
   Closure.f prog
 
+let erlang prog =
+  Log.verbose "# Erlang conversion\n";
+  Erlang.f prog
+
+let emit prog =
+  Log.verbose "# Generate Erlang source files\n";
+  Emit.f prog
+
 let parse_test fpath =
-  let _ = closure & alpha & knormal & typing & parse fpath in
+  let prog = erlang & closure & alpha & knormal & typing & parse fpath in
+  let mname = modname fpath in
+  let outbuf = Buffer.create 128 in
+  Emit.f mname outbuf prog;
+  let outfpath =
+    if !Config.escript then
+      escript_path fpath
+    else
+      modpath fpath
+  in
+  let outchan = open_out outfpath in
+  Buffer.output_buffer outchan outbuf;
+  close_out outchan;
   ()
 
 (*
