@@ -237,8 +237,16 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { create $1 (add_type (Match($2, $4))) }
 
 if_exp:
-    | IF expr THEN block ELSE block END
-    { range $1 $6.loc (add_type (If($2, $4, $6))) }
+    | IF expr THEN nl_opt block ELSE nl_opt block END
+    { range $1 $8.loc (add_type (If($2, $5, $8))) }
+
+nl_opt:
+    | (* empty *) {}
+    | nl {}
+
+nl:
+    | NL {}
+    | nl NL {}
 
 block:
     | rev_stmts { rev_combine $1 }

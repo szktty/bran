@@ -124,7 +124,7 @@ rule token = parse
     { IF (to_loc lexbuf) }
 | "then"
     { THEN (to_loc lexbuf) }
-| "else"
+| nl* "else"
     { ELSE (to_loc lexbuf) }
 | "in"
     { IN (to_loc lexbuf) }
@@ -138,7 +138,7 @@ rule token = parse
 | "of" { OF (to_loc lexbuf) }
 | "with" { WITH (to_loc lexbuf) }
 | "match" { MATCH (to_loc lexbuf) }
-| "end" { END (to_loc lexbuf) }
+| nl* "end" { END (to_loc lexbuf) }
 | "done" { DONE (to_loc lexbuf) }
 | "for" { FOR (to_loc lexbuf) }
 | "while" { WHILE (to_loc lexbuf) }
