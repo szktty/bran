@@ -1,0 +1,3 @@
+bin: [
+  "?src/bran.opt" {"bran"}
+]

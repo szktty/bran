@@ -1,0 +1,12 @@
+opam-version: "1.2"
+name: "bran"
+version: "git"
+author: "SUZUKI Tetsuya <tetsuya.suzuki@gmail.com>"
+homepage: "https://github.com/szktty/bran"
+bug-reports: "https://github.com/szktty/bran/issues"
+dev-repo: "git://github.com/szktty/bran.git"
+license: "Apache"
+build: [
+  ["sh" "-c" "cd src && omake"]
+]
+depends: ["ocamlfind" {build} "omake" {build} "spotlib" "menhir"]
