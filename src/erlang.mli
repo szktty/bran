@@ -2,7 +2,6 @@
 type closure = { entry : Id.l; actual_fv : Id.t list }
 type t =
   | Atom of string
-  | Bool of bool
   | Int of int
   | String of string
   | Record of (Id.t * t) list
@@ -22,7 +21,7 @@ type t =
   | Var of Id.t
   | AppCls of t * t list
   | AppDir of Id.l * t list
-  | If of t * t * t
+  | If of (t * t) list
   | Match of Id.t * (pattern * t) list
   | Let of Id.t * t * t
   | MakeCls of Id.t * closure * t
