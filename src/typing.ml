@@ -52,6 +52,7 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
     | Type.App(Type.Unit, xs), Type.App(Type.Unit, ys) 
     | Type.App(Type.Bool, xs), Type.App(Type.Bool, ys) 
     | Type.App(Type.Int, xs), Type.App(Type.Int, ys) 
+    | Type.App(Type.String, xs), Type.App(Type.String, ys) 
     | Type.App(Type.Tuple, xs), Type.App(Type.Tuple, ys) 
     | Type.App(Type.Arrow, xs), Type.App(Type.Arrow, ys) -> List.iter2 unify' xs ys
     | Type.App(Type.Record(x, fs), xs), Type.App(Type.Record(y, fs'), ys) when fs = fs' -> List.iter2 unify' xs ys
@@ -254,6 +255,7 @@ and deref_expr ({ Env.venv = venv } as env) = function
   | LE(e1, e2) -> LE(deref_typed_expr env e1, deref_typed_expr env e2)
   | Mul(e1, e2) -> Mul(deref_typed_expr env e1, deref_typed_expr env e2)
   | Div(e1, e2) -> Div(deref_typed_expr env e1, deref_typed_expr env e2)
+  | Concat(e1, e2) -> Concat(deref_typed_expr env e1, deref_typed_expr env e2)
   | If(e1, e2, e3) -> If(deref_typed_expr env e1, deref_typed_expr env e2, deref_typed_expr env e3)
   | Match(e, pes) ->  Match(deref_typed_expr env e, (List.map (fun (p, e) -> let p', env' = deref_pattern env p in p', deref_typed_expr env' e) pes))
   | LetVar((x, t), e1, e2) -> 
@@ -375,6 +377,12 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
         let e', t' = g env et in
         unify env (Type.App(Type.Bool, [])) t';
         Not (set et (e', t')), Type.App(Type.Bool, [])
+      | Concat(et1, et2) ->
+        let e1', t1' = g env et1 in
+        let e2', t2' = g env et2 in
+        unify env (Type.App(Type.String, [])) t1';
+        unify env (Type.App(Type.String, [])) t2';
+        Concat (set et1 (e1', t1'), set et2 (e2', t2')), Type.App(Type.String, [])
       | And(et1, et2) ->
         let e1', t1' = g env et1 in
         let e2', t2' = g env et2 in

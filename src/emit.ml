@@ -30,6 +30,7 @@ let rec gen_exp oc = function
   | Sub (e1, e2) -> gen_bin_exp oc e1 "-" e2
   | Mul (e1, e2) -> gen_bin_exp oc e1 "*" e2
   | Div (e1, e2) -> gen_bin_exp oc e1 "/" e2
+  | Concat (e1, e2) -> gen_bin_exp oc e1 "++" e2
   | Eq (e1, e2) -> gen_bin_exp oc e1 "=:=" e2
   | LE (e1, e2) -> gen_bin_exp oc e1 "=<" e2
   | AppDir (Id.L x, es) ->

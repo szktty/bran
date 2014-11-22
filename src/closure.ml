@@ -25,6 +25,7 @@ and expr =
   | Sub of et * et
   | Mul of et * et
   | Div of et * et
+  | Concat of et * et
   | Eq of et * et
   | LE of et * et
   | Var of Id.t
@@ -75,6 +76,7 @@ and string_of_expr =
   | Sub(e1, e2) -> (string_of_typed_expr e1) ^ " - " ^ (string_of_typed_expr e2)
   | Mul(e1, e2) -> (string_of_typed_expr e1) ^ " * " ^ (string_of_typed_expr e2)
   | Div(e1, e2) -> (string_of_typed_expr e1) ^ " / " ^ (string_of_typed_expr e2)
+  | Concat (e1, e2) -> (string_of_typed_expr e1) ^ " ^ " ^ (string_of_typed_expr e2)
   | Eq(e1, e2) -> (string_of_typed_expr e1) ^ " = " ^ (string_of_typed_expr e2)
   | LE(e1, e2) -> (string_of_typed_expr e1) ^ " <= " ^ (string_of_typed_expr e2) 
   | Var(x) -> "Var(" ^ x ^ ")"
@@ -119,7 +121,8 @@ let rec fv_of_expr (e, _) =
   | Tuple(es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
   | Not(e) | Neg(e) -> fv_of_expr e
   | And(e1, e2) | Or(e1, e2) 
-  | Add(e1, e2) | Sub(e1, e2) | Mul(e1, e2) | Div(e1, e2) | Eq(e1, e2) | LE(e1, e2) -> S.union (fv_of_expr e1) (fv_of_expr e2)
+  | Add(e1, e2) | Sub(e1, e2) | Mul(e1, e2) | Div(e1, e2) | Concat(e1, e2)
+  | Eq(e1, e2) | LE(e1, e2) -> S.union (fv_of_expr e1) (fv_of_expr e2)
   | Var(x) -> S.singleton x
   | Constr(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
   | AppCls(e, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty (e :: es)
@@ -191,6 +194,7 @@ let rec h env known (expr, ty) =
     | KNormal.Sub(e1, e2) -> Sub(h env known e1, h env known e2)
     | KNormal.Mul(e1, e2) -> Mul(h env known e1, h env known e2)
     | KNormal.Div(e1, e2) -> Div(h env known e1, h env known e2)
+    | KNormal.Concat(e1, e2) -> Concat(h env known e1, h env known e2)
     | KNormal.Eq(e1, e2)  -> Eq(h env known e1, h env known e2)
     | KNormal.LE(e1, e2)  -> LE(h env known e1, h env known e2)
     | KNormal.Var(x) -> Var(x)

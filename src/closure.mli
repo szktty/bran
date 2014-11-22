@@ -25,6 +25,7 @@ and expr =
   | Sub of et * et
   | Mul of et * et
   | Div of et * et
+  | Concat of et * et
   | Eq of et * et
   | LE of et * et
   | Var of Id.t

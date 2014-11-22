@@ -27,6 +27,7 @@ and expr =
   | Eq of et * et
   | LE of et * et
   | Var of Id.t
+  | Concat of et * et
   | Constr of Id.t * et list
   | App of et * et list
   | ExtFunApp of Id.t * et list

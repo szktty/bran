@@ -16,6 +16,7 @@ type t =
   | Sub of t * t
   | Mul of t * t
   | Div of t * t
+  | Concat of t * t
   | Eq of t * t
   | LE of t * t
   | Var of Id.t

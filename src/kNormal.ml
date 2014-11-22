@@ -32,6 +32,7 @@ and expr =
   | Eq of et * et
   | LE of et * et
   | Var of Id.t
+  | Concat of et * et
   | Constr of Id.t * et list
   | App of et * et list
   | ExtFunApp of Id.t * et list
@@ -76,6 +77,7 @@ and string_of_expr =
   | Mul(e1, e2) -> (string_of_typed_expr e1) ^ " * " ^ (string_of_typed_expr e2)
   | Div(e1, e2) -> (string_of_typed_expr e1) ^ " / " ^ (string_of_typed_expr e2)
   | Var(x) -> "Var(" ^ x ^ ")"
+  | Concat(e1, e2) -> (string_of_typed_expr e1) ^ " ^ " ^ (string_of_typed_expr e2)
   | Constr(x, es) -> "Constr(" ^ x ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ "])"
   | Eq(e1, e2) -> (string_of_typed_expr e1) ^ " = " ^ (string_of_typed_expr e2)
   | LE(e1, e2) -> (string_of_typed_expr e1) ^ " <= " ^ (string_of_typed_expr e2) 
@@ -157,6 +159,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* Kæ­£è
     | Syntax.Mul(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Mul(e1', e2'), t))
     | Syntax.Div(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Div(e1', e2'), t))
     | Syntax.Var(x) -> Exp(Var(x), t)
+    | Syntax.Concat(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Concat(e1', e2'), t))
     | Syntax.Constr(x, es) -> insert_lets es (fun es' -> Exp(Constr(x, es'), t))
     | Syntax.Eq(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Eq(e1', e2'), t))
     | Syntax.LE(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(LE(e1', e2'), t))

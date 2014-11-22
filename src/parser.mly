@@ -105,6 +105,7 @@ let rev_combine = function
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %right LAND
 %right LOR
+%right UARROW
 %right CONS
 %left PLUS MINUS
 %left AST SLASH
@@ -199,6 +200,8 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1.loc $3.loc (add_type (Mul($1, $3))) }
 | expr SLASH expr
     { range $1.loc $3.loc (add_type (Div($1, $3))) }
+| expr UARROW expr
+    { range $1.loc $3.loc (add_type (Concat($1, $3))) }
 | expr CONS expr
     { range $1.loc $3.loc (add_type (Constr("Cons", [$1; $3]))) }
 | expr LAND expr

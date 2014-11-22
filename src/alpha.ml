@@ -17,6 +17,7 @@ let rec h ids (e, t) =
     | Field(e, x) -> Field(h ids e, find x ids)
     | Tuple(es) -> Tuple(List.map (h ids) es)
     | Var(x) -> Var(find x ids)
+    | Concat(e1, e2) -> Concat(h ids e1, h ids e2)
     | Constr(x, es) -> Constr(find x ids, List.map (h ids) es)
     | Not(e) -> Not(h ids e)
     | And(e1, e2) -> And(h ids e1, h ids e2)

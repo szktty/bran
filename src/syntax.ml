@@ -23,6 +23,7 @@ and expr =
   | Match of t * (pattern * t) list
   | LetVar of (Id.t * Type.t) * t * t
   | Var of Id.t
+  | Concat of t * t
   | Constr of Id.t * t list
   | LetRec of fundef * t
   | App of t * t list
@@ -76,6 +77,7 @@ and string_of_expr =
   | Match(e, pes) -> "Match(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat "; " (List.map (fun (p, e) -> (string_of_pattern p) ^ " -> " ^ (string_of_typed_expr e)) pes)) ^ "])"
   | LetVar((x, t), e1, e2) -> "LetVar(" ^ x ^ " : " ^ (Type.string_of_t t) ^ " = " ^ (string_of_typed_expr e1) ^ " in " ^ (string_of_typed_expr e2) ^ ")"
   | Var(x) -> "Var(" ^ x ^ ")"
+  | Concat (e1, e2) -> "Concat(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2) ^ ")"
   | Constr(x, es) -> "Constr(" ^ x ^ ", " ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
   | LetRec({ name = (x, t); args = yts; body = e1 }, e2) -> "LetRec(" ^ x ^ "(" ^ (String.concat ", " (List.map (fun (y, t) -> y ^ " : " ^ (Type.string_of_t t)) yts)) ^ ") : " ^ (Type.string_of_t t) ^ " = " ^ (string_of_typed_expr e1) ^ " in " ^ (string_of_typed_expr e2) ^ ")"
   | App(e, es) -> "App(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ "])"

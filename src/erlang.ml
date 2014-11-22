@@ -17,6 +17,7 @@ type t =
   | Sub of t * t
   | Mul of t * t
   | Div of t * t
+  | Concat of t * t
   | Eq of t * t
   | LE of t * t
   | Var of Id.t
@@ -76,6 +77,7 @@ let rec gen_exp (e, t) =
   | Closure.Sub (e1, e2) -> Sub (gen_exp e1, gen_exp e2)
   | Closure.Mul (e1, e2) -> Mul (gen_exp e1, gen_exp e2)
   | Closure.Div (e1, e2) -> Div (gen_exp e1, gen_exp e2)
+  | Closure.Concat (e1, e2) -> Concat (gen_exp e1, gen_exp e2)
   | Closure.Eq (e1, e2) -> Eq (gen_exp e1, gen_exp e2)
   | Closure.LE (e1, e2) -> LE (gen_exp e1, gen_exp e2)
   | Closure.Var x -> Var x

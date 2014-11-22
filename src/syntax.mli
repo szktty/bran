@@ -23,6 +23,7 @@ and expr =
   | Match of t * (pattern * t) list
   | LetVar of (Id.t * Type.t) * t * t
   | Var of Id.t
+  | Concat of t * t
   | Constr of Id.t * t list
   | LetRec of fundef * t
   | App of t * t list
