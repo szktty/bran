@@ -112,7 +112,7 @@ let rev_combine = function
 %left prec_app
 %nonassoc guard
 %nonassoc PIPE
-%nonassoc UIDENT LPAREN LBRACK INT IDENT BOOL BEGIN RPAREN END
+%nonassoc UIDENT LPAREN LBRACK INT IDENT BOOL STRING BEGIN RPAREN END
 
 /* 開始記号の定義 */
 %type <Syntax.def list> prog
@@ -171,6 +171,8 @@ simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2
     { create $1.loc (add_type (Bool $1.desc)) }
 | INT
     { create $1.loc (add_type (Int $1.desc)) }
+| STRING
+    { create $1.loc (add_type (String $1.desc)) }
 | IDENT
     { create $1.loc (add_type (Var $1.desc)) }
 | UIDENT

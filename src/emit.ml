@@ -16,6 +16,7 @@ let iter_with_sep oc sep f es =
 let rec gen_exp oc = function
   | Atom s -> bprintf oc "'%s'" s
   | Int v -> bprintf oc "%d" v
+  | String s -> bprintf oc "%s" (Erlang.literal_of_string s)
   | Var x -> bprintf oc "%s" (gen_var x)
   | Tuple es ->
     bprintf oc "{";

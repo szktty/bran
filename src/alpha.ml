@@ -12,6 +12,7 @@ let rec h ids (e, t) =
     match e with
     | Bool(b) -> Bool(b)
     | Int(i) -> Int(i)
+    | String s -> String s
     | Record(xes) -> Record(List.map (fun (x, e) -> find x ids, (h ids e)) xes)
     | Field(e, x) -> Field(h ids e, find x ids)
     | Tuple(es) -> Tuple(List.map (h ids) es)

@@ -144,7 +144,7 @@ let instantiate env ty =
 (* for pretty printing (and type normalization) *)
 let rec deref_tycon ({ Env.tycons = tycons } as env) reached tycon =
   match tycon with
-  | Type.Int | Type.Bool | Type.Unit | Type.Arrow | Type.Tuple as tycon -> tycon, reached
+  | Type.Int | Type.Bool | Type.String | Type.Unit | Type.Arrow | Type.Tuple as tycon -> tycon, reached
   | Type.Record(x, _) as tycon -> tycon, M.add x tycon reached
   | Type.Variant(x, _) when M.mem x reached -> 
       tycon, reached
@@ -240,7 +240,7 @@ let rec deref_typed_expr ({ Env.venv = venv } as env) le =
   set le (deref_expr env e, deref_type env t)
 
 and deref_expr ({ Env.venv = venv } as env) = function
-  | Int _ | Bool _ | Unit | Var _ as e -> e
+  | Int _ | Bool _ | String _ | Unit | Var _ as e -> e
   | Record(xes) -> Record(List.map (fun (x, e) -> x, deref_typed_expr env e) xes)
   | Field(e, x) -> Field(deref_typed_expr env e, x)
   | Tuple(es) -> Tuple(List.map (deref_typed_expr env) es)
@@ -332,6 +332,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
       | Unit -> expr, Type.App(Type.Unit, [])
       | Bool(_) -> expr, Type.App(Type.Bool, [])
       | Int(_) -> expr, Type.App(Type.Int, [])
+      | String _ -> expr, Type.App(Type.String, [])
       | Record(xets) -> 
         let xets', ts' = List.fold_left 
             (fun (xets, ts) (x, e) ->

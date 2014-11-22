@@ -13,6 +13,7 @@ and et =
 and expr = 
   | Bool of bool
   | Int of int
+  | String of string
   | Record of (Id.t * et) list
   | Field of et * Id.t
   | Tuple of et list

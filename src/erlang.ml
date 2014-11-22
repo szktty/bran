@@ -66,6 +66,7 @@ let rec gen_exp (e, t) =
   | Closure.Bool true -> true_atom
   | Closure.Bool false -> false_atom
   | Closure.Int v -> Int v
+  | Closure.String s -> String s
   | Closure.Tuple ets -> Tuple (List.map gen_exp ets)
   | Closure.Not et -> Not (gen_exp et)
   | Closure.And (e1, e2) -> And (gen_exp e1, gen_exp e2)

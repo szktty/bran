@@ -8,6 +8,7 @@ and tycon =
   | Unit
   | Bool
   | Int
+  | String
   | Arrow
   | Tuple
   | Record of Id.t * Id.t list (* 型名とフィールド識別子のリスト。型名はあとで名前引きやすいようにするため *)
@@ -39,6 +40,7 @@ and string_of_tycon reached =
   | Unit -> "Unit"
   | Bool -> "Bool"
   | Int -> "Int"
+  | String -> "String"
   | Arrow -> "Arrow"
   | Tuple -> "Tuple"
   | Record(x, fs) -> "Record(" ^ x ^ ", {" ^ (String.concat ", " fs) ^ "})"
@@ -71,6 +73,7 @@ and prefix_of_tycon =
   | Unit -> "u"
   | Bool -> "b"
   | Int -> "n"
+  | String -> "s"
   | Arrow -> "pfn"
   | Tuple -> "t"
   | Record _ -> "st"
@@ -142,13 +145,14 @@ let rec name t =
   | App(Unit, []) -> "unit"
   | App(Bool, []) -> "bool"
   | App(Int, []) -> "int"
+  | App(String, []) -> "string"
   | App(Arrow, ts) -> "fun_of_" ^ (String.concat "_" (List.map name ts))
   | App(Tuple, ts) -> "tuple_of_" ^ (String.concat "_" (List.map name ts))
   | App(Record(x, _), _) -> x
   | App(Variant(x, _), _) -> x
   | Field(_, t) -> name t
   | App(TyFun([], t), []) -> name t
-  | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _) | App(TyFun _, _) -> assert false (* impossible *)
+  | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _) | App(String, _) | App(TyFun _, _) -> assert false (* impossible *)
   | App(NameTycon(x, _), _) -> x
 
 let app_unit = App (Unit, [])

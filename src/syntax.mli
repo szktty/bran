@@ -5,6 +5,7 @@ and expr =
     Unit
   | Bool of bool
   | Int of int
+  | String of string
   | Record of (Id.t * t) list
   | Field of t * Id.t
   | Tuple of t list

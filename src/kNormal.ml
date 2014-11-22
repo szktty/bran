@@ -17,6 +17,7 @@ and et =
 and expr =
   | Bool of bool
   | Int of int
+  | String of string
   | Record of (Id.t * et) list
   | Field of et * Id.t
   | Tuple of et list
@@ -62,6 +63,7 @@ and string_of_expr =
   function
   | Bool(b) -> string_of_bool b
   | Int(n) -> string_of_int n
+  | String s -> "\"" ^ s ^ "\""
   | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
   | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
   | Tuple(es) -> "(" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
@@ -140,6 +142,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* Kæ­£è
     | Syntax.Unit -> Unit
     | Syntax.Bool(b) -> Exp(Bool(b), t)
     | Syntax.Int(n) -> Exp(Int(n), t)
+    | Syntax.String(s) -> Exp(String(s), t)
     | Syntax.Record(xes) ->
       insert_lets (List.map snd xes)
         (fun ets' -> Exp(Record(List.combine (List.map fst xes) ets'), t))
