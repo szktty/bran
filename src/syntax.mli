@@ -25,8 +25,6 @@ and expr =
   | Constr of Id.t * t list
   | LetRec of fundef * t
   | App of t * t list
-  | WrapBody of Id.t * Type.t
-  | UnwrapBody of Id.t * Type.t
 and pattern = pattern_desc Locating.t
 and pattern_desc =
     PtBool of bool

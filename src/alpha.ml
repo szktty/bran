@@ -79,8 +79,7 @@ let rec g ids (e, t) = (* α変換ルーチン本体 (caml2html: alpha_g) *)
 	         args = List.map (fun (y, t) -> (find y ids', t)) yts;
 	         body = g ids' e1 },
 	       g ids e2)
-    | WrapBody(x, t) -> WrapBody(x, t)
-    | UnwrapBody(x, t) -> UnwrapBody(x, t) in
+  in
   (e', t)
       
 let f =

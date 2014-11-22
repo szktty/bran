@@ -25,8 +25,6 @@ and expr =
   | Constr of Id.t * t list
   | LetRec of fundef * t
   | App of t * t list
-  | WrapBody of Id.t * Type.t (* ラップ関数のbody. 外部で定義される扱い。最終的にはc.mlで中身が生成される *)
-  | UnwrapBody of Id.t * Type.t 
 and pattern = pattern_desc Locating.t
 and pattern_desc =
   | PtBool of bool
@@ -79,8 +77,6 @@ and string_of_expr =
   | Constr(x, es) -> "Constr(" ^ x ^ ", " ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
   | LetRec({ name = (x, t); args = yts; body = e1 }, e2) -> "LetRec(" ^ x ^ "(" ^ (String.concat ", " (List.map (fun (y, t) -> y ^ " : " ^ (Type.string_of_t t)) yts)) ^ ") : " ^ (Type.string_of_t t) ^ " = " ^ (string_of_typed_expr e1) ^ " in " ^ (string_of_typed_expr e2) ^ ")"
   | App(e, es) -> "App(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ "])"
-  | WrapBody(x, t) -> "WrapBody(" ^ x ^ ", " ^ (Type.string_of_t t) ^ ")"
-  | UnwrapBody(x, t) -> "UnwrapBody(" ^ x ^ ", " ^ (Type.string_of_t t) ^ ")"
 
 let string_of_fundef { name = (x, t); args = yts; body = e } =
   x ^ " " ^ (String.concat " " (List.map (fun (y, t) -> y) yts)) ^ " : " ^ (Type.string_of_t t) ^ " = " ^ (string_of_typed_expr e) 

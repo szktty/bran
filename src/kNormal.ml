@@ -12,8 +12,6 @@ and term =
   | Match of Id.t * (pattern * t) list
   | Let of (Id.t * Type.t) * t * t
   | LetRec of fundef * t
-  | WrapBody of Id.t * Type.t
-  | UnwrapBody of Id.t * Type.t
 and et = 
     expr * Type.t
 and expr =
@@ -94,8 +92,6 @@ and string_of_term =
   | LetRec({ name = (x, t); args = yts; body = e1 }, e2) -> 
       "LetRec(" ^ x ^ ", [" ^ (String.concat ", " (List.map (fun (y, t) -> y) yts)) ^ " : " ^ (Type.string_of_t  t) ^ "] = "
       ^ (string_of_typed_term e1) ^ " in " ^ (string_of_typed_term e2) ^ ")"
-  | WrapBody(x, t) -> "WrapBody(" ^ x ^ ", " ^ (Type.string_of_t t) ^ ")"
-  | UnwrapBody(x, t) -> "UnwrapBody(" ^ x ^ ", " ^ (Type.string_of_t t) ^ ")"
 
 let rec insert_let (e, t) k = (* letを挿入する補助関数 (caml2html: knormal_insert) *)
   match e with
@@ -203,8 +199,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* K正�
               | [] -> Exp(App(f, xs), t)
               | e2 :: e2s -> insert_let (g env e2) (fun x -> bind (xs @ [x]) e2s) in
             bind [] e2s) (* left-to-right evaluation *)
-    | Syntax.WrapBody(x, t) -> WrapBody(x, t)
-    | Syntax.UnwrapBody(x, t) -> UnwrapBody(x, t) in
+  in
   (e', t)
         
 let fold f env defs = 

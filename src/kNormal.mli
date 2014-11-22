@@ -7,8 +7,6 @@ and term =
   | Match of Id.t * (pattern * t) list
   | Let of (Id.t * Type.t) * t * t
   | LetRec of fundef * t
-  | WrapBody of Id.t * Type.t
-  | UnwrapBody of Id.t * Type.t
 and et = 
     expr * Type.t
 and expr =

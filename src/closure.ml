@@ -3,8 +3,6 @@ type t = (* クロージャ変換後の式 (caml2html: closure_t) *)
     term * Type.t
 and term =
   | Unit
-  | WrapBody of Id.t * Type.t
-  | UnwrapBody of Id.t * Type.t
   | Exp of et
   | If of et * t * t
   | Match of Id.t * (pattern * t) list
@@ -87,8 +85,6 @@ let rec string_of_typed_term (e, t) = (string_of_term e) ^ " : " ^ (Type.string_
 and string_of_term = 
   function
   | Unit -> "Unit"
-  | WrapBody(x, t) -> "WrapBody(" ^ x ^ ", " ^ (Type.string_of_t t) ^ ")"
-  | UnwrapBody(x, t) -> "UnwrapBody(" ^ x ^ ", " ^ (Type.string_of_t t) ^ ")"
   | Exp(e) -> "Exp(" ^ (string_of_typed_expr e) ^ ")"
   | If(e1, e2, e3) -> "If(" ^ (string_of_typed_expr e1) ^ " then " ^ (string_of_typed_term e2) ^ " else " ^ (string_of_typed_term e3) ^ ")"
   | Match(x, pes) -> "Match(" ^ x ^ ", [" ^ (String.concat "; " (List.map (fun (p, e) -> (string_of_pattern p) ^ " -> " ^ (string_of_typed_term e)) pes)) ^ "])"
@@ -129,7 +125,7 @@ let rec fv_of_expr (e, _) =
       
 let rec fv (e, _) = 
   match e with
-  | Unit | WrapBody _ | UnwrapBody _ -> S.empty
+  | Unit -> S.empty
   | Exp(e) -> fv_of_expr e
   | If(e, e1, e2) -> S.union (fv_of_expr e) (S.union (fv e1) (fv e2))
   | Match(x, pes) -> (List.fold_left (fun s (p, e) -> S.diff (S.union s (fv e)) (vars_of_pattern p)) S.empty pes)
@@ -210,8 +206,6 @@ let rec g venv known (expr, ty) = (* クロージャ変換ルーチン本体 (ca
   let expr' = 
     match expr with 
     | KNormal.Unit -> Unit
-    | KNormal.WrapBody(x, t) -> WrapBody(x, t)
-    | KNormal.UnwrapBody(x, t) -> UnwrapBody(x, t)
     | KNormal.Exp(e) -> Exp(h venv known e)
     | KNormal.If(e, e1, e2) -> If(h venv known e, g venv known e1, g venv known e2)
     | KNormal.Match(x, pes) -> Match(x, (List.map (fun (p, e) -> let env', p' = pattern venv p in p', (g env' known e)) pes))

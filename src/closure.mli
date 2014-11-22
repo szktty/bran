@@ -3,8 +3,6 @@ type t = (* クロージャ変換後の式 (caml2html: closure_t) *)
     term * Type.t
 and term =
   | Unit
-  | WrapBody of Id.t * Type.t
-  | UnwrapBody of Id.t * Type.t
   | Exp of et
   | If of et * t * t
   | Match of Id.t * (pattern * t) list

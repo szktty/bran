@@ -265,8 +265,6 @@ and deref_expr ({ Env.venv = venv } as env) = function
              deref_typed_expr (Env.add_var env x t) e2)
   | App(e, es) -> App(deref_typed_expr env e, List.map (deref_typed_expr env) es)
   | Constr(x, es) -> Constr(x, List.map (deref_typed_expr env) es)
-  | WrapBody(x, t) -> WrapBody(x, deref_type env t)
-  | UnwrapBody(x, t) -> UnwrapBody(x, deref_type env t)
 
 let deref_def env def =
   set def (match def.desc with
@@ -500,8 +498,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
           let result = Type.Meta(Type.newmetavar ()) in
           unify env t' (Type.App(Type.Arrow, ts' @ [result]));
           App(set et (e', t'), ets'), result
-      | WrapBody(_, t) -> expr, t
-      | UnwrapBody(_, t) -> expr, t in
+    in
     unify env ty ty';
     expr', ty'
   with Unify(t1, t2) -> 
