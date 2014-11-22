@@ -98,6 +98,7 @@ let rev_combine = function
 %token <Location.t> EOF
 
 /* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) */
+%right prec_stmt
 %right SEMI NL
 %nonassoc tuple_ tuple_guard
 %left COMMA
@@ -109,8 +110,6 @@ let rev_combine = function
 %left AST SLASH
 %right prec_unary_minus
 %left prec_app
-
-%nonassoc app
 %nonassoc guard
 %nonassoc PIPE
 %nonassoc UIDENT LPAREN LBRACK INT IDENT BOOL BEGIN RPAREN END
@@ -138,10 +137,10 @@ rev_definitions:
       { $2 :: $1 }
 
 definition:
-| VAR IDENT EQUAL seq_expr
-    { range $1 $4.loc (VarDef(add_type $2.desc, $4)) }
-| VAR LPAREN RPAREN EQUAL seq_expr
-    { range $1 $4 (VarDef((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), $5)) }
+| VAR IDENT EQUAL nl_opt block
+    { range $1 $5.loc (VarDef(add_type $2.desc, $5)) }
+| VAR LPAREN RPAREN EQUAL nl_opt block
+    { range $1 $4 (VarDef((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), $6)) }
 | DEF fundef
     { create $1 (RecDef $2) }
 | DEF REC fundef
@@ -160,9 +159,9 @@ simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2
     { $2 }
 | BEGIN expr END
     { $2 }
-| LPAREN seq_expr RPAREN
+| LPAREN block RPAREN
     { $2 }
-| BEGIN seq_expr END
+| BEGIN block END
     { $2 }
 | LPAREN RPAREN
     { range $1 $2 (add_type Unit) }
@@ -229,12 +228,12 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1.loc $2.loc (add_type (Constr($1.desc, constr_args $2))) }
 | LBRACE fields RBRACE
     { range $1 $3 (add_type (Record($2))) }
-| VAR IDENT EQUAL seq_expr IN seq_expr
-    { range $1 $6.loc (add_type (LetVar(add_type $2.desc, $4, $6))) }
-| DEF REC fundef IN seq_expr
-    { range $1 $5.loc (add_type (LetRec($3, $5))) }
-| MATCH expr WITH pattern_matching
-    { create $1 (add_type (Match($2, $4))) }
+| VAR IDENT EQUAL nl_opt block IN nl_opt block
+    { range $1 $8.loc (add_type (LetVar(add_type $2.desc, $5, $8))) }
+| DEF REC fundef IN nl_opt block
+    { range $1 $6.loc (add_type (LetRec($3, $6))) }
+| MATCH expr WITH nl_opt pattern_matching
+    { create $1 (add_type (Match($2, $5))) }
 
 if_exp:
     | IF expr THEN nl_opt block ELSE nl_opt block END
@@ -249,22 +248,14 @@ nl:
     | nl NL {}
 
 block:
-    | rev_stmts { rev_combine $1 }
+    | rev_stmts %prec prec_stmt { rev_combine $1 }
 
 rev_stmts:
     | stmt { [$1] }
     | rev_stmts terms stmt { $3 :: $1 }
 
 stmt:
-    | expr { $1 }
-
-(* TODO: replace with block *)
-seq_expr: 
-| expr %prec app
-    { $1 }
-| expr terms seq_expr
-    { range $1.loc $3.loc (add_type (LetVar((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), $1, $3))) }
-;    
+    | expr %prec prec_stmt { $1 }
 
 terms:
     | term {}
@@ -282,8 +273,8 @@ tuple:
 ;
 
 fundef:
-| IDENT formal_args EQUAL seq_expr
-    { { name = add_type $1.desc; args = $2; body = $4 } }
+| IDENT formal_args EQUAL nl_opt block
+    { { name = add_type $1.desc; args = $2; body = $5 } }
 ;
 
 formal_args:
@@ -315,7 +306,7 @@ field:
 ;
 
 pattern_matching:
-| opt_pipe pattern RARROW seq_expr pattern_matching_tail
+| opt_pipe pattern RARROW block pattern_matching_tail
     { ($2, $4) :: $5 }
 ;
 pattern_matching_tail:
@@ -378,12 +369,12 @@ field_pattern:
 ;
 
 typedef:
-| type_params IDENT EQUAL IDENT
-    { TypeDef($2.desc, Type.TyFun($1, (Type.App(Type.NameTycon($4.desc, ref None), [])))) }
-| type_params IDENT EQUAL LBRACE field_decls RBRACE
-    { TypeDef($2.desc, Type.TyFun($1, (Type.App(Type.Record($2.desc, List.map fst $5), List.map snd $5)))) }
-| type_params IDENT EQUAL variant_decls
-    { TypeDef($2.desc, Type.TyFun($1, (Type.App(Type.Variant($2.desc, $4), [])))) }
+| type_params IDENT EQUAL nl_opt IDENT
+    { TypeDef($2.desc, Type.TyFun($1, (Type.App(Type.NameTycon($5.desc, ref None), [])))) }
+| type_params IDENT EQUAL nl_opt LBRACE nl_opt field_decls RBRACE
+    { TypeDef($2.desc, Type.TyFun($1, (Type.App(Type.Record($2.desc, List.map fst $7), List.map snd $7)))) }
+| type_params IDENT EQUAL nl_opt variant_decls
+    { TypeDef($2.desc, Type.TyFun($1, (Type.App(Type.Variant($2.desc, $5), [])))) }
 ;
 type_params:
 | /* empty */
@@ -416,7 +407,7 @@ field_decls:
 field_decls_tail:
 | /* empty */
     { [] }
-| SEMI field_decl field_decls_tail
+| terms field_decl field_decls_tail
     { $2 :: $3 }
 ;
 field_decl:

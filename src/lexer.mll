@@ -130,7 +130,7 @@ rule token = parse
     { IN (to_loc lexbuf) }
 | "rec"
     { REC (to_loc lexbuf) }
-| "def" { DEF (to_loc lexbuf) }
+| nl* "def" { DEF (to_loc lexbuf) }
 | "external" { EXTERNAL (to_loc lexbuf) }
 | "var" { VAR (to_loc lexbuf) }
 | "import" { IMPORT (to_loc lexbuf) }
@@ -164,7 +164,7 @@ rule token = parse
     { SEMI (to_loc lexbuf) }
 | '"'
     { STRING (strlit_to_word lexbuf string) }
-| eof
+| nl* eof
     { EOF (to_loc lexbuf) }
 | ident
     { IDENT (to_word lexbuf) }
