@@ -59,6 +59,7 @@ let escape = '\\' ['\'' '"' '\\' 'a' 'b' 'f' 'n' 'r' 't' 'v']
 let dqstrchr = escape | hexstr | octstr | [^ '"' '\\' '\r' '\n']+
 let sqstrchr = escape | hexstr | octstr | [^ '\'' '\\' '\r' '\n']+
 let blank = [' ' '\t']*
+let space = blank | nl
 let dirname = [^' ' '\t' '\r' '\n']+
 
 
@@ -124,13 +125,13 @@ rule token = parse
     { IF (to_loc lexbuf) }
 | "then"
     { THEN (to_loc lexbuf) }
-| nl* "else"
+| space* "else"
     { ELSE (to_loc lexbuf) }
 | "in"
     { IN (to_loc lexbuf) }
 | "rec"
     { REC (to_loc lexbuf) }
-| nl* "def" { DEF (to_loc lexbuf) }
+| space* "def" { DEF (to_loc lexbuf) }
 | "external" { EXTERNAL (to_loc lexbuf) }
 | "var" { VAR (to_loc lexbuf) }
 | "import" { IMPORT (to_loc lexbuf) }
@@ -138,7 +139,7 @@ rule token = parse
 | "of" { OF (to_loc lexbuf) }
 | "with" { WITH (to_loc lexbuf) }
 | "match" { MATCH (to_loc lexbuf) }
-| nl* "end" { END (to_loc lexbuf) }
+| space* "end" { END (to_loc lexbuf) }
 | "done" { DONE (to_loc lexbuf) }
 | "for" { FOR (to_loc lexbuf) }
 | "while" { WHILE (to_loc lexbuf) }
@@ -164,7 +165,7 @@ rule token = parse
     { SEMI (to_loc lexbuf) }
 | '"'
     { STRING (strlit_to_word lexbuf string) }
-| nl* eof
+| space* eof
     { EOF (to_loc lexbuf) }
 | ident
     { IDENT (to_word lexbuf) }
