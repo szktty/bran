@@ -10,7 +10,7 @@ exception Error of expr Locating.t * Type.t * Type.t
 let rec subst ({ Env.tycons = tycons } as env) tyvars reached t =
   Log.debug "# Typing.subst %s\n" (Type.string_of_t t);
   let rec subst' reached ty = 
-(*    let () = Log.debug "    Typing.subst' %s\n" (Type.string_of_t ty) in *)
+    Log.debug "#    Typing.subst' %s\n" (Type.string_of_t ty);
     match ty with
     | Type.Var(x) when M.mem x tyvars -> M.find x tyvars
     | Type.Var(x) -> Type.Var(x)
@@ -327,7 +327,7 @@ let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p =
         
 let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン (caml2html: typing_g) *)
   let expr, ty = desc e in
-  Log.debug "Typing.g %s\n" (string_of_expr expr);
+  Log.debug "# %s: Typing.g %s\n" (Location.to_string e.loc) (string_of_expr expr);
   try
     let expr', ty' =
       match expr with
