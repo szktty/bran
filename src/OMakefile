@@ -153,14 +153,9 @@ MENHIR_ENABLED = true
 
 FILES[] =
 	alpha
-	#asm
-	#ast
 	#beta
-	#binOp
-	#builtin
 	closure
 	config
-	#context
 	emit
 	env
 	erlang
@@ -182,7 +177,6 @@ FILES[] =
 	type
 	typing
 	version
-	#virtual
 	xstring
 
 PROGRAM = bran
