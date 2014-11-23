@@ -47,7 +47,7 @@ let rec occur x = (* occur check (caml2html: typing_occur) *)
 let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、メタ型変数への代入をする. 成功したら () を返す. (caml2html: typing_unify) *)
   Log.debug "# Typing.unify %s %s\n" (Type.string_of_t ty1) (Type.string_of_t ty2);
   let rec unify' t1 t2 =  
-(*    let _ = Log.debug "    Typing.unify' %s %s\n" (Type.string_of_t t1) (Type.string_of_t t2) in *)
+    Log.debug "#     Typing.unify' %s %s\n" (Type.string_of_t t1) (Type.string_of_t t2);
     match t1, t2 with
     | Type.App(Type.Unit, xs), Type.App(Type.Unit, ys) 
     | Type.App(Type.Bool, xs), Type.App(Type.Bool, ys) 
@@ -62,10 +62,14 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
     | Type.App(Type.TyFun(xs, u), ys), t2 -> unify' (subst env (M.add_list2 xs ys M.empty) u) t2
     | t1, Type.App(Type.TyFun(xs, u), ys) -> unify' t1 (subst env (M.add_list2 xs ys M.empty) u)
     | Type.App(Type.NameTycon(x, _), xs), Type.App(Type.NameTycon(y, _), ys) when x = y -> List.iter2 unify' xs ys
-    | Type.App(Type.NameTycon(x, { contents = None }), ys), t2 -> unify' (Type.App(M.find x tycons, ys)) t2
-    | t1, Type.App(Type.NameTycon(x, { contents = None }), ys) -> unify' t1 (Type.App(M.find x tycons, ys))
-    | Type.App(Type.NameTycon(x, { contents = Some(t1) }), xs), t2 -> unify' (Type.App(t1, xs)) t2
-    | t1, Type.App(Type.NameTycon(x, { contents = Some(t2) }), ys) -> unify' t1 (Type.App(t2, ys))
+    | Type.App(Type.NameTycon(x, { contents = None }), ys), t2 ->
+      unify' (Type.App(M.find x tycons, ys)) t2
+    | t1, Type.App(Type.NameTycon(x, { contents = None }), ys) ->
+      unify' t1 (Type.App(M.find x tycons, ys))
+    | Type.App(Type.NameTycon(x, { contents = Some(t1) }), xs), t2 ->
+      unify' (Type.App(t1, xs)) t2
+    | t1, Type.App(Type.NameTycon(x, { contents = Some(t2) }), ys) ->
+      unify' t1 (Type.App(t2, ys))
     | Type.Poly([], u1), t2 -> unify' u1 t2
     | t1, Type.Poly([], u2) -> unify' t1 u2
     | Type.Poly(xs, u1), Type.Poly(ys, u2) -> unify' u1 (subst env (M.add_list2 ys (List.map (fun x -> Type.Var(x)) xs) M.empty) u2)
@@ -95,7 +99,7 @@ let rec expand tenv =
   | t -> t
 *)      
 let generalize { Env.venv = venv; tycons = tycons } ty = 
-  Log.debug "Typing.generalize %s\n" (Type.string_of_t ty);
+  Log.debug "# Typing.generalize %s\n" (Type.string_of_t ty);
   let rec exists v = 
     function
     | Type.App(Type.NameTycon(_, { contents = Some(tycon) }), ts) -> exists v (Type.App(tycon, ts))
@@ -145,7 +149,7 @@ let instantiate env ty =
 (* for pretty printing (and type normalization) *)
 let rec deref_tycon ({ Env.tycons = tycons } as env) reached tycon =
   match tycon with
-  | Type.Int | Type.Bool | Type.String | Type.Unit | Type.Arrow | Type.Tuple as tycon -> tycon, reached
+  | Type.Int | Type.Bool | Type.String | Type.Unit | Type.Arrow | Type.Tuple | Type.Module _ as tycon -> tycon, reached
   | Type.Record(x, _) as tycon -> tycon, M.add x tycon reached
   | Type.Variant(x, _) when M.mem x reached -> 
       tycon, reached
@@ -162,8 +166,14 @@ let rec deref_tycon ({ Env.tycons = tycons } as env) reached tycon =
       tycon', reached
   | Type.NameTycon(x, { contents = Some(tycon) }) ->       
       tycon, M.add x tycon reached
-  | Type.NameTycon("int", { contents = None }) -> M.find "int" tycons, reached
-  | Type.NameTycon("bool", { contents = None }) -> M.find "bool" tycons, reached
+  | Type.NameTycon("int", { contents = None }) ->
+    M.find "int" tycons, reached
+  | Type.NameTycon("bool", { contents = None }) ->
+    M.find "bool" tycons, reached
+  | Type.NameTycon("string", { contents = None }) ->
+    M.find "string" tycons, reached
+  | Type.NameTycon("unit", { contents = None }) ->
+    M.find "unit" tycons, reached
   | Type.NameTycon(x, r) when M.mem x reached -> 
       let tycon = M.find x reached in 
       r := Some(tycon);
@@ -241,7 +251,7 @@ let rec deref_typed_expr ({ Env.venv = venv } as env) le =
   set le (deref_expr env e, deref_type env t)
 
 and deref_expr ({ Env.venv = venv } as env) = function
-  | Int _ | Bool _ | String _ | Unit | Var _ as e -> e
+  | Int _ | Bool _ | String _ | Unit | Var _ | Module _ as e -> e
   | Record(xes) -> Record(List.map (fun (x, e) -> x, deref_typed_expr env e) xes)
   | Field(e, x) -> Field(deref_typed_expr env e, x)
   | Tuple(es) -> Tuple(List.map (deref_typed_expr env) es)
@@ -277,7 +287,8 @@ let deref_def env def =
       | RecDef({ name = (x, ty_f); args = yts; body = et }) -> 
         RecDef({ name = (x, deref_type env ty_f); 
                  args = List.map (fun (y, t) -> y, deref_type env t) yts; 
-                 body = deref_typed_expr env et }))
+                 body = deref_typed_expr env et })
+      | _ -> assert false)
 
 let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p =
   Log.debug "Typing.pattern (%s)\n" (string_of_pattern p);
@@ -358,6 +369,16 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
           | t ->
             Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t);
             assert false
+        end
+      | Field ({ desc = (Module mx, _) }, x) ->
+        begin match Module.find_opt mx with
+        | None -> raise (Unbound_module_error (e.loc, mx))
+        | Some m ->
+          Log.debug "#   => module val %s.%s\n" mx x;
+          begin match Module.find_val_opt m x with
+          | None -> raise (Unbound_value_error (e.loc, Module.(m.name) ^ "." ^ x))
+          | Some t -> expr, t
+          end
         end
       | Field(et, x) ->
           let _, ty_rec' as et' = g env et in
@@ -464,7 +485,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
       | Var(x) when M.mem x venv -> 
           expr, instantiate env (M.find x venv) (* 変数の型推論 (caml2html: typing_var) *)
       | Var(x) ->
-        raise (Syntax.Unbound_error (e.loc, x))
+        raise (Syntax.Unbound_value_error (e.loc, x))
       | Constr(x, []) -> 
           expr, instantiate env (M.find x venv)
       | Constr(x, ets) -> 
@@ -482,6 +503,10 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
             Constr(x, ets'), (L.last ys)
           | t -> Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t); assert false
         end
+      | Module x when Module.mem x ->
+        expr, instantiate env (Type.App(Type.Module x, []))
+      | Module x ->
+        raise (Syntax.Unbound_module_error (e.loc, x))
       | LetRec({ name = (x, ty_f); args = yts; body = et1 }, et2) -> (* let recの型推論 (caml2html: typing_letrec) *)
           let t2 = Type.Meta(Type.newmetavar()) in
           let ty_f' = Type.App(Type.Arrow, ((List.map snd yts) @ [t2])) in
@@ -540,7 +565,9 @@ let f defs =
             { env with Env.venv = M.add x t'' venv }, 
             RecDef({ name = (x, t''); 
                      args = yts;
-                     body = set et et' }) in
+                     body = set et et' })
+        | _ -> assert false
+      in
       env', (set def def') :: defs) (!Env.empty, []) defs
   in
 

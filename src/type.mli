@@ -15,6 +15,7 @@ and tycon =
   | Variant of Id.t * constr list
   | TyFun of tyvar list * t
   | NameTycon of Id.t * tycon option ref
+  | Module of Id.t
 and tyvar = Id.t
 and metavar = Id.t
 and constr = Id.t * t list

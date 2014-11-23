@@ -56,7 +56,7 @@ let parse fpath =
   let inchan = open_in fpath in
   try
     let prog = Parser.prog Lexer.token (Lexing.from_channel inchan) in
-    Printf.printf "# %s\n" (String.concat ";\n " (List.map Syntax.string_of_def prog));
+    Log.debug "# %s\n" (String.concat ";\n " (List.map Syntax.string_of_def prog));
     prog
   with
   | Syntax.Syntax_error loc -> raise (Error (loc, "Syntax error"))
@@ -66,7 +66,10 @@ let typing prog =
   try
     Typing.f prog
   with
-  | Syntax.Unbound_error (loc, x) -> raise (Error (loc, "Unbound value `" ^ x ^ "'"))
+  | Syntax.Unbound_value_error (loc, x) ->
+    raise (Error (loc, "Unbound value `" ^ x ^ "'"))
+  | Syntax.Unbound_module_error (loc, x) ->
+    raise (Error (loc, "Unbound module `" ^ x ^ "'"))
   | Typing.Error (e, t1, t2) ->
     raise (Error (e.loc,
                   Printf.sprintf "Type mismatch: actual %s, expected %s"
@@ -198,26 +201,11 @@ let compile fpath =
     | Lexer.Error (loc, msg) -> err loc msg
     | Type.Parse_error (loc, msg) -> err loc msg
     | e -> raise e
+ *)
 
 let load_sig fpath = 
   Log.verbose "# loading signature file \"%s\"...\n" fpath;
-  let inchan = open_in fpath in
-  let err loc msg =
-    close_in inchan;
-    print_error fpath loc;
-    Printf.printf "Error: %s\n" msg;
-    raise Error
-  in
-  try
-    let (t, _) = parse (Lexing.from_channel inchan) in
-    close_in inchan
-    (*Sig.load (String.capitalize & modname fpath) t*)
-  with
-    | Lexer.Error (loc, msg) -> err loc msg
-    | Type.Parse_error (loc, msg) -> err loc msg
-    (*| Sig.Error (loc, msg) -> err loc msg*)
-    | e -> raise e
- *)
+  Sig.load (String.capitalize & modname fpath) & parse fpath
 
 (* entry point *)
 let () =
@@ -245,10 +233,14 @@ let () =
          (*Builtin.init ();*)
          match Xfilename.split_extension fpath with
          | (_, ".br") -> parse_test fpath (*ignore (compile f)*)
-         | (_, ".bri") -> () (*ignore (load_sig f)*)
+         | (_, ".bri") -> ignore (load_sig fpath)
          | (_, ext) -> Log.error "Unknown file extension %s\n" ext
        with
        | Error (loc, msg) ->
+         print_error fpath loc;
+         Log.error "%s\n" msg;
+         exit 1
+       | Sig.Error (loc, msg) ->
          print_error fpath loc;
          Log.error "%s\n" msg;
          exit 1

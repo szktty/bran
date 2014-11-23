@@ -15,6 +15,7 @@ let rec h ids (e, t) =
     | String s -> String s
     | Record(xes) -> Record(List.map (fun (x, e) -> find x ids, (h ids e)) xes)
     | Field(e, x) -> Field(h ids e, find x ids)
+    | Module x -> Module x
     | Tuple(es) -> Tuple(List.map (h ids) es)
     | Var(x) -> Var(find x ids)
     | Concat(e1, e2) -> Concat(h ids e1, h ids e2)

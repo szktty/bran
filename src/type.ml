@@ -15,6 +15,7 @@ and tycon =
   | Variant of Id.t * constr list (* 最初のId.tは型名。理由は同上 *)
   | TyFun of tyvar list * t
   | NameTycon of Id.t * tycon option ref 
+  | Module of Id.t
 and tyvar = Id.t
 and metavar = Id.t
 and constr = Id.t * t list
@@ -43,6 +44,7 @@ and string_of_tycon reached =
   | String -> "String"
   | Arrow -> "Arrow"
   | Tuple -> "Tuple"
+  | Module x -> "Module(" ^ x ^ ")"
   | Record(x, fs) -> "Record(" ^ x ^ ", {" ^ (String.concat ", " fs) ^ "})"
   | Variant(x, constrs) when S.mem x reached -> "Variant(" ^ x ^ ")"
   | Variant(x, constrs) -> "Variant(" ^ x ^ ", " ^ (String.concat " | " (List.map (string_of_constr (S.add x reached)) constrs)) ^ ")"
@@ -76,6 +78,7 @@ and prefix_of_tycon =
   | String -> "s"
   | Arrow -> "pfn"
   | Tuple -> "t"
+  | Module _ -> "m"
   | Record _ -> "st"
   | Variant _ -> "v"
   | TyFun(_, t) -> prefix t
@@ -90,6 +93,7 @@ let rec ocaml_of =
   | App(Int, []) -> "int"
   | App(Arrow, xs) -> String.concat " -> " (List.map ocaml_of xs)
   | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map ocaml_of xs)) ^ ")"
+  | App(Module x, []) -> "module type " ^ x
   | App(Record(_, xs), ys) -> 
       "{" ^ (String.concat ";" 
                (List.map (fun (x, y) -> x ^ " = " ^ (ocaml_of y)) (List.combine xs ys))) ^ "}"
@@ -148,11 +152,12 @@ let rec name t =
   | App(String, []) -> "string"
   | App(Arrow, ts) -> "fun_of_" ^ (String.concat "_" (List.map name ts))
   | App(Tuple, ts) -> "tuple_of_" ^ (String.concat "_" (List.map name ts))
+  | App(Module x, []) -> x
   | App(Record(x, _), _) -> x
   | App(Variant(x, _), _) -> x
   | Field(_, t) -> name t
   | App(TyFun([], t), []) -> name t
-  | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _) | App(String, _) | App(TyFun _, _) -> assert false (* impossible *)
+  | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _) | App(String, _) | App(TyFun _, _) | App(Module _, _) -> assert false (* impossible *)
   | App(NameTycon(x, _), _) -> x
 
 let app_unit = App (Unit, [])

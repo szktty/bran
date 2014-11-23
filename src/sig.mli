@@ -2,4 +2,4 @@
 
 exception Error of Location.t * string
 
-val load : string -> Ast.t -> unit
+val load : Id.t -> Syntax.def list -> unit

@@ -1,18 +1,20 @@
 exception Error of Location.t * string
 
-let rec parse e accu =
-  let open AstTypes in
-  match Ast.desc e with
-  | Nop | Unit -> accu
-  | Let (_, e1, e2) -> parse e1 (parse e2 accu)
-  | SigDef (x, f) ->
-    Log.debug "# val %s : %s\n" x (Fun.to_string f);
-    (x, f) :: accu
-  | _ ->
-    Log.debug "sig error: %s\n" (Ast.to_string e);
-    raise (Error (Ast.loc e, "signature definition only at .bri file"))
+let parse defs =
+  let open Syntax in
+  let open Locating in
+  let parse' (typs, vals) def =
+    match def.desc with
+    | SigDef { sig_name = (x, t) } ->
+      Log.debug "# val %s : %s\n" x (Type.string_of_t t);
+      (typs, (x, t) :: vals)
+    | _ ->
+      raise (Error (def.loc, "Signature definition only at .bri file"))
+  in
+  List.fold_left parse' ([], []) defs
 
-let load name e =
+let load name defs =
   Log.verbose "# begin loading module %s\n" name;
-  Context.add_module (Module.create name (parse e []));
+  let (typs, vals) = parse defs in
+  Module.register { Module.name; typs; vals };
   Log.verbose "# end loading module %s\n" name;

@@ -1,11 +1,14 @@
-type t = Type.module_
+type t = {
+  name : Id.t;
+  typs : (Id.t * Type.tycon) list;
+  vals : (Id.t * Type.t) list;
+}
 
-val create : ?erl:string -> string -> (string * Fun.t) list -> t
+val modules : t list ref
+val register : t -> unit
+val mem : Id.t -> bool
+val find_opt : Id.t -> t option
+val find : Id.t -> t
 
-val of_typ : Type.t -> t
-
-val find_opt : t -> string -> Fun.t option
-val find : t -> string -> Fun.t
-                            
-val add_fun : t -> string -> Fun.t -> unit
-val fun_typs : t -> (string * Type.t) list
+val find_typ_opt : t -> Id.t -> Type.tycon option
+val find_val_opt : t -> Id.t -> Type.t option

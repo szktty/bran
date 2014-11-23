@@ -16,6 +16,7 @@ and expr =
   | String of string
   | Record of (Id.t * et) list
   | Field of et * Id.t
+  | Module of Id.t
   | Tuple of et list
   | Not of et
   | And of et * et
@@ -69,6 +70,7 @@ and string_of_expr =
   | String(s) -> "\"" ^ s ^ "\""
   | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
   | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
+  | Module x -> "module type " ^ x
   | Tuple(es) -> "(" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
   | Not(e) -> "not " ^ (string_of_typed_expr e)
   | And(e1, e2) -> (string_of_typed_expr e1) ^ " && " ^ (string_of_typed_expr e2)
@@ -117,7 +119,7 @@ let rec vars_of_pattern =
       
 let rec fv_of_expr (e, _) = 
   match e with
-  | Bool(_) | Int(_) | String _ -> S.empty
+  | Bool(_) | Int(_) | String _ | Module _ -> S.empty
   | Record(xes) -> List.fold_left (fun s (_, e) -> S.union s (fv_of_expr e)) S.empty xes
   | Field(e, _) -> fv_of_expr e
   | Tuple(es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
@@ -188,6 +190,7 @@ let rec h env known (expr, ty) =
     | KNormal.String s -> String s
     | KNormal.Record(xes) -> Record(List.map (fun (x, e) -> x, h env known e) xes)
     | KNormal.Field(e, x) -> Field(h env known e, x)
+    | KNormal.Module x -> Module x
     | KNormal.Tuple(es) -> Tuple(List.map (h env known) es)
     | KNormal.Not(e) -> Not(h env known e)
     | KNormal.Neg(e) -> Neg(h env known e)

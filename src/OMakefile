@@ -173,11 +173,11 @@ FILES[] =
 	log
 	m
 	main
-	#module
+	module
 	parser
 	position
 	s
-	#sig
+	sig
 	syntax
 	type
 	typing

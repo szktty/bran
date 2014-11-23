@@ -132,7 +132,7 @@ definitions:
     | (* empty *)
       { [] }
     | rev_definitions
-      { List.rev $1 }
+      { List.rev & List.filter (fun def -> def.desc <> Nop) $1 }
 
 rev_definitions:
     | definition
@@ -151,42 +151,58 @@ definition:
     { create $1 (RecDef $3) }
 | TYPE typedef    
     { create $1 $2 }
+| DEF sigdef
+    { create $1 (SigDef $2) }
+| EXTERNAL ext_sigdef
+    { create $1 (SigDef $2) }
 | NL
-    { create $1 (VarDef((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), create $1 (Unit, Type.App(Type.Unit, [])))) }
+    { create $1 Nop }
 | error
     { raise (Syntax_error (Location.create
                              (Position.of_lexing_pos $startpos)
                              (Position.of_lexing_pos $endpos))) }
 
 simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2html: parser_simple) */
-| LPAREN expr RPAREN
-    { $2 }
-| BEGIN expr END
-    { $2 }
-| LPAREN block RPAREN
-    { $2 }
-| BEGIN block END
-    { $2 }
-| LPAREN RPAREN
-    { range $1 $2 (add_type Unit) }
-| BEGIN END
-    { range $1 $2 (add_type Unit) }
-| BOOL
-    { create $1.loc (add_type (Bool $1.desc)) }
-| INT
-    { create $1.loc (add_type (Int $1.desc)) }
-| STRING
-    { create $1.loc (add_type (String $1.desc)) }
-| IDENT
-    { create $1.loc (add_type (Var $1.desc)) }
-| UIDENT
-    { create $1.loc (add_type (Constr($1.desc, []))) }
-| simple_expr DOT IDENT
-    { range $1.loc $3.loc (add_type (Field($1, $3.desc))) }
-| LBRACK list RBRACK
-    { List.fold_right (fun x xs ->
-        create x.loc (add_type (Constr("Cons", [x; xs]))))
-        $2 (create $3 (add_type (Constr("Nil", [])))) }
+    | primary { $1 }
+    | field_expr { $1 }
+    | simple_constr { $1 }
+
+primary:
+    | LPAREN expr RPAREN
+      { $2 }
+    | BEGIN expr END
+      { $2 }
+    | LPAREN block RPAREN
+      { $2 }
+    | BEGIN block END
+      { $2 }
+    | LPAREN RPAREN
+      { range $1 $2 (add_type Unit) }
+    | BEGIN END
+      { range $1 $2 (add_type Unit) }
+    | BOOL
+      { create $1.loc (add_type (Bool $1.desc)) }
+    | INT
+      { create $1.loc (add_type (Int $1.desc)) }
+    | STRING
+      { create $1.loc (add_type (String $1.desc)) }
+    | IDENT
+      { create $1.loc (add_type (Var $1.desc)) }
+    | LBRACK list RBRACK
+      { List.fold_right (fun x xs ->
+            create x.loc (add_type (Constr("Cons", [x; xs]))))
+            $2 (create $3 (add_type (Constr("Nil", [])))) }
+    
+field_expr:
+    | primary DOT IDENT
+      { range $1.loc $3.loc (add_type (Field($1, $3.desc))) }
+    | UIDENT DOT IDENT
+      { let m = create $1.loc (add_type (Module $1.desc)) in
+        range $1.loc $3.loc (add_type (Field(m, $3.desc))) }
+
+simple_constr:
+    | UIDENT
+      { create $1.loc (add_type (Constr($1.desc, []))) }
 
 expr: /* 一般の式 (caml2html: parser_expr) */
 | simple_expr
@@ -419,15 +435,28 @@ type_params_tail:
     { [] }
 | COMMA type_param type_params_tail
     { $2 :: $3 }
-;
+
 type_expr:
-| IDENT
-    { Type.App(Type.NameTycon($1.desc, ref None), []) }
-| QUATE IDENT
-    { Type.Var($2.desc) }
-| type_expr IDENT
-    { Type.App(Type.NameTycon($2.desc, ref None), [$1]) }
-;
+    | rev_type_expr
+      { match $1 with
+        | [e] -> e
+        | es -> Type.App (Type.Arrow, List.rev es)
+      }
+
+rev_type_expr:
+    | type_expr_elt
+      { [$1] }
+    | rev_type_expr RARROW type_expr_elt
+      { $3 :: $1 }
+
+type_expr_elt:
+    | IDENT
+      { Type.App(Type.NameTycon($1.desc, ref None), []) }
+    | QUATE IDENT
+      { Type.Var($2.desc) }
+    | type_expr_elt IDENT
+      { Type.App(Type.NameTycon($2.desc, ref None), [$1]) }
+
 field_decls:
 | field_decl field_decls_tail
     { $1 :: $2 }
@@ -492,4 +521,10 @@ tail_pattern:
 | SEMI pattern tail_pattern
     { $2 :: $3 }
     
-    
+sigdef:
+    | IDENT COLON type_expr
+      { { sig_name = ($1.desc, $3); sig_ext = None } }
+
+ext_sigdef:
+    | sigdef EQUAL nl_opt STRING
+      { { $1 with sig_ext = Some $4.desc } }

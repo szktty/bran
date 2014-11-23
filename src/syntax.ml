@@ -1,5 +1,6 @@
 exception Syntax_error of Location.t
-exception Unbound_error of Location.t * Id.t
+exception Unbound_value_error of Location.t * Id.t
+exception Unbound_module_error of Location.t * Id.t
 
 type t = (expr * Type.t) Locating.t
 and expr = 
@@ -26,6 +27,7 @@ and expr =
   | Var of Id.t
   | Concat of t * t
   | Constr of Id.t * t list
+  | Module of Id.t
   | LetRec of fundef * t
   | App of t * t list
 and pattern = pattern_desc Locating.t
@@ -38,11 +40,17 @@ and pattern_desc =
   | PtRecord of (Id.t * pattern) list
   | PtConstr of Id.t * pattern list
 and fundef = { name : Id.t * Type.t; args : (Id.t * Type.t) list; body : t }
+and sigdef = {
+  sig_name : Id.t * Type.t;
+  sig_ext : string option;
+}
 and def = def_desc Locating.t
 and def_desc =
+  | Nop
   | TypeDef of Id.t * Type.tycon
   | VarDef of (Id.t * Type.t) * t
   | RecDef of fundef
+  | SigDef of sigdef
 
 let rec string_of_pattern { Locating.desc = p } =
   match p with
@@ -82,17 +90,26 @@ and string_of_expr =
   | Var(x) -> "Var(" ^ x ^ ")"
   | Concat (e1, e2) -> "Concat(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2) ^ ")"
   | Constr(x, es) -> "Constr(" ^ x ^ ", " ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
+  | Module x -> "Module(" ^ x ^ ")"
   | LetRec({ name = (x, t); args = yts; body = e1 }, e2) -> "LetRec(" ^ x ^ "(" ^ (String.concat ", " (List.map (fun (y, t) -> y ^ " : " ^ (Type.string_of_t t)) yts)) ^ ") : " ^ (Type.string_of_t t) ^ " = " ^ (string_of_typed_expr e1) ^ " in " ^ (string_of_typed_expr e2) ^ ")"
   | App(e, es) -> "App(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ "])"
 
 let string_of_fundef { name = (x, t); args = yts; body = e } =
   x ^ " " ^ (String.concat " " (List.map (fun (y, t) -> y) yts)) ^ " : " ^ (Type.string_of_t t) ^ " = " ^ (string_of_typed_expr e) 
 
+let string_of_sigdef { sig_name = (x, t); sig_ext = ext } =
+  let typ = Type.string_of_t t in
+  match ext with
+  | None -> Printf.sprintf "%s : %s" x typ
+  | Some f -> Printf.sprintf "external %s : %s = %s" x typ f
+
 let string_of_def { Locating.desc = def } =
   match def with
+  | Nop -> "Nop"
   | TypeDef(x, t) -> "TypeDef(" ^ x ^ ", " ^ (Type.string_of_tycon t) ^ ")"
   | VarDef((x, t), e) -> "VarDef((" ^ x ^ ", " ^ (Type.string_of_t t) ^ "), " ^ (string_of_typed_expr e)
   | RecDef(fundef) -> "RecDef(" ^ (string_of_fundef fundef) ^ ")"
+  | SigDef(sigdef) -> "SigDef(" ^ (string_of_sigdef sigdef) ^ ")"
 
 let fold f defs =
   let _, defs' = 
@@ -108,6 +125,7 @@ let fold f defs =
             Env.add_var env x t, f (env, defs) def
         | RecDef({ name = (x, ty_f); args = yts; body = e }) -> 
             let env' = { env with Env.venv = M.add_list yts (M.add x ty_f venv) } in
-            { env with Env.venv = M.add x ty_f venv }, f (env', defs) def)
+            { env with Env.venv = M.add x ty_f venv }, f (env', defs) def
+        | _ -> assert false)
       (!Env.empty, []) defs in
   List.rev defs'

@@ -20,6 +20,7 @@ and expr =
   | String of string
   | Record of (Id.t * et) list
   | Field of et * Id.t
+  | Module of Id.t
   | Tuple of et list
   | Not of et
   | And of et * et
@@ -69,6 +70,7 @@ and string_of_expr =
   | String s -> "\"" ^ s ^ "\""
   | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
   | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
+  | Module x -> "module type " ^ x
   | Tuple(es) -> "(" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
   | Not(e) -> "not " ^ (string_of_typed_expr e)
   | And(e1, e2) -> (string_of_typed_expr e1) ^ " && " ^ (string_of_typed_expr e2)
@@ -152,6 +154,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* Kæ­£è
       insert_lets (List.map snd xes)
         (fun ets' -> Exp(Record(List.combine (List.map fst xes) ets'), t))
     | Syntax.Field(e, x) -> insert_let (g env e) (fun e' -> Exp(Field(e', x), t))
+    | Syntax.Module x -> Exp(Module x, t)
     | Syntax.Tuple(es) -> insert_lets es (fun es' -> Exp(Tuple(es'), t))
     | Syntax.Not(e) -> insert_let (g env e) (fun e' -> Exp(Not(e'), t))
     | Syntax.And(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(And(e1', e2'), t))
@@ -240,5 +243,5 @@ let f =
     | Syntax.TypeDef(x, t) -> TypeDef(x, t) :: defs
     | Syntax.VarDef((x, t), e) -> VarDef((x, t), f' env e) :: defs
     | Syntax.RecDef({ Syntax.name = (x, t); args = yts; body = e }) -> 
-        RecDef({ name = (x, t); args = yts; body = f' env e }) :: defs)
-    
+        RecDef({ name = (x, t); args = yts; body = f' env e }) :: defs
+    | _ -> assert false)

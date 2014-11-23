@@ -16,6 +16,7 @@ and expr =
   | String of string
   | Record of (Id.t * et) list
   | Field of et * Id.t
+  | Module of Id.t
   | Tuple of et list
   | Not of et
   | And of et * et
