@@ -49,7 +49,7 @@ let print_error fpath loc =
       fpath start_line start_col end_col
   else
     Printf.printf "File \"%s\", between line and characters %d:%d-%d:%d:\n"
-      fpath start_line end_line start_col end_col
+      fpath start_line start_col end_line end_col
 
 let parse fpath =
   Log.verbose "# parsing\n";
