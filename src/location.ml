@@ -31,3 +31,8 @@ let contains_pos loc (pos : Position.t) =
 
 let contains_offset loc offset =
   loc.start.offset <= offset && offset < loc.end_.offset
+
+let to_string loc =
+  Printf.sprintf "%d:%d(%d)-%d:%d(%d)"
+    loc.start.line loc.start.col loc.start.offset
+    loc.end_.line loc.end_.col loc.end_.offset
