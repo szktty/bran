@@ -1,4 +1,5 @@
 exception Syntax_error of Location.t
+exception Unbound_error of Location.t * Id.t
 
 type t = (expr * Type.t) Locating.t
 and expr =

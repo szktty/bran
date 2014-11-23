@@ -251,7 +251,6 @@ let rec g venv known (expr, ty) = (* クロージャ変換ルーチン本体 (ca
   (expr', ty)
     
 let f' { Env.venv = venv } e = 
-  let venv = M.union venv !Env.extenv.Env.venv in
   let known = M.fold (fun x _ known -> S.add x known) venv S.empty in
   g venv known e
 

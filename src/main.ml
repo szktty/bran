@@ -66,6 +66,7 @@ let typing prog =
   try
     Typing.f prog
   with
+  | Syntax.Unbound_error (loc, x) -> raise (Error (loc, "Unbound value `" ^ x ^ "'"))
   | Typing.Error (e, t1, t2) ->
     raise (Error (e.loc,
                   Printf.sprintf "Type mismatch: actual %s, expected %s"

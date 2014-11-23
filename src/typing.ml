@@ -463,13 +463,8 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
           LetVar((x, t1'), set et1 (e1', t1'), set et2 (e2', t2')), t2'
       | Var(x) when M.mem x venv -> 
           expr, instantiate env (M.find x venv) (* 変数の型推論 (caml2html: typing_var) *)
-      | Var(x) when M.mem x !Env.extenv.Env.venv -> 
-          expr, instantiate env (M.find x !Env.extenv.Env.venv)
-      | Var(x) -> (* 外部変数の型推論 (caml2html: typing_extvar) *)
-          Format.eprintf "free variable %s assumed as external@." x;
-          let t = Type.Meta(Type.newmetavar ()) in
-          Env.extenv := { !Env.extenv with Env.venv = M.add x t !Env.extenv.Env.venv };
-          expr, instantiate env t
+      | Var(x) ->
+        raise (Syntax.Unbound_error (e.loc, x))
       | Constr(x, []) -> 
           expr, instantiate env (M.find x venv)
       | Constr(x, ets) -> 
@@ -554,6 +549,5 @@ let f defs =
   Env.empty := { Env.venv = M.map (deref_type env) venv;
                  Env.tenv = M.map (deref_type env) tenv; 
                  Env.tycons = M.map (deref_tycon env) tycons; };
-  Env.extenv := { !Env.extenv with Env.venv = M.map (deref_type env) !Env.extenv.Env.venv };
 
   fold (fun (env, defs) def -> deref_def env def :: defs) (List.rev defs')
