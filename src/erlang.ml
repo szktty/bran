@@ -63,6 +63,7 @@ let false_atom = Atom "false"
 let ok_atom = Atom "ok"
 
 let rec gen_exp (e, t) =
+  Log.debug "# Erlang.gen_exp %s\n" (Closure.string_of_expr e);
   match e with
   | Closure.Bool true -> true_atom
   | Closure.Bool false -> false_atom
@@ -84,12 +85,26 @@ let rec gen_exp (e, t) =
   | Closure.AppDir (x, ets) -> AppDir (x, List.map gen_exp ets)
   | _ -> ok_atom
 
-let rec gen_term (term, t) =
+let rec gen_ptn (ptn, term) =
+  match ptn with
+  | _ -> (PtAtom "ok", gen_term term)
+                        (*
+  | Closure.PtBool of bool
+  | Closure.PtInt of int
+  | Closure.PtVar of Id.t * Type.t
+  | Closure.PtTuple of pattern list
+  | Closure.PtRecord of (Id.t * pattern) list
+  | Closure.PtConstr of Id.t * pattern list
+                         *)
+
+and gen_term (term, t) =
+  Log.debug "# Erlang.gen_term %s\n" (Closure.string_of_term term);
   match term with
   | Closure.Unit -> ok_atom
   | Closure.Exp e -> gen_exp e
   | Closure.If (e, tr1, tr2) ->
     If [(gen_exp e, gen_term tr1); (true_atom, gen_term tr2)]
+  | Closure.Match (x, pts) -> Match (x, List.map gen_ptn pts)
   | _ -> ok_atom
 
 let gen_def = function

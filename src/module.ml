@@ -2,6 +2,7 @@ type t = {
   name : Id.t;
   typs : (Id.t * Type.tycon) list;
   vals : (Id.t * Type.t) list;
+  exts : (Id.t * string) list;
 }
 
 let modules = ref []
@@ -26,3 +27,14 @@ let find_typ_opt m x =
 let find_val_opt m x =
   Spotlib.Xlist.find_map_opt
     (fun (ex, et) -> if x = ex then Some et else None) m.vals
+
+let find_val m x =
+  match find_val_opt m x with
+  | None -> raise Not_found
+  | Some t -> t
+
+let find_ext_opt m x =
+  Spotlib.Xlist.find_map_opt
+    (fun (ex, et) -> if x = ex then Some et else None) m.exts
+
+let erl_name m = String.uncapitalize m.name

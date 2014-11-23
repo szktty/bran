@@ -206,8 +206,18 @@ let rec h env known (expr, ty) =
     | KNormal.Var(x) -> Var(x)
     | KNormal.Constr(x, es) -> Constr(x, List.map (h env known) es)
     | KNormal.App((KNormal.Var(x), ft), ys) when S.mem x known -> (* 関数適用の場合 (caml2html: closure_app) *)
-        Log.debug "directly applying %s@." x;
+        Log.debug "directly applying %s\n" x;
         AppDir(Id.L(x), List.map (h env known) ys)
+    | KNormal.App((KNormal.Field ((Module mx, _), fx), ft), es) ->
+      Log.debug "# directly applying %s.%s\n" mx fx;
+      let m = Module.find mx in
+      let fx' =
+        match Module.find_ext_opt m fx with
+        | Some x -> x
+        | None -> Module.erl_name m ^ ":" ^ fx
+      in
+      Log.debug "#    -> %s\n" fx';
+      AppDir(Id.L(fx'), List.map (h env known) es)
     | KNormal.App(e, es) -> 
         AppCls(h env known e, List.map (h env known) es)
     | KNormal.ExtFunApp(x, ys) -> 

@@ -44,6 +44,13 @@ let rec gen_exp oc = function
         bprintf oc " -> ";
         gen_exp oc e2) ptns;
     bprintf oc " end"
+  | Match (x, pts) ->
+    bprintf oc "case %s of " (gen_var x);
+    iter_with_sep oc "; " (fun (p, t) ->
+        gen_ptn oc p;
+        bprintf oc " -> ";
+        gen_exp oc t) pts;
+    bprintf oc " end"
   | _ -> bprintf oc "ok"
 
 and gen_prefix_exp oc op e =
@@ -57,6 +64,14 @@ and gen_bin_exp oc e1 op e2 =
     bprintf oc " %s " op;
     gen_exp oc e2;
     bprintf oc ")"
+
+and gen_ptn oc = function
+  | PtAtom s -> bprintf oc "'%s'" s
+  | PtBool v -> bprintf oc "%s" (string_of_bool v)
+  | PtInt v -> bprintf oc "%d" v
+  | PtString s -> bprintf oc "\"%s\"" s
+  | PtVar x -> bprintf oc "%s" x
+  | _ -> assert false (* TODO *)
 
 let gen_def oc = function
   | FunDef { name = (Id.L x, _); args = args; body = body } ->
