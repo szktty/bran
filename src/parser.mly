@@ -1,5 +1,6 @@
 %{
 (* parserが利用する変数、関数、型などの定義 *)
+open Spotlib.Base
 open Syntax
 open Locating
 
@@ -16,15 +17,16 @@ let constr_pattern_args = function
 let range_from_list es desc =
   range (List.hd es).loc (Spotlib.Xlist.last es).loc desc
 
-let rev_combine = function
+let combine e1 e2 =
+  (add_type
+     (LetVar((Id.gentmp (Type.prefix Type.app_unit),
+              Type.app_unit), e1, e2)))
+
+let rev_combine_list = function
   | [] -> create Location.zero (Unit, Type.app_unit)
   | init :: stmts ->
-    List.fold_left (fun s1 s2 ->
-        range s2.loc s1.loc
-          (add_type
-             (LetVar((Id.gentmp (Type.prefix Type.app_unit),
-                      Type.app_unit), s2, s1))))
-    init stmts
+    List.fold_left (fun s1 s2 -> range s2.loc s1.loc & combine s2 s1)
+      init stmts
 
 %}
 
@@ -100,7 +102,7 @@ let rev_combine = function
 /* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) */
 %right prec_stmt
 %right SEMI NL
-%nonassoc tuple_ tuple_guard
+%nonassoc prec_tuple prec_tuple_pattern
 %left COMMA
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %right LAND
@@ -114,6 +116,7 @@ let rev_combine = function
 %nonassoc guard
 %nonassoc PIPE
 %nonassoc UIDENT LPAREN LBRACK INT IDENT BOOL STRING BEGIN RPAREN END
+%left LBRACE
 
 /* 開始記号の定義 */
 %type <Syntax.def list> prog
@@ -223,8 +226,8 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1.loc $3.loc (add_type (LE($1, $3))) }
 | expr GREATER_EQUAL expr
     { range $1.loc $3.loc (add_type (LE($3, $1))) }
-| tuple %prec tuple_
-    { range_from_list $1 (add_type (Tuple (List.rev $1))) }
+| tuple
+    { range_from_list $1 (add_type (Tuple $1)) }
 | if_exp { $1 }
 | expr actual_args
     %prec prec_app
@@ -253,7 +256,7 @@ nl:
     | nl NL {}
 
 block:
-    | rev_stmts %prec prec_stmt { rev_combine $1 }
+    | rev_stmts %prec prec_stmt { rev_combine_list $1 }
 
 rev_stmts:
     | stmt { [$1] }
@@ -271,23 +274,36 @@ term:
     | NL {}
 
 tuple:
-| tuple COMMA expr
-    { $3 :: $1 }
-| expr COMMA expr
-    { [$3; $1] }
-;
+    | rev_tuple %prec prec_tuple
+      { List.rev $1 }
+
+rev_tuple:
+    | rev_tuple COMMA expr
+      { $3 :: $1 }
+    | expr COMMA expr
+      { [$3; $1] }
 
 fundef:
-| IDENT formal_args EQUAL nl_opt block
-    { { name = add_type $1.desc; args = $2; body = $5 } }
+    | IDENT rev_formal_args EQUAL nl_opt block
+      (* convert argument patterns to pattern matching *)
+      { let (_, args, body) = List.fold_left
+          (fun (i, args, e1) (ptn, t) ->
+             let x = ("_t" ^ string_of_int i) in
+             let e2 = add_type & Match ((create ptn.loc (Var x, t)), [(ptn, e1)]) in
+             (i + 1, (x, t) :: args, range ptn.loc e1.loc e2)
+          ) (0, [], $5) $2
+        in
+        { name = add_type $1.desc; args = args; body = body } }
 ;
 
-formal_args:
-| IDENT formal_args
-    { add_type $1.desc :: $2 }
-| IDENT
-    { [add_type $1.desc] }
-;
+rev_formal_args:
+    | formal_arg
+      { [add_type $1.desc] }
+    | rev_formal_args formal_arg
+      { add_type $2.desc :: $1 }
+
+formal_arg:
+    | pattern { create Location.zero $1 (* TODO: location *) }
 
 actual_args:
 | actual_args simple_expr
@@ -338,10 +354,10 @@ pattern:
 (* TODO: FLOAT *)
 | IDENT
     { create $1.loc (PtVar($1.desc, Type.Meta(Type.newmetavar ()))) }
-| tuple_pattern %prec tuple_guard
-    { range (List.hd $1).loc (Spotlib.Xlist.last $1).loc (PtTuple(List.rev $1)) }
+| tuple_pattern
+    { range (List.hd $1).loc (Spotlib.Xlist.last $1).loc (PtTuple $1) }
 | LBRACE field_patterns RBRACE
-    { range $1 $3 (PtRecord(List.rev $2)) }
+    { range $1 $3 (PtRecord $2) }
 | UIDENT 
     { create $1.loc (PtConstr($1.desc, [])) }
 | UIDENT pattern
@@ -355,18 +371,23 @@ pattern:
 ;
 
 tuple_pattern:
-| tuple_pattern COMMA pattern
-    { $3 :: $1 }
-| pattern COMMA pattern
-    { [$3; $1] }
-;
+    | rev_tuple_pattern %prec prec_tuple_pattern
+      { List.rev $1 }
+
+rev_tuple_pattern:
+    | rev_tuple_pattern COMMA pattern
+      { $3 :: $1 }
+    | pattern COMMA pattern
+      { [$3; $1] }
 
 field_patterns:
-| field_patterns SEMI field_pattern
-    { $3 :: $1 }
-| field_pattern SEMI field_pattern
-    { [$3; $1] }
-;
+    | rev_field_patterns { List.rev $1 }
+
+rev_field_patterns:
+    | rev_field_patterns SEMI field_pattern
+      { $3 :: $1 }
+    | field_pattern SEMI field_pattern
+      { [$3; $1] }
 
 field_pattern:
 | IDENT EQUAL pattern
