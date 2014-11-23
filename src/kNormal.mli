@@ -32,6 +32,7 @@ and expr =
   | App of et * et list
   | ExtFunApp of Id.t * et list
 and pattern =
+  | PtUnit
   | PtBool of bool
   | PtInt of int
   | PtVar of Id.t * Type.t

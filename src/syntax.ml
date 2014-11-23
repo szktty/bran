@@ -29,6 +29,7 @@ and expr =
   | App of t * t list
 and pattern = pattern_desc Locating.t
 and pattern_desc =
+  | PtUnit
   | PtBool of bool
   | PtInt of int
   | PtVar of Id.t * Type.t
@@ -44,6 +45,7 @@ and def_desc =
 
 let rec string_of_pattern { Locating.desc = p } =
   match p with
+  | PtUnit -> "PtUnit"
   | PtBool(b) -> "PtBool(" ^ (string_of_bool b) ^ ")"
   | PtInt(n) -> "PtInt(" ^ (string_of_int n) ^ ")"
   | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.string_of_t t) ^ ")"

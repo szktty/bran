@@ -347,6 +347,8 @@ pattern:
     { $2 }
 | BEGIN pattern END
     { $2 }
+| LPAREN RPAREN
+    { range $1 $2 PtUnit }
 | BOOL
     { create $1.loc (PtBool $1.desc) }
 | INT

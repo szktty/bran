@@ -29,7 +29,8 @@ and expr =
   | App of t * t list
 and pattern = pattern_desc Locating.t
 and pattern_desc =
-    PtBool of bool
+  | PtUnit
+  | PtBool of bool
   | PtInt of int
   | PtVar of Id.t * Type.t
   | PtTuple of pattern list

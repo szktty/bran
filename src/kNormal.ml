@@ -37,6 +37,7 @@ and expr =
   | App of et * et list
   | ExtFunApp of Id.t * et list
 and pattern =
+  | PtUnit
   | PtBool of bool
   | PtInt of int
   | PtVar of Id.t * Type.t
@@ -51,6 +52,7 @@ and def =
 
 let rec ocaml_of_pattern =
   function
+  | PtUnit -> "()"
   | PtBool(b) -> string_of_bool b
   | PtInt(n) -> string_of_int n
   | PtVar(x, t) -> x
@@ -111,6 +113,7 @@ let rec insert_let (e, t) k = (* letを挿入する補助関数 (caml2html: knor
 let rec pattern env p = 
   let () = Log.debug "KNormal.pattern %s\n" (Syntax.string_of_pattern p) in
   match p.desc with
+  | Syntax.PtUnit -> env, PtUnit
   | Syntax.PtBool(b) -> env, (PtBool(b))
   | Syntax.PtInt(n) -> env, (PtInt(n))
   | Syntax.PtVar(x, t) -> Env.add_var env x t, (PtVar(x, t))

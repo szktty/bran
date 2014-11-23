@@ -33,6 +33,7 @@ and expr =
   | AppCls of et * et list
   | AppDir of Id.l * et list
 and pattern =
+  | PtUnit
   | PtBool of bool
   | PtInt of int
   | PtVar of Id.t * Type.t
@@ -51,6 +52,7 @@ type prog = Prog of def list
 
 let rec string_of_pattern =
   function
+  | PtUnit -> "PtUnit"
   | PtBool(b) -> "PtBool(" ^ (string_of_bool b) ^ ")"
   | PtInt(n) -> "PtInt(" ^ (string_of_int n) ^ ")"
   | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.string_of_t t) ^ ")"
@@ -108,7 +110,7 @@ let string_of_def =
 
 let rec vars_of_pattern = 
   function
-  | PtBool _ | PtInt _ -> S.empty
+  | PtUnit | PtBool _ | PtInt _ -> S.empty
   | PtVar(x, _) -> S.singleton x
   | PtTuple(ps) | PtConstr(_, ps) -> List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty ps
   | PtRecord(xps) -> List.fold_left (fun s (_, p) -> S.union s (vars_of_pattern p)) S.empty xps
@@ -151,6 +153,7 @@ let ids_of_defs defs =
 let rec pattern env = 
 
   function
+  | KNormal.PtUnit -> env, PtUnit
   | KNormal.PtBool(b) -> env, PtBool(b)
   | KNormal.PtInt(n) -> env, PtInt(n)
   | KNormal.PtVar(x, t) -> M.add x t env, PtVar(x, t)

@@ -33,6 +33,7 @@ and expr =
   | AppCls of et * et list
   | AppDir of Id.l * et list
 and pattern =
+  | PtUnit
   | PtBool of bool
   | PtInt of int
   | PtVar of Id.t * Type.t

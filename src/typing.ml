@@ -216,7 +216,7 @@ let deref_type env ty =
 
 let rec deref_pattern env lp =
   let (d, env) = match desc lp with
-  | PtBool _ | PtInt _ as p -> p, env
+  | PtUnit | PtBool _ | PtInt _ as p -> p, env
   | PtVar(x, t) -> PtVar(x, deref_type env t), Env.add_var env x t
   | PtTuple(ps) -> 
     let ps', env' = List.fold_right
@@ -282,6 +282,7 @@ let deref_def env def =
 let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p =
   Log.debug "Typing.pattern (%s)\n" (string_of_pattern p);
   match desc p with
+  | PtUnit -> env, Type.App(Type.Unit, [])
   | PtBool(b) -> env, Type.App(Type.Bool, [])
   | PtInt(n) -> env, Type.App(Type.Int, [])
   | PtVar(x, t') -> Env.add_var env x t', t'
