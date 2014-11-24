@@ -84,13 +84,13 @@ and prefix_of_tycon =
   | TyFun(_, t) -> prefix t
   | NameTycon(x, _) -> x
       
-let rec ocaml_of = 
-  function
+let rec ocaml_of = function
   | Var _ -> "'a"
   | Field(_, t) -> ocaml_of t
-  | App(Unit, []) -> "()"
+  | App(Unit, []) -> "unit"
   | App(Bool, []) -> "bool"
   | App(Int, []) -> "int"
+  | App(String, []) -> "string"
   | App(Arrow, xs) -> String.concat " -> " (List.map ocaml_of xs)
   | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map ocaml_of xs)) ^ ")"
   | App(Module x, []) -> "module type " ^ x
@@ -102,6 +102,12 @@ let rec ocaml_of =
   | App(TyFun([], t), []) -> ocaml_of t
   | App(NameTycon(x, _), ts) -> (String.concat " * " (List.map ocaml_of ts)) ^ " " ^ x
   | t -> Printf.eprintf "%s : not implemented yet." (string_of_t t); assert false
+and ocaml_of_tycon = function
+  | Unit -> "unit"
+  | Bool -> "bool"
+  | Int -> "int"
+  | String -> "string"
+  | t -> Printf.eprintf "%s : not implemented yet." (string_of_tycon t); assert false
 
 (* 等値判定。型推論後のみ使用可能。*)
 let rec equal t1 t2 = 

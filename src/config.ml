@@ -6,3 +6,4 @@ let compile_only = ref false
 let erl_opts = ref None
 let escript = ref false
 let load_paths = ref []
+let gen_sig_file = ref false

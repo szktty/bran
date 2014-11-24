@@ -27,9 +27,36 @@ let rec optimize n e =
       optimize (n - 1) e'
  *)
 
+let auto_sig_path path =
+  match Utils.dirbase path with
+  | _, None -> failwith "auto_sig_path"
+  | dir, Some base ->
+    let open Spotlib.Filepath in
+    to_string & dir ^/ (fst & Spotlib.Xfilename.split_extension base) ^ ".auto.bri"
+
+let gen_sig_file fpath defs =
+  let open Syntax in
+  Log.verbose "# generate signature file\n";
+  let lines = fold (fun (env, accu) def ->
+      match def.desc with
+      | TypeDef (x, t) ->
+        (* FIXME *)
+        Printf.sprintf "type %s = %s" x (Type.ocaml_of_tycon t) :: accu
+      | VarDef ((x, t), _) ->
+        Printf.sprintf "var %s : %s" x (Type.ocaml_of t) :: accu
+      | RecDef { name = (x, t) } ->
+        Printf.sprintf "def %s : %s" x (Type.ocaml_of t) :: accu
+      | _ -> accu)
+      defs (Sig.create_env ())
+  in
+  let oc = open_out & auto_sig_path fpath in
+  let s = String.concat "\n" lines in
+  Log.verbose "%s\n" s;
+  Printf.fprintf oc "%s\n" s
+
 let compile_file fpath =
-  let prog = Erlang.f & Closure.f & Alpha.f & KNormal.f &
-             Typing.f & Utils.parse_file fpath in
+  let typed = Typing.f & Utils.parse_file fpath in
+  let prog = Erlang.f & Closure.f & Alpha.f & KNormal.f typed in
   let mname = Utils.module_name fpath in
   let outbuf = Buffer.create 128 in
   Emit.f mname outbuf prog;
@@ -42,6 +69,9 @@ let compile_file fpath =
   let outchan = open_out outfpath in
   Buffer.output_buffer outchan outbuf;
   close_out outchan;
+
+  if !Config.gen_sig_file then
+    gen_sig_file fpath typed;
 
   if not !Config.compile_only then begin
     compile_erl_file outfpath;

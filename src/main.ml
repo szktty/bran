@@ -27,6 +27,8 @@ let () =
       "Erlang compiler (erlc) options");
      ("-escript", Arg.Unit (fun () -> Config.escript := true),
       "create an executable file");
+     ("-i", Arg.Unit (fun () -> Config.gen_sig_file := true),
+      "generate inferred interface to signature file (*.auto.bri)");
      ("-I", Arg.String (fun v ->
                           Config.load_paths := !Config.load_paths @ [v]),
       "add the path to load path list");
