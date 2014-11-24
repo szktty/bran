@@ -42,7 +42,7 @@ let () =
        try
          match Spotlib.Xfilename.split_extension fpath with
          | (_, ".br") -> ignore & Compiler.compile_file fpath
-         | (_, ".bri") -> ignore & Compiler.load_sig_file fpath
+         | (_, ".bri") -> ignore & Sig.load_file fpath
          | (_, ext) -> Log.error "Unknown file extension %s\n" ext
        with
        | Sig.Error (loc, msg) -> print_error fpath loc msg

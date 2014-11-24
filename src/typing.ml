@@ -372,13 +372,16 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
         end
       | Field ({ desc = (Module mx, _) }, x) ->
         begin match Module.find_opt mx with
-        | None -> raise (Unbound_module_error (e.loc, mx))
-        | Some m ->
-          Log.debug "#   => module val %s.%s\n" mx x;
-          begin match Module.find_val_opt m x with
-          | None -> raise (Unbound_value_error (e.loc, Module.(m.name) ^ "." ^ x))
-          | Some t -> expr, t
-          end
+        | Some _ -> ()
+        | None ->
+          if not & Sig.load_module mx then
+            raise (Unbound_module_error (e.loc, mx))
+        end;
+        let m = Module.find mx in
+        Log.debug "#   => module val %s.%s\n" mx x;
+        begin match Module.find_val_opt m x with
+        | None -> raise (Unbound_value_error (e.loc, Module.(m.name) ^ "." ^ x))
+        | Some t -> expr, t
         end
       | Field(et, x) ->
           let _, ty_rec' as et' = g env et in

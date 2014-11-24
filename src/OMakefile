@@ -177,6 +177,7 @@ FILES[] =
 	syntax
 	type
 	typing
+	utils
 	version
 	xstring
 

@@ -40,4 +40,17 @@ let load name defs =
   Log.verbose "# begin loading module %s\n" name;
   let (typs, vals, exts) = parse defs in
   Module.register { Module.name; typs; vals; exts };
-  Log.verbose "# end loading module %s\n" name;
+  Log.verbose "# end loading module %s\n" name
+
+let load_file fpath = 
+  Log.verbose "# loading signature file \"%s\"...\n" fpath;
+  let fpath' = find_lib_file fpath in
+  Log.verbose "#    load %s\n" fpath';
+  if Sys.file_exists fpath' then begin
+    load (String.capitalize & Utils.module_name fpath) & Utils.parse_file fpath';
+    true
+  end else
+    false
+
+let load_module (name : Id.t) =
+  load_file & String.uncapitalize name ^ ".bri"
