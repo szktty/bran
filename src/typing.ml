@@ -548,13 +548,14 @@ let f' env (et, ty) =
 let f defs = 
   
   let _, defs' = 
-    List.fold_left (fun ({ Env.venv = venv; tenv = tenv; tycons = tycons } as env, defs) def ->
+    List.fold_left (fun ({ Env.venv = venv; tenv = tenv; tycons = tycons; mods = mods } as env, defs) def ->
       let env', def' = 
         match def.desc with
         | TypeDef(x, t) -> 
             { Env.venv = M.add_list (Type.vars t) venv;
               Env.tenv = M.add_list (Type.types t) tenv;
-              Env.tycons = M.add x t tycons }, 
+              Env.tycons = M.add x t tycons;
+              Env.mods = mods },
           TypeDef(x, t)
         | VarDef((x, t), et) -> 
             let et' = f' env (et, t) in
@@ -571,13 +572,14 @@ let f defs =
                      body = set et et' })
         | _ -> assert false
       in
-      env', (set def def') :: defs) (!Env.empty, []) defs
+      env', (set def def') :: defs) ((Sig.create_env ()), []) defs
   in
 
   (* deref_def の中で未解決なメタ変数を型変数に置き換えてしまうので、すべての式の型推論が終わってから deref を呼ぶこと *)
-  let { Env.venv = venv; tenv = tenv; tycons = tycons } as env = !Env.empty in
+  let { Env.venv = venv; tenv = tenv; tycons = tycons; mods = mods } as env = !Env.empty in
   Env.empty := { Env.venv = M.map (deref_type env) venv;
                  Env.tenv = M.map (deref_type env) tenv; 
-                 Env.tycons = M.map (deref_tycon env) tycons; };
+                 Env.tycons = M.map (deref_tycon env) tycons;
+                 Env.mods = mods };
 
-  fold (fun (env, defs) def -> deref_def env def :: defs) (List.rev defs')
+  fold (fun (env, defs) def -> deref_def env def :: defs) (List.rev defs') (Sig.create_env ())

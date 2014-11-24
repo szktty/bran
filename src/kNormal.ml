@@ -198,11 +198,18 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* K正�
         let e1' = g { env with Env.venv = M.add_list yts venv' } e1 in
         LetRec({ name = (x, t); args = yts; body = e1' }, e2')
     | Syntax.App({ desc = (Syntax.Var(f), _) }, e2s) when not (M.mem f venv) -> (* 外部関数の呼び出し (caml2html: knormal_extfunapp) *)
-        let rec bind xs = (* "xs" are identifiers for the arguments *)
-          function 
-          | [] -> Exp(ExtFunApp(f, xs), t)
-          | e2 :: e2s -> insert_let (g env e2) (fun x -> bind (xs @ [x]) e2s) in
-        (bind [] e2s) (* left-to-right evaluation *)
+      Log.debug "# external variable `%s'\n" f;
+      assert false
+    | Syntax.App({ desc = (Syntax.Var(f), _) }, e2s)
+      when Env.is_module_val env f ->
+      let m = Env.find_module_of_val env f in
+      Log.debug "# applying %s.%s (full imported)\n" m.Module.name f;
+      let f' = Module.primitive m f in
+      let rec bind xs = (* "xs" are identifiers for the arguments *)
+        function
+        | [] -> Exp(ExtFunApp(f', xs), t)
+        | e2 :: e2s -> insert_let (g env e2) (fun x -> bind (xs @ [x]) e2s) in
+      (bind [] e2s) (* left-to-right evaluation *)
     | Syntax.App(e1, e2s) ->
         insert_let (g env e1)
           (fun f ->
@@ -220,6 +227,7 @@ let fold f env defs =
 
 let map f defs =
   let f' (({ Env.venv = venv; tenv = tenv } as env), defs) def =
+                            Log.debug "# KNormal.map import mv %d\n" (List.length env.Env.mods);
     let env', def' = 
       match def with 
       | TypeDef(x, t) -> 
@@ -233,15 +241,15 @@ let map f defs =
           let env' = Env.add_var env x t in
           env', f env' def in
     env', (def' :: defs) in
-  fold f' !Env.empty defs
+  fold f' (Sig.create_env ()) defs
 
 let f' env e = g env e
 
-let f = 
-  Syntax.fold (fun (env, defs) def -> 
+let f defs =
+  Syntax.fold (fun (env, defs) def ->
     match def.desc with
     | Syntax.TypeDef(x, t) -> TypeDef(x, t) :: defs
     | Syntax.VarDef((x, t), e) -> VarDef((x, t), f' env e) :: defs
-    | Syntax.RecDef({ Syntax.name = (x, t); args = yts; body = e }) -> 
+    | Syntax.RecDef({ Syntax.name = (x, t); args = yts; body = e }) ->
         RecDef({ name = (x, t); args = yts; body = f' env e }) :: defs
-    | _ -> assert false)
+    | _ -> assert false) defs (Sig.create_env ())

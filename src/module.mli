@@ -17,3 +17,4 @@ val find_val : t -> Id.t -> Type.t
 val find_ext_opt : t -> Id.t -> string option
 
 val erl_name : t -> string
+val primitive : t -> Id.t -> string

@@ -111,15 +111,16 @@ let string_of_def { Locating.desc = def } =
   | RecDef(fundef) -> "RecDef(" ^ (string_of_fundef fundef) ^ ")"
   | SigDef(sigdef) -> "SigDef(" ^ (string_of_sigdef sigdef) ^ ")"
 
-let fold f defs =
-  let _, defs' = 
+let fold f defs env =
+  let _, defs' =
     List.fold_left
-      (fun ({ Env.venv = venv; tenv = tenv; tycons = tycons } as env, defs) def -> 
+      (fun ({ Env.venv = venv; tenv = tenv; tycons = tycons; mods = mods } as env, defs) def -> 
         match Locating.desc def with
         | TypeDef(x, t) -> 
             { Env.venv = M.add_list (Type.vars t) venv;
               Env.tenv = M.add_list (Type.types t) tenv;
-              Env.tycons = M.add x t tycons }, 
+              Env.tycons = M.add x t tycons;
+              Env.mods = mods },
           f (env, defs) def
         | VarDef((x, t), e) -> 
             Env.add_var env x t, f (env, defs) def
@@ -127,5 +128,5 @@ let fold f defs =
             let env' = { env with Env.venv = M.add_list yts (M.add x ty_f venv) } in
             { env with Env.venv = M.add x ty_f venv }, f (env', defs) def
         | _ -> assert false)
-      (!Env.empty, []) defs in
+      (env, []) defs in
   List.rev defs'

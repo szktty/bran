@@ -1,6 +1,7 @@
 open Spotlib.Base
 
 exception Error of Location.t * string
+exception Pervasives_not_found
 
 let find_lib_file path =
   let open Spotlib in
@@ -54,3 +55,17 @@ let load_file fpath =
 
 let load_module (name : Id.t) =
   load_file & String.uncapitalize name ^ ".bri"
+
+let empty = ref None
+
+let create_env () =
+  match !empty with
+  | Some env -> env
+  | None ->
+    let env = !Env.empty in
+    let mx = "Pervasives" in
+    if not & load_module mx then
+      raise Pervasives_not_found;
+    let env' = Env.import env & Module.find mx in
+    empty := Some env';
+    env'
