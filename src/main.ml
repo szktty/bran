@@ -205,7 +205,9 @@ let compile fpath =
 
 let load_sig fpath = 
   Log.verbose "# loading signature file \"%s\"...\n" fpath;
-  Sig.load (String.capitalize & modname fpath) & parse fpath
+  let fpath' = Sig.find_lib_file fpath in
+  Log.verbose "#    load %s\n" fpath';
+  Sig.load (String.capitalize & modname fpath) & parse fpath'
 
 (* entry point *)
 let () =
@@ -220,6 +222,9 @@ let () =
       "Erlang compiler (erlc) options");
      ("-escript", Arg.Unit (fun () -> Config.escript := true),
       "create an executable file");
+     ("-I", Arg.String (fun v ->
+                          Config.load_paths := !Config.load_paths @ [v]),
+      "add the path to load path list");
      ("-v", Arg.Unit (fun () -> Config.verbose := true), "print verbose messages");
      ("-V", Arg.Unit (fun () -> printf "%s\n" Version.version),
       "print version and exit");
