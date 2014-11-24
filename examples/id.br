@@ -1,0 +1,3 @@
+def rec id x = x
+
+def main () = print_int (id 0)

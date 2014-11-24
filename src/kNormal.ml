@@ -1,298 +1,255 @@
 (* give names to intermediate values (K-normalization) *)
-open Spotlib
-open Base
+(* å¤‰æ›å¾Œã®ã‚³ãƒ¼ãƒ‰ã‚’ãªã‚‹ã¹ãã‚ªãƒªã‚¸ãƒŠãƒ«ã«è¿‘ã„ã‚‚ã®ã«ã™ã‚‹ãŸã‚ã€å®Ÿéš›ã«ã¯ã»ã¨ã‚“ã©Kæ­£è¦å½¢ã«ã¯ã—ãªã„ã€‚ *)
 
-module L = Location
+open Locating
 
-type t = (* KÀµµ¬²½¸å¤Î¼° (caml2html: knormal_t) *)
+type t = (* Kæ­£è¦åŒ–å¾Œã®å¼ (caml2html: knormal_t) *)
+    term * Type.t
+and term =
   | Unit
+  | Exp of et
+  | If of et * t * t 
+  | Match of Id.t * (pattern * t) list
+  | Let of (Id.t * Type.t) * t * t
+  | LetRec of fundef * t
+and et = 
+    expr * Type.t
+and expr =
   | Bool of bool
   | Int of int
-  | Float of float
   | String of string
-  | Neg of Id.t
-  | Add of Id.t * Id.t
-  | Sub of Id.t * Id.t
-  | FNeg of Id.t
-  | FAdd of Id.t * Id.t
-  | FSub of Id.t * Id.t
-  | FMul of Id.t * Id.t
-  | FDiv of Id.t * Id.t
-  | SConcat of Id.t * Id.t
-  | IfEq of Id.t * Id.t * t * t (* Èæ³Ó + Ê¬´ô (caml2html: knormal_branch) *)
-  | IfLE of Id.t * Id.t * t * t (* Èæ³Ó + Ê¬´ô *)
-  | Let of (Id.t * Type.t) * t * t
+  | Record of (Id.t * et) list
+  | Field of et * Id.t
+  | Module of Id.t
+  | Tuple of et list
+  | Not of et
+  | And of et * et
+  | Or of et * et
+  | Neg of et
+  | Add of et * et
+  | Sub of et * et
+  | Mul of et * et
+  | Div of et * et
+  | Eq of et * et
+  | LE of et * et
   | Var of Id.t
-  | Mod_fun of Fun.t
-  | Def of fundef
-  | App of Id.t * Id.t list
-  | Tuple of Id.t list
-  | LetTuple of (Id.t * Type.t) list * Id.t * t
-  | List of Id.t list
-  | Get of Id.t * Id.t
-  | Put of Id.t * Id.t * Id.t
-  | ExtArray of Id.t
-  | ExtFunApp of Id.t * Id.t list
-and fundef = {
-  name : Id.t * Type.t;
-  rec_ : bool;
-  args : FunArg.t list;
-  body : t
-}
+  | Concat of et * et
+  | Constr of Id.t * et list
+  | App of et * et list
+  | ExtFunApp of Id.t * et list
+and pattern =
+  | PtUnit
+  | PtBool of bool
+  | PtInt of int
+  | PtVar of Id.t * Type.t
+  | PtTuple of pattern list
+  | PtField of (Id.t * pattern) list
+  | PtConstr of Id.t * pattern list
+and fundef = { name : Id.t * Type.t; args : (Id.t * Type.t) list; body : t }
+and def =
+  | TypeDef of (Id.t * Type.tycon)
+  | VarDef of (Id.t * Type.t) * t
+  | RecDef of fundef
 
-let rec to_string t =
-  let open Printf in
-  match t with
-  | Unit -> "Unit"
-  | Bool b -> string_of_bool b
-  | Int i -> string_of_int i
-  | Float f -> string_of_float f
-  | String s -> sprintf "\"%s\"" s
-  | Neg x -> sprintf "(- %s)" x
-  | FNeg x -> sprintf "(-. %s)" x
-  | Add (x, y) -> sprintf "(%s + %s)" x y
-  | Sub (x, y) -> sprintf "(%s - %s)" x y
-  | FAdd (x, y) -> sprintf "(%s +. %s)" x y
-  | FSub (x, y) -> sprintf "(%s -. %s)" x y
-  | FMul (x, y) -> sprintf "(%s *. %s)" x y
-  | FDiv (x, y) -> sprintf "(%s /. %s)" x y
-  | SConcat (x, y) -> sprintf "(SConcat %s %s)" x y
-  | IfEq (x, y, e1, e2) ->
-    sprintf "(IfEq %s %s %s %s)" x y (to_string e1) (to_string e2)
-  | IfLE (x, y, e1, e2) ->
-    sprintf "(IfLE %s %s %s %s)" x y (to_string e1) (to_string e2)
-  | Let ((x, t), e1, e2) ->
-    sprintf "(Let (%s, %s) %s %s)" x
-      (Type.to_string t) (to_string e1) (to_string e2)
-  | Var x -> sprintf "$%s" x
-  | Def { name = (x, t); rec_ = rec_ } ->
-    sprintf "(Def %s%s:%s)" (if rec_ then "rec " else "")
-      x (Type.to_string t)
-  | Mod_fun f -> Fun.to_string f
-  | App (x, ys) -> sprintf "(App %s %s)" x (String.concat " " ys)
-  | Tuple xs -> sprintf "(%s)" (String.concat ", " xs)
-  | List xs -> sprintf "[%s]" (String.concat ", " xs)
-             (*
-  | LetTuple of (Id.t * Type.t) list * Id.t * t
-  | Get of Id.t * Id.t
-  | Put of Id.t * Id.t * Id.t
-  | ExtArray of Id.t
-  | ExtFunApp of Id.t * Id.t list
-              *)
-  | _ -> sprintf "unknown"
+let rec ocaml_of_pattern =
+  function
+  | PtUnit -> "()"
+  | PtBool(b) -> string_of_bool b
+  | PtInt(n) -> string_of_int n
+  | PtVar(x, t) -> x
+  | PtTuple(ps) -> String.concat ", " (List.map ocaml_of_pattern ps)
+  | PtField(xps) -> String.concat ", " (List.map (fun (x, p) -> x ^ " = " ^ (ocaml_of_pattern p)) xps)
+  | PtConstr(x, ps) -> x ^ ", " ^ String.concat ", " (List.map ocaml_of_pattern ps)
 
-let rec fv = function (* ¼°¤Ë½Ğ¸½¤¹¤ë¡Ê¼«Í³¤Ê¡ËÊÑ¿ô (caml2html: knormal_fv) *)
-  | Unit | Bool _ | Int(_) | Float(_) | String _ | ExtArray(_) | Mod_fun _ -> S.empty
-  | Neg(x) | FNeg(x) -> S.singleton x
-  | Add(x, y) | Sub(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | SConcat(x, y) | Get(x, y) -> S.of_list [x; y]
-  | IfEq(x, y, e1, e2) | IfLE(x, y, e1, e2) -> S.add x (S.add y (S.union (fv e1) (fv e2)))
-  | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
-  | Var(x) -> S.singleton x
-  | Def { name = (x, t); args = yts; body = e1 } ->
-    S.diff (fv e1) (S.of_list (FunArg.names yts))
-  | App(x, ys) -> S.of_list (x :: ys)
-  | Tuple(xs) | List xs | ExtFunApp(_, xs) -> S.of_list xs
-  | Put(x, y, z) -> S.of_list [x; y; z]
-  | LetTuple(xs, y, e) -> S.add y (S.diff (fv e) (S.of_list (List.map fst xs)))
+let rec string_of_typed_expr (e, t) = (string_of_expr e) ^ " : " ^ (Type.string_of_t t)
 
-let insert_let (e, t) k = (* let¤òÁŞÆş¤¹¤ëÊä½õ´Ø¿ô (caml2html: knormal_insert) *)
+and string_of_expr = 
+  function
+  | Bool(b) -> string_of_bool b
+  | Int(n) -> string_of_int n
+  | String s -> "\"" ^ s ^ "\""
+  | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
+  | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
+  | Module x -> "module type " ^ x
+  | Tuple(es) -> "(" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
+  | Not(e) -> "not " ^ (string_of_typed_expr e)
+  | And(e1, e2) -> (string_of_typed_expr e1) ^ " && " ^ (string_of_typed_expr e2)
+  | Or(e1, e2) -> (string_of_typed_expr e1) ^ " || " ^ (string_of_typed_expr e2)
+  | Neg(e) -> "! " ^ (string_of_typed_expr e)
+  | Add(e1, e2) -> (string_of_typed_expr e1) ^ " + " ^ (string_of_typed_expr e2)
+  | Sub(e1, e2) -> (string_of_typed_expr e1) ^ " - " ^ (string_of_typed_expr e2)
+  | Mul(e1, e2) -> (string_of_typed_expr e1) ^ " * " ^ (string_of_typed_expr e2)
+  | Div(e1, e2) -> (string_of_typed_expr e1) ^ " / " ^ (string_of_typed_expr e2)
+  | Var(x) -> "Var(" ^ x ^ ")"
+  | Concat(e1, e2) -> (string_of_typed_expr e1) ^ " ^ " ^ (string_of_typed_expr e2)
+  | Constr(x, es) -> "Constr(" ^ x ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ "])"
+  | Eq(e1, e2) -> (string_of_typed_expr e1) ^ " = " ^ (string_of_typed_expr e2)
+  | LE(e1, e2) -> (string_of_typed_expr e1) ^ " <= " ^ (string_of_typed_expr e2) 
+  | App(e, args) -> "App(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr args)) ^ "])"
+  | ExtFunApp(x, args) -> "ExtFunApp(" ^ x ^ ", [" ^ (String.concat " " (List.map string_of_typed_expr args)) ^ "])"
+
+let rec string_of_typed_term (e, t) = (string_of_term e) ^ " : " ^ (Type.string_of_t t)
+
+and string_of_term = 
+  function
+  | Unit -> "()"
+  | Exp(e) -> "Exp(" ^ string_of_typed_expr e ^ ")"
+  | If(e, e1, e2) -> "If(" ^ (string_of_typed_expr e) ^ "then " ^ (string_of_typed_term e1) ^ "else " ^ (string_of_typed_term e2) ^ ")"
+  | Match(x, pes) -> "Match(" ^ x ^ ", [" ^ (String.concat "" (List.map (fun (p, e) -> " | " ^ (ocaml_of_pattern p) ^ " -> " ^ (string_of_typed_term e)) pes)) ^ "])"
+  | Let((s1, t), e1, e2) -> "Let(" ^ s1 ^ " : " ^ (Type.string_of_t  t) ^ " = " ^ (string_of_typed_term e1) ^ " in " ^ (string_of_typed_term e2) ^ ")"
+  | LetRec({ name = (x, t); args = yts; body = e1 }, e2) -> 
+      "LetRec(" ^ x ^ ", [" ^ (String.concat ", " (List.map (fun (y, t) -> y) yts)) ^ " : " ^ (Type.string_of_t  t) ^ "] = "
+      ^ (string_of_typed_term e1) ^ " in " ^ (string_of_typed_term e2) ^ ")"
+
+let rec insert_let (e, t) k = (* letã‚’æŒ¿å…¥ã™ã‚‹è£œåŠ©é–¢æ•° (caml2html: knormal_insert) *)
   match e with
-  | Var(x) -> k x
+  | Exp(e) -> k e
+  | LetRec(fundef, et) ->
+      let e' = insert_let et k in
+      LetRec(fundef, (e', t))
   | _ ->
-      let x = Id.gentmp t in
-      let e', t' = k x in
-      Let((x, t), e, e'), t'
+      let x = Id.gentmp (Type.prefix t) in
+      let e' = k (Var(x), t) in
+      Let((x, t), (e, t), (e', t))
 
-(* KÀµµ¬²½¥ë¡¼¥Á¥óËÜÂÎ (caml2html: knormal_g) *)
-let rec g env e =
-  match Ast.desc e with
-  | AstTypes.Nop -> failwith "nop"
-  | AstTypes.SigDef _ -> failwith "sigdef"
-  | AstTypes.Unit -> Unit, Type.Unit
-  (*| AstTypes.Bool(b) -> Int(if b then 1 else 0), Type.Int (* ÏÀÍıÃÍtrue, false¤òÀ°¿ô1, 0¤ËÊÑ´¹ (caml2html: knormal_bool) *)*)
-  | AstTypes.Bool(b) -> Bool(b), Type.Bool
-  | AstTypes.Int(i) -> Int(i), Type.Int
-  | AstTypes.Float(d) -> Float(d), Type.Float
-  | AstTypes.String s -> String s, Type.String
-  | AstTypes.Not(e) ->
-    g env & L.replace e (fun l _ -> 
-      (AstTypes.If (e, L.with_loc l (AstTypes.Bool false), L.with_loc l (AstTypes.Bool true))))
-  | AstTypes.Neg(e) ->
-      insert_let (g env e)
-	(fun x -> Neg(x), Type.Int)
-  | AstTypes.FNeg(e) ->
-      insert_let (g env e)
-	(fun x -> FNeg(x), Type.Float)
+let rec pattern env p = 
+  let () = Log.debug "KNormal.pattern %s\n" (Syntax.string_of_pattern p) in
+  match p.desc with
+  | Syntax.PtUnit -> env, PtUnit
+  | Syntax.PtBool(b) -> env, (PtBool(b))
+  | Syntax.PtInt(n) -> env, (PtInt(n))
+  | Syntax.PtVar(x, t) -> Env.add_var env x t, (PtVar(x, t))
+  | Syntax.PtTuple(ps) -> 
+      let env, ps' = List.fold_left (fun (env, ps) p -> let env', p' = pattern env p in env', p' :: ps) (env, []) (List.rev ps) in
+      env, PtTuple(ps')
+  | Syntax.PtRecord(xps) -> 
+      let env, xps' = List.fold_left (fun (env, xps) (x, p) -> let env', p' = pattern env p in env', (x, p') :: xps) (env, []) (List.rev xps) in
+      env, PtField(xps')
+  | Syntax.PtConstr(x, ps) -> 
+      let env, ps' = List.fold_left (fun (env, ps) p -> let env', p' = pattern env p in env', p' :: ps) (env, []) (List.rev ps) in
+      env, PtConstr(x, ps')
+        
+let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* Kæ­£è¦åŒ–ãƒ«ãƒ¼ãƒãƒ³æœ¬ä½“ (caml2html: knormal_g) *)
+  let _ = Log.debug "kNormal.g %s\n" (Syntax.string_of_expr e) in  
 
-  | AstTypes.Bin (e1, op, e2) ->
-    begin match op with
-    | BinOp.Add ->
-      insert_let (g env e1)
-        (fun x -> insert_let (g env e2)
-          (fun y -> Add (x, y), Type.Int))
-    | BinOp.Sub ->
-      insert_let (g env e1)
-        (fun x -> insert_let (g env e2)
-          (fun y -> Sub (x, y), Type.Int))
-    | BinOp.FAdd ->
-      insert_let (g env e1)
-        (fun x -> insert_let (g env e2)
-          (fun y -> FAdd (x, y), Type.Float))
-    | BinOp.FSub ->
-      insert_let (g env e1)
-        (fun x -> insert_let (g env e2)
-          (fun y -> FSub (x, y), Type.Float))
-    | BinOp.FMul ->
-      insert_let (g env e1)
-        (fun x -> insert_let (g env e2)
-          (fun y -> FMul (x, y), Type.Float))
-    | BinOp.FDiv ->
-      insert_let (g env e1)
-        (fun x -> insert_let (g env e2)
-	      (fun y -> FDiv (x, y), Type.Float))
-    | BinOp.SConcat ->
-      insert_let (g env e1)
-        (fun x -> insert_let (g env e2)
-	      (fun y -> SConcat (x, y), Type.String))
-    | _ -> (* cmp *)
-      g env & L.replace e
-        (fun l _ -> (AstTypes.If (e, L.with_loc l (AstTypes.Bool true),
-                         L.with_loc l (AstTypes.Bool false))))
-    end
-  | AstTypes.If({L.desc = AstTypes.Not(e1)}, e2, e3) ->
-    (* not¤Ë¤è¤ëÊ¬´ô¤òÊÑ´¹ (caml2html: knormal_not) *)
-    g env & L.replace e (fun l _ -> AstTypes.If (e1, e3, e2))
-  | AstTypes.If({L.desc = AstTypes.Bin (e1, BinOp.Eq, e2)}, e3, e4) ->
+  let insert_lets es k =
+    let rec insert_lets' es k args =
+      match es with
+      | [] -> k args
+      | (e::es') -> insert_let (g env e) (fun et' -> insert_lets' es' k (args @ [et'])) in
+    insert_lets' es k [] in
+
+  let binop e1 e2 f =
     insert_let (g env e1)
-      (fun x -> insert_let (g env e2)
-      (fun y ->
-        let e3', t3 = g env e3 in
-        let e4', t4 = g env e4 in
-        IfEq(x, y, e3', e4'), t3))
-  | AstTypes.If({L.desc = AstTypes.Bin (e1, BinOp.LE, e2)}, e3, e4) ->
-    insert_let (g env e1)
-      (fun x -> insert_let (g env e2)
-      (fun y ->
-        let e3', t3 = g env e3 in
-        let e4', t4 = g env e4 in
-        IfLE(x, y, e3', e4'), t3))
-  | AstTypes.If (e1, e2, e3) ->
-      (* TODO: Â¾¤Î¥ª¥Ú¥ì¡¼¥¿¤ËÂĞ±ş¤Ç¤­¤Æ¤Ê¤¤ *)
-    (* Èæ³Ó¤Î¤Ê¤¤Ê¬´ô¤òÊÑ´¹ (caml2html: knormal_if) *)
-    let l = Ast.loc e1 in
-    L.(g env & with_loc l
-                (AstTypes.If (with_loc l (AstTypes.Bin (e1, BinOp.Eq, with_loc l (AstTypes.Bool false))), e3, e2)))
-  | AstTypes.Let((x, t), e1, e2) ->
-    let e1', t1 = g env e1 in
-    let e2', t2 = g (M.add x t env) e2 in
-    Let((x, t), e1', e2'), t2
-  | AstTypes.Var(x) when M.mem x env ->
-    begin match M.find x env with
-    | Type.Fun ({ Type.fun_mod = Some _; fun_name = Some _ } as f) as t ->
-      Mod_fun(f), t
-    | t -> Var(x), t
-    end
-  | AstTypes.Var(x) when Context.mem_top_typ x ->
-    Var(x), Fun.to_typ (Context.find_top_typ x)
-  | AstTypes.Var(x) -> (* ³°ÉôÇÛÎó¤Î»²¾È (caml2html: knormal_extarray) *)
-    Log.debug "# external array `%s'\n" x;
-      (match M.find x !Typing.extenv with
-      | Type.Array(_) as t -> ExtArray x, t
-      | _ -> failwith (Printf.sprintf "external variable %s does not have an array type" x))
-  | AstTypes.Local (x, e) ->
-    begin match Context.find_module_opt x with
-    | None -> assert false
-    | Some m -> g (M.add_list (Module.fun_typs m) env) e
-    end
-                    (*
-  | AstTypes.LetRec({ AstTypes.name = (x, t); AstTypes.args = yts; AstTypes.body = e1 }, e2) ->
-      let env' = M.add x t env in
-      let e2', t2 = g env' e2 in
-      let e1', t1 = g (M.add_list yts env') e1 in
-      LetRec({ name = (x, t); args = yts; body = e1' }, e2'), t2
-                     *)
-  | AstTypes.Def { AstTypes.name = (x, t); AstTypes.rec_ = rec_; AstTypes.args = yts; AstTypes.body = e1 } ->
-    let env' = M.add x t env in
-    let e1', t1 = g (M.add_list (FunArg.vars yts) env') e1 in
-    (* FIXME: t1 (return type) is not correct. *)
-    Context.add_top_typ x (Fun.create [Type.Unit] t1); (* TODO: args *)
-    Def { name = (x, t); rec_ = rec_; args = yts; body = e1' }, t1
-  | AstTypes.App({L.desc = AstTypes.Var(f)}, e2s)
-    when not (M.mem f env) && not (Context.mem_top_typ f) -> (* ³°Éô´Ø¿ô¤Î¸Æ¤Ó½Ğ¤· (caml2html: knormal_extfunapp) *)
-      (* TODO: error? *)
-      Log.debug "# kNormal: call extfun %s\n" f;
-      (match M.find f !Typing.extenv with
-      | Type.Fun { fun_ret = t } ->
-	  let rec bind xs = function (* "xs" are identifiers for the arguments *)
-	    | [] -> ExtFunApp(f, xs), t
-	    | e2 :: e2s ->
-		insert_let (g env e2)
-		  (fun x -> bind (xs @ [x]) e2s) in
-	  bind [] e2s (* left-to-right evaluation *)
-      | _ -> assert false)
-  | AstTypes.App(e1, e2s) ->
-    let (t, g_e1) =
-      match g env e1 with
-      | _, Type.Fun { fun_ret = t } as g_e1 -> (t, g_e1)
-      | _ -> assert false
-    in
-    insert_let g_e1
-    (fun f ->
-      let rec bind xs = function (* "xs" are identifiers for the arguments *)
-        | [] -> App(f, xs), t
-        | e2 :: e2s ->
-          insert_let (g env e2)
-            (fun x -> bind (xs @ [x]) e2s)
-      in
-      bind [] e2s) (* left-to-right evaluation *)
-  | AstTypes.Tuple(es) ->
-      let rec bind xs ts = function (* "xs" and "ts" are identifiers and types for the elements *)
-	| [] -> Tuple(xs), Type.Tuple(ts)
-	| e :: es ->
-	    let _, t as g_e = g env e in
-	    insert_let g_e
-	      (fun x -> bind (xs @ [x]) (ts @ [t]) es) in
-      bind [] [] es
-  | AstTypes.LetTuple(xts, e1, e2) ->
-      insert_let (g env e1)
-	(fun y ->
-	  let e2', t2 = g (M.add_list xts env) e2 in
-	  LetTuple(xts, y, e2'), t2)
-  | AstTypes.List es ->
-    let rec bind xs t = function (* "xs" and "ts" are identifiers and types for the elements *)
-      | [] -> (List xs, Type.List t)
-      | e :: es ->
-        let _, t as g_e = g env e in
-        insert_let g_e (fun x -> bind (xs @ [x]) t es)
-    in
-    bind [] Unit es
-  | AstTypes.Typed (e, t) ->
-    begin match e.desc with
-    | AstTypes.List [] -> (List [], t)
-    | _ -> g env e
-    end
-  | AstTypes.Array(e1, e2) ->
-      insert_let (g env e1)
-	(fun x ->
-	  let _, t2 as g_e2 = g env e2 in
-	  insert_let g_e2
-	    (fun y ->
-	      let l =
-		match t2 with
-		| Type.Float -> "create_float_array"
-		| _ -> "create_array" in
-	      ExtFunApp(l, [x; y]), Type.Array(t2)))
-  | AstTypes.Get(e1, e2) ->
-      (match g env e1 with
-      |	_, Type.Array(t) as g_e1 ->
-	  insert_let g_e1
-	    (fun x -> insert_let (g env e2)
-		(fun y -> Get(x, y), t))
-      | _ -> assert false)
-  | AstTypes.Put(e1, e2, e3) ->
-      insert_let (g env e1)
-	(fun x -> insert_let (g env e2)
-	    (fun y -> insert_let (g env e3)
-		(fun z -> Put(x, y, z), Type.Unit)))
+      (fun e1' -> insert_let (g env e2)
+        (fun e2' -> f e1' e2')) in
 
-let f e = fst (g (Env.create ()) e)
+  let e' = 
+    match e with
+    | Syntax.Unit -> Unit
+    | Syntax.Bool(b) -> Exp(Bool(b), t)
+    | Syntax.Int(n) -> Exp(Int(n), t)
+    | Syntax.String(s) -> Exp(String(s), t)
+    | Syntax.Record(xes) ->
+      insert_lets (List.map snd xes)
+        (fun ets' -> Exp(Record(List.combine (List.map fst xes) ets'), t))
+    | Syntax.Field(e, x) -> insert_let (g env e) (fun e' -> Exp(Field(e', x), t))
+    | Syntax.Module x -> Exp(Module x, t)
+    | Syntax.Tuple(es) -> insert_lets es (fun es' -> Exp(Tuple(es'), t))
+    | Syntax.Not(e) -> insert_let (g env e) (fun e' -> Exp(Not(e'), t))
+    | Syntax.And(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(And(e1', e2'), t))
+    | Syntax.Or(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Or(e1', e2'), t))
+    | Syntax.Neg(e) -> insert_let (g env e) (fun e' -> Exp(Neg(e'), t))
+    | Syntax.Add(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Add(e1', e2'), t)) (* è¶³ã—ç®—ã®Kæ­£è¦åŒ– (caml2html: knormal_add) *)
+    | Syntax.Sub(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Sub(e1', e2'), t))
+    | Syntax.Mul(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Mul(e1', e2'), t))
+    | Syntax.Div(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Div(e1', e2'), t))
+    | Syntax.Var(x) -> Exp(Var(x), t)
+    | Syntax.Concat(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Concat(e1', e2'), t))
+    | Syntax.Constr(x, es) -> insert_lets es (fun es' -> Exp(Constr(x, es'), t))
+    | Syntax.Eq(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Eq(e1', e2'), t))
+    | Syntax.LE(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(LE(e1', e2'), t))
+    | Syntax.If(e1, e2, e3) -> insert_let (g env e1) (fun e1' -> If(e1', (g env e2), (g env e3)))
+    | Syntax.Match({ desc = (Syntax.Var(x), _) }, pes) ->
+        let pes' = List.map 
+          (fun (p, e) -> 
+            let env', p' = pattern env p in
+            let e' = g env' e in 
+            p', e')
+          pes in
+        Match(x, pes')
+    | Syntax.Match(e, pes) ->
+        let e' = g env e in
+        let pes' = List.map 
+          (fun (p, e) -> 
+            let env', p' = pattern env p in
+            let e' = g env' e in 
+            p', e')
+          pes in
+        let x = Id.gentmp (Type.prefix t) in
+        Let((x, t), e', (Match(x, pes'), t))
+    | Syntax.LetVar((x, t), e1, e2) ->
+        let e1' = g env e1 in
+        let e2' = g (Env.add_var env x t) e2 in
+        Let((x, t), e1', e2')
+    | Syntax.LetRec({ Syntax.name = (x, t); Syntax.args = yts; Syntax.body = e1 }, e2) ->
+        let venv' = M.add x t venv in
+        let e2' = g { env with Env.venv = venv' } e2 in
+        let e1' = g { env with Env.venv = M.add_list yts venv' } e1 in
+        LetRec({ name = (x, t); args = yts; body = e1' }, e2')
+    | Syntax.App({ desc = (Syntax.Var(f), _) }, e2s) when not (M.mem f venv) -> (* å¤–éƒ¨é–¢æ•°ã®å‘¼ã³å‡ºã— (caml2html: knormal_extfunapp) *)
+      Log.debug "# external variable `%s'\n" f;
+      assert false
+    | Syntax.App({ desc = (Syntax.Var(f), _) }, e2s)
+      when Env.is_module_val env f ->
+      let m = Env.find_module_of_val env f in
+      Log.debug "# applying %s.%s (full imported)\n" m.Module.name f;
+      let f' = Module.primitive m f in
+      let rec bind xs = (* "xs" are identifiers for the arguments *)
+        function
+        | [] -> Exp(ExtFunApp(f', xs), t)
+        | e2 :: e2s -> insert_let (g env e2) (fun x -> bind (xs @ [x]) e2s) in
+      (bind [] e2s) (* left-to-right evaluation *)
+    | Syntax.App(e1, e2s) ->
+        insert_let (g env e1)
+          (fun f ->
+            let rec bind xs = (* "xs" are identifiers for the arguments *)
+              function 
+              | [] -> Exp(App(f, xs), t)
+              | e2 :: e2s -> insert_let (g env e2) (fun x -> bind (xs @ [x]) e2s) in
+            bind [] e2s) (* left-to-right evaluation *)
+  in
+  (e', t)
+        
+let fold f env defs = 
+  let _, defs' = List.fold_left f (env, []) defs in
+  List.rev defs'
+
+let map f defs =
+  let f' (({ Env.venv = venv; tenv = tenv } as env), defs) def =
+                            Log.debug "# KNormal.map import mv %d\n" (List.length env.Env.mods);
+    let env', def' = 
+      match def with 
+      | TypeDef(x, t) -> 
+          let env' = { env with 
+            Env.venv = M.add_list (Type.vars t) venv;
+            Env.tenv = M.add_list (Type.types t) tenv } in
+          env', f env' def
+      | VarDef((x, t), e) ->  
+          Env.add_var env x t, f env def
+      | RecDef({ name = (x, t); args = yts; body = e1 }) -> 
+          let env' = Env.add_var env x t in
+          env', f env' def in
+    env', (def' :: defs) in
+  fold f' (Sig.create_env ()) defs
+
+let f' env e = g env e
+
+let f defs =
+  Syntax.fold (fun (env, defs) def ->
+    match def.desc with
+    | Syntax.TypeDef(x, t) -> TypeDef(x, t) :: defs
+    | Syntax.VarDef((x, t), e) -> VarDef((x, t), f' env e) :: defs
+    | Syntax.RecDef({ Syntax.name = (x, t); args = yts; body = e }) ->
+        RecDef({ name = (x, t); args = yts; body = f' env e }) :: defs
+    | _ -> assert false) defs (Sig.create_env ())

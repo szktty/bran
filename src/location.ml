@@ -4,11 +4,6 @@ type t = {
   len : int;
 }
 
-type 'a loc = {
-  desc : 'a;
-  loc : t;
-}
-
 let start_line t = t.start.line
 let start_col t = t.start.col
 let start_offset t = t.start.offset
@@ -37,11 +32,7 @@ let contains_pos loc (pos : Position.t) =
 let contains_offset loc offset =
   loc.start.offset <= offset && offset < loc.end_.offset
 
-let with_loc loc desc =
-  { desc; loc }
-
-let with_range start_loc end_loc desc =
-  with_loc (union start_loc end_loc) desc
-
-let replace wloc f =
-  with_loc wloc.loc (f wloc.loc wloc.desc)
+let to_string loc =
+  Printf.sprintf "%d:%d(%d)-%d:%d(%d)"
+    loc.start.line loc.start.col loc.start.offset
+    loc.end_.line loc.end_.col loc.end_.offset

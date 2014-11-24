@@ -29,7 +29,6 @@
 # Any of these can be deleted if you are not using them,
 # but you probably want to keep the Common file.
 #
-open build/C
 open build/OCaml
 
 #
@@ -41,4 +40,4 @@ DefineCommandVars()
 #
 # Include the OMakefile in this directory.
 #
-.SUBDIRS: .
+.SUBDIRS: . src libsrc

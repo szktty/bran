@@ -32,7 +32,7 @@
 # If so, define the subdirectory targets and uncomment this section.
 #
 
-.SUBDIRS: erl
+# .SUBDIRS:
 
 ########################################################################
 # C configuration.
@@ -153,22 +153,18 @@ MENHIR_ENABLED = true
 
 FILES[] =
 	alpha
-	asm
-	ast
-	beta
-	binOp
-	builtin
+	#beta
 	closure
+	compiler
 	config
-	context
 	emit
 	env
 	erlang
-	fun
-	funArg
 	id
 	kNormal
+	l
 	lexer
+	locating
 	location
 	log
 	m
@@ -178,10 +174,11 @@ FILES[] =
 	position
 	s
 	sig
+	syntax
 	type
 	typing
+	utils
 	version
-	virtual
 	xstring
 
 PROGRAM = bran

@@ -6,11 +6,6 @@ type t = {
   len : int;            (** 長さ。 start と end_ が同じ位置であれば 0 *)
 }
 
-type 'a loc = {
-  desc : 'a;
-  loc : t;
-}
-
 val zero : t
 
 val create : Position.t -> Position.t -> t
@@ -27,6 +22,4 @@ val union : t -> t -> t
 val contains_pos : t -> Position.t -> bool
 val contains_offset : t -> int -> bool
 
-val with_loc : t -> 'a -> 'a loc
-val with_range : t -> t -> 'a -> 'a loc
-val replace : 'a loc -> (t -> 'a -> 'b) -> 'b loc
+val to_string : t -> string

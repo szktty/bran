@@ -1,30 +1,45 @@
-type t = Type.module_
+type t = {
+  name : Id.t;
+  typs : (Id.t * Type.tycon) list;
+  vals : (Id.t * Type.t) list;
+  exts : (Id.t * string) list;
+}
 
-let set f m = { f with Type.fun_mod = Some m }
+let modules = ref []
 
-let add_fun m x f =
-  m.Type.mod_funs <- (x, set f m) :: m.Type.mod_funs
+let register m =
+  modules := m :: !modules
 
-let create ?(erl="") x fs =
-  let erl' = if erl = "" then String.lowercase x else erl in
-  let m = { Type.mod_name = x; mod_erl = erl'; mod_funs = [] } in
-  List.iter (fun (x, f) -> add_fun m x f) fs;
-  m
+let find_opt x =
+  Spotlib.Xlist.find_opt (fun m -> m.name = x) !modules
 
-let of_typ = function
-  | Type.Module m -> m
-  | _ -> assert false
-
-let find_opt t fx =
-  try
-    Some (snd (List.find (fun (x, _) -> fx = x) t.Type.mod_funs))
-  with
-  | Not_found -> None
-
-let find t fx =
-  match find_opt t fx with
+let find x =
+  match find_opt x with
   | None -> raise Not_found
-  | Some ft -> ft
+  | Some m -> m
 
-let fun_typs m =
-  List.map (fun (x, f) -> (x, Fun.to_typ f)) m.Type.mod_funs
+let mem x = find_opt x <> None
+
+let find_typ_opt m x =
+  Spotlib.Xlist.find_map_opt
+    (fun (ex, et) -> if x = ex then Some et else None) m.typs
+
+let find_val_opt m x =
+  Spotlib.Xlist.find_map_opt
+    (fun (ex, et) -> if x = ex then Some et else None) m.vals
+
+let find_val m x =
+  match find_val_opt m x with
+  | None -> raise Not_found
+  | Some t -> t
+
+let find_ext_opt m x =
+  Spotlib.Xlist.find_map_opt
+    (fun (ex, et) -> if x = ex then Some et else None) m.exts
+
+let erl_name m = String.uncapitalize m.name
+
+let primitive m fx =
+  match find_ext_opt m fx with
+  | Some x -> x
+  | None -> erl_name m ^ ":" ^ fx
