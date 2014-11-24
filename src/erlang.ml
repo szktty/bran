@@ -83,19 +83,17 @@ let rec gen_exp (e, t) =
   | Closure.LE (e1, e2) -> LE (gen_exp e1, gen_exp e2)
   | Closure.Var x -> Var x
   | Closure.AppDir (x, ets) -> AppDir (x, List.map gen_exp ets)
-  | _ -> ok_atom
+  | _ -> assert false
 
-let rec gen_ptn (ptn, term) =
-  match ptn with
-  | _ -> (PtAtom "ok", gen_term term)
-                        (*
-  | Closure.PtBool of bool
-  | Closure.PtInt of int
-  | Closure.PtVar of Id.t * Type.t
-  | Closure.PtTuple of pattern list
-  | Closure.PtRecord of (Id.t * pattern) list
-  | Closure.PtConstr of Id.t * pattern list
-                         *)
+let rec gen_ptn = function
+  | Closure.PtUnit -> PtAtom "ok"
+  | Closure.PtBool v -> PtBool v
+  | Closure.PtInt v -> PtInt v
+  | Closure.PtVar (x, _) -> PtVar x
+  | Closure.PtTuple ps -> PtTuple (List.map gen_ptn ps)
+  | Closure.PtRecord xps ->
+    PtRecord (List.map (fun (x, p) -> (x, gen_ptn p)) xps)
+  | Closure.PtConstr (x, ps) -> assert false
 
 and gen_term (term, t) =
   Log.debug "# Erlang.gen_term %s\n" (Closure.string_of_term term);
@@ -104,8 +102,11 @@ and gen_term (term, t) =
   | Closure.Exp e -> gen_exp e
   | Closure.If (e, tr1, tr2) ->
     If [(gen_exp e, gen_term tr1); (true_atom, gen_term tr2)]
-  | Closure.Match (x, pts) -> Match (x, List.map gen_ptn pts)
-  | _ -> ok_atom
+  | Closure.Match (x, pts) ->
+    Match (x, List.map (fun (p, t) -> gen_ptn p, gen_term t) pts)
+  | Closure.Let ((x, _), e1, e2) ->
+    Let (x, gen_term e1, gen_term e2)
+  | _ -> assert false
 
 let gen_def = function
   | Closure.TypeDef _ -> []

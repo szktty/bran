@@ -51,7 +51,12 @@ let rec gen_exp oc = function
         bprintf oc " -> ";
         gen_exp oc t) pts;
     bprintf oc " end"
-  | _ -> bprintf oc "ok"
+  | Let (x, e1, e2) ->
+    bprintf oc "%s = " (gen_var x);
+    gen_exp oc e1;
+    bprintf oc ", ";
+    gen_exp oc e2
+  | _ -> assert false
 
 and gen_prefix_exp oc op e =
     bprintf oc "(";
@@ -70,7 +75,11 @@ and gen_ptn oc = function
   | PtBool v -> bprintf oc "%s" (string_of_bool v)
   | PtInt v -> bprintf oc "%d" v
   | PtString s -> bprintf oc "\"%s\"" s
-  | PtVar x -> bprintf oc "%s" x
+  | PtVar x -> bprintf oc "%s" (gen_var x)
+  | PtTuple ps ->
+    bprintf oc "{";
+    iter_with_sep oc ", " (fun p -> gen_ptn oc p) ps;
+    bprintf oc "}"
   | _ -> assert false (* TODO *)
 
 let gen_def oc = function
