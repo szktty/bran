@@ -1,0 +1,9 @@
+# String conversion functions
+external bool_of_string : string -> bool = "bran_lib_pervasives:bool_of_string"
+external string_of_int : int -> string = "bran_lib_pervasives:string_of_int"
+external int_of_string : string -> int = "bran_lib_pervasives:int_of_string"
+
+# Output functions
+external print_bool : bool -> unit = "bran_lib_pervasives:print_bool"
+external print_int : int -> unit = "bran_lib_pervasives:print_int"
+external print_string : string -> unit = "bran_lib_pervasives:print_string"
