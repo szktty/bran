@@ -7,6 +7,9 @@ let filepath_of_string path =
 let dirbase path =
   Spotlib.Filepath.dirbase & filepath_of_string path
 
+let replace_ext path ext =
+    (fst & Spotlib.Xfilename.split_extension path) ^ ext
+
 let module_name path =
   match dirbase path with
   | _, None -> failwith "mod_name"
@@ -17,7 +20,7 @@ let erl_path path =
   | _, None -> failwith "erl_path"
   | dir, Some base ->
     let open Spotlib.Filepath in
-    to_string & dir ^/ (fst & Spotlib.Xfilename.split_extension base) ^ ".erl"
+    to_string & dir ^/ replace_ext base ".erl"
 
 let escript_path path =
   let open Spotlib.Filepath in

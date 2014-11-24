@@ -27,13 +27,6 @@ let rec optimize n e =
       optimize (n - 1) e'
  *)
 
-let auto_sig_path path =
-  match Utils.dirbase path with
-  | _, None -> failwith "auto_sig_path"
-  | dir, Some base ->
-    let open Spotlib.Filepath in
-    to_string & dir ^/ (fst & Spotlib.Xfilename.split_extension base) ^ ".auto.bri"
-
 let gen_sig_file fpath defs =
   let open Syntax in
   Log.verbose "# generate signature file\n";
@@ -49,7 +42,7 @@ let gen_sig_file fpath defs =
       | _ -> accu)
       defs (Sig.create_env ())
   in
-  let oc = open_out & auto_sig_path fpath in
+  let oc = open_out & Utils.replace_ext fpath ".auto.bri" in
   let s = String.concat "\n" lines in
   Log.verbose "%s\n" s;
   Printf.fprintf oc "%s\n" s
