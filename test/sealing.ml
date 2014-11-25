@@ -60,6 +60,10 @@ module Env = struct
   }
 
   let run_check env =
+    if not env.running then
+      failwith "Sealing.Env: process is not running"
+
+  let not_run_check env =
     if env.running then
       failwith "Sealing.Env: process is running"
 
@@ -179,20 +183,31 @@ module Env = struct
            fc :: accu
         ) changes files
 
+  let print_outerr outbuf errbuf =
+    Printf.printf "stdout: ";
+    Buffer.output_buffer stdout outbuf;
+    Printf.printf "\nstderr: ";
+    Buffer.output_buffer stderr errbuf;
+    Printf.printf "\n";
+    flush_all ()
+
   let run
       ?(expect_error=true)
       ?(expect_stderr=false)
       ?chdir
       ?(quiet=false)
+      ?f
       env args =
-    run_check env;
+    not_run_check env;
+    env.running <- true;
     let chdir =
       match chdir with
-      | None -> env.workdir
+      | None -> env.basedir
       | Some d -> d
     in
     Xunix.with_chdir chdir
       (fun () ->
+         Option.iter (fun f -> f env) f;
          let proc = Xunix.Command.execvp args in
          let outbuf = Buffer.create 256 in
          let errbuf = Buffer.create 256 in
@@ -206,24 +221,21 @@ module Env = struct
                      match ch with
                      | `Out -> outbuf
                      | `Err ->
-                       if not expect_stderr then
+                       if not expect_stderr then begin
+                         Buffer.add_string errbuf s;
+                         print_outerr outbuf errbuf;
                          failwith "Sealing.Env.run: stderr is not expected"
-                       else
+                       end else
                          errbuf
                    in
                    Buffer.add_string buf s)
          in
          if not expect_error && st <> (Unix.WEXITED 0) then
            failwith "Sealing.Env.run: error is not expected";
-         if not quiet && st <> (Unix.WEXITED 0) then begin
-           Printf.printf "stdout: ";
-           Buffer.output_buffer stdout outbuf;
-           Printf.printf "\nstderr: ";
-           Buffer.output_buffer stderr errbuf;
-           Printf.printf "\n";
-           flush_all ();
-         end;
+         if not quiet && st <> (Unix.WEXITED 0) then
+           print_outerr outbuf errbuf;
          update_file_changes env;
+         env.running <- false;
          { Result.stdout = Buffer.contents outbuf;
            stderr = Buffer.contents errbuf;
            status = st;
@@ -232,13 +244,13 @@ module Env = struct
 
   let install env src =
     run_check env;
-    match Sys.command & Printf.sprintf "cp %s %s" src env.basedir with
+    match Sys.command & Printf.sprintf "cp %s ." src with
     | 0 ->
       env.file_changes <- { FileChange.path = src;
                             change = Not_changed;
                             time = Sys.time () }
                           :: env.file_changes
-    | _ -> Exn.failwithf "Env.install: copying file %s failed" src
+    | v -> Exn.failwithf "Env.install: copying file %s failed (exit %d)" src v
 
 end
 
@@ -257,8 +269,7 @@ let with_run
     args =
   let env = Env.create ?env ?chdir ?start_clear ?ignore_files
       ?ignore_hidden basedir in
-  Option.iter (fun f -> f env) f;
-  Env.run ?expect_error ?expect_stderr ?chdir ?quiet env args
+  Env.run ?expect_error ?expect_stderr ?chdir ?quiet ?f env args
 
 let _test () =
   let res = with_run ["ls"] in

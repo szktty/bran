@@ -62,6 +62,7 @@ module Env : sig
     -> ?expect_stderr:bool
     -> ?chdir:string
     -> ?quiet:bool
+    -> ?f:(t -> unit)
     -> t
     -> string list
     -> Result.t
