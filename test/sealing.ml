@@ -254,7 +254,7 @@ module Env = struct
     in
     match Sys.command & Printf.sprintf "cp %s ." src with
     | 0 ->
-      env.file_changes <- { FileChange.path = src;
+      env.file_changes <- { FileChange.path = dest;
                             change = Not_changed;
                             time = Sys.time () }
                           :: env.file_changes;
