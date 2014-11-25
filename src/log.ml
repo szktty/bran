@@ -1,5 +1,5 @@
 let printf = function
-  | true -> Printf.printf
+  | true -> flush_all (); Printf.printf
   | false -> Spotlib.Xprintf.zprintf
 
 let debug f = printf !Config.debug f
