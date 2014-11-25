@@ -23,6 +23,8 @@ let () =
       "compile only, output Erlang source");
      ("-d", Arg.Unit (fun () -> Config.debug := true), "print debug messages");
      ("-dry-run", Arg.Unit (fun () -> Config.dry_run := true), "parse syntax only");
+     ("-emu-args", Arg.String (fun v -> Config.emu_args := Some v),
+      "Erlang emulator flag embedded into executable file");
      ("-erl", Arg.String (fun v -> Config.erl_opts := Some v),
       "Erlang compiler (erlc) options");
      ("-escript", Arg.Unit (fun () -> Config.escript := true),

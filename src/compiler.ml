@@ -1,5 +1,7 @@
 open Spotlib.Base
 
+exception Error of string
+
 let compile_erl_file fpath =
   let open Spotlib.Xunix.Command in
   let (dir, _) = Utils.dirbase fpath in
@@ -8,11 +10,24 @@ let compile_erl_file fpath =
   Log.verbose "# $ %s\n" cmd_s;
   let cmd = shell cmd_s in
   match print ~prefix:"# erlc" cmd with
-  | (Unix.WEXITED 0, _) -> Unix.unlink fpath
-  | _ -> Log.error "compilation failed"
+  | (Unix.WEXITED 0, _) -> ()
+  | _ -> raise (Error "Erlang compilation failed")
 
 let create_exec_file fpath =
-  Unix.chmod fpath 0o755
+  let open Printf in
+  let buf = Buffer.create 1 in
+  let (exec, _) = Spotlib.Xfilename.split_extension fpath in
+  bprintf buf "erl -boot start_clean -noinput -s init stop -eval '";
+  bprintf buf "{ok, _, Beam} = compile:file(\"%s\", [binary, compressed, debug_info]), " fpath;
+  bprintf buf "escript:create(\"%s\", [shebang, {beam, Beam}, " exec;
+  bprintf buf "{emu_args, \"-pa bran/ebin %s\"}])'"
+    (Spotlib.Option.default !Config.emu_args (fun () -> ""));
+  let cmd_s = Buffer.contents buf in
+  Log.verbose "# $ %s\n" cmd_s;
+  let cmd = Spotlib.Xunix.Command.shell cmd_s in
+  match Spotlib.Xunix.Command.print ~prefix:"# erl" cmd with
+  | (Unix.WEXITED 0, _) -> ()
+  | _ -> raise (Error "Executable file creation failed")
 
 (*
 let limit = ref 1000
@@ -55,12 +70,7 @@ let compile_file fpath =
   let mname = Utils.module_name fpath in
   let outbuf = Buffer.create 128 in
   Emit.f mname outbuf prog;
-  let outfpath =
-    if !Config.escript then
-      Utils.escript_path fpath
-    else
-      Utils.erl_path fpath
-  in
+  let outfpath = Utils.erl_path fpath in
   let outchan = open_out outfpath in
   Buffer.output_buffer outchan outbuf;
   close_out outchan;
@@ -69,7 +79,9 @@ let compile_file fpath =
     gen_sig_file fpath typed;
 
   if not !Config.compile_only then begin
-    compile_erl_file outfpath;
     if !Config.escript then
       create_exec_file outfpath
+    else
+      compile_erl_file outfpath;
+    Unix.unlink outfpath
   end

@@ -5,5 +5,6 @@ val dry_run : bool ref
 val compile_only : bool ref
 val erl_opts : string option ref
 val escript : bool ref
+val emu_args : string option ref
 val load_paths : string list ref
 val gen_sig_file : bool ref
