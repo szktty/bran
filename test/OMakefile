@@ -1,0 +1,22 @@
+.PHONY: all clean
+
+USE_OCAMLFIND = true
+OCAMLFLAGS += -g -thread -w A-4-9-27-40-42-44-45 -warn-error A
+
+FILES[] =
+	sealing
+
+PROGRAM = test
+
+OCAMLPACKS[] +=
+	unix
+	spotlib
+
+.DEFAULT: $(OCamlProgram $(PROGRAM), $(FILES))
+
+# omake xxx.auto.mli creates the mli file from xxx.ml automatically
+%.auto.mli: %.ml
+	$(OCamlC) -i -c $< > $@
+
+clean:
+	rm -rf *.cm* *.o *.opt $(PROGRAM)

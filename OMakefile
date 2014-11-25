@@ -1,1 +1,3 @@
 .PHONY: all install clean
+
+.SUBDIRS: src test libsrc
