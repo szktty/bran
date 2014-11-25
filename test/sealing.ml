@@ -41,6 +41,7 @@ module Result = struct
     stderr : string;
     status : Unix.process_status;
     file_changes : FileChange.t list;
+    predictions : FileChange.t list;
   }
 
   let filter_files ch r =
@@ -70,8 +71,8 @@ module Result = struct
       List.fold_left
         (fun (accu, all) fc ->
            match fc.change with
-           | Not_changed -> accu, all
-           | Created | Accessed -> fc.path :: accu, all
+           | Not_changed | Accessed -> accu, all
+           | Created -> fc.path :: accu, all
            | _ -> accu, false)
         ([], true) res.file_changes
     in
@@ -95,6 +96,26 @@ module Result = struct
     | Unix.WEXITED 0 -> true
     | _ -> false
 
+  let prediction res =
+    let open FileChange in
+    let (related, others) =
+      List.partition
+        (fun ex -> List.exists (fun ac -> ex.path = ac.path) res.file_changes)
+        res.predictions
+    in
+    if not & List.for_all
+         (fun fc -> fc.change = Not_changed || fc.change = Accessed) others then
+      `Failure
+    else
+      if List.for_all
+          (fun ex -> List.exists
+              (fun ac -> ex.path = ac.path && ex.change = ac.change)
+              related)
+          res.predictions then
+        `Success
+      else
+        `Failure
+ 
 end
 
 module Env = struct
@@ -110,6 +131,7 @@ module Env = struct
     ignore_files : Str.regexp list;
     ignore_hidden : bool;
     mutable file_changes : FileChange.t list;
+    mutable predictions : FileChange.t list;
   }
 
   let run_check env =
@@ -174,7 +196,7 @@ module Env = struct
     let e = { running = false; origdir = Unix.getcwd ();
               basedir; workdir; vars;
               ignore_files = ignore_files';
-              ignore_hidden; file_changes = [] } in
+              ignore_hidden; file_changes = []; predictions = [] } in
     if start_clear then
       clear e;
     if not & Sys.file_exists basedir then
@@ -296,6 +318,7 @@ module Env = struct
            stderr = Buffer.contents errbuf;
            status = st;
            file_changes = env.file_changes;
+           predictions = env.predictions;
          })
 
   let install env src =
@@ -316,6 +339,9 @@ module Env = struct
 
   let write env path f =
     with_oc (open_out path) f
+
+  let predict env path change =
+    env.predictions <- { FileChange.path; change; time = 0.0 } :: env.predictions
 
 end
 

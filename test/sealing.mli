@@ -32,6 +32,7 @@ module Result : sig
     stderr : string;
     status : Unix.process_status;
     file_changes : FileChange.t list;
+    predictions : FileChange.t list;
   }
 
   val files_not_changed : t -> string list
@@ -47,6 +48,8 @@ module Result : sig
   val return_code : t -> int option
   val is_exited : t -> bool
   val is_succeded : t -> bool
+
+  val prediction : t -> [`Success | `Failure]
 
 end
 
@@ -80,6 +83,10 @@ module Env : sig
   (** Copy the file to the base directory *)
 
   val write : t -> string -> (out_channel -> unit) -> unit
+
+  val predict : t -> string -> FileChange.change -> unit
+  (** Register the file name will be changed at running.
+   *  The result of prediction can be confirmed with Result.prediction *)
 
 end
 
