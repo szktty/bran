@@ -50,6 +50,7 @@ module Env = struct
   module Vars = Map.Make(String)
 
   type t = {
+    mutable running : bool;
     basedir : string;
     mutable workdir : string;
     vars : string Vars.t;
@@ -57,6 +58,10 @@ module Env = struct
     ignore_hidden : bool;
     mutable file_changes : FileChange.t list;
   }
+
+  let run_check env =
+    if env.running then
+      failwith "Sealing.Env: process is running"
 
   let ignore env path =
     let (dir, base) =
@@ -107,7 +112,8 @@ module Env = struct
       | Some s -> s
     in
     let ignore_files' = List.map Str.regexp ignore_files in
-    let e = { basedir; workdir; vars; ignore_files = ignore_files';
+    let e = { running = false; basedir; workdir; vars;
+              ignore_files = ignore_files';
               ignore_hidden; file_changes = [] } in
     if start_clear then
       clear e;
@@ -179,6 +185,7 @@ module Env = struct
       ?chdir
       ?(quiet=false)
       env args =
+    run_check env;
     let chdir =
       match chdir with
       | None -> env.workdir
@@ -223,6 +230,16 @@ module Env = struct
            file_changes = env.file_changes;
          })
 
+  let install env src =
+    run_check env;
+    match Sys.command & Printf.sprintf "cp %s %s" src env.basedir with
+    | 0 ->
+      env.file_changes <- { FileChange.path = src;
+                            change = Not_changed;
+                            time = Sys.time () }
+                          :: env.file_changes
+    | _ -> Exn.failwithf "Env.install: copying file %s failed" src
+
 end
 
 let with_run 
@@ -236,10 +253,12 @@ let with_run
     ?chdir
     ?quiet
     ?(basedir="test_output")
+    ?f
     args =
-  Env.run ?expect_error ?expect_stderr ?chdir ?quiet
-    (Env.create ?env ?chdir ?start_clear ?ignore_files ?ignore_hidden basedir)
-    args
+  let env = Env.create ?env ?chdir ?start_clear ?ignore_files
+      ?ignore_hidden basedir in
+  Option.iter (fun f -> f env) f;
+  Env.run ?expect_error ?expect_stderr ?chdir ?quiet env args
 
 let _test () =
   let res = with_run ["ls"] in

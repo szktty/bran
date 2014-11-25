@@ -66,6 +66,9 @@ module Env : sig
     -> string list
     -> Result.t
 
+  val install : t -> string -> unit
+  (** Copy the file to the base directory *)
+
 end
 
 val with_run :
@@ -79,5 +82,6 @@ val with_run :
   -> ?chdir:string
   -> ?quiet:bool
   -> ?basedir:string
+  -> ?f:(Env.t -> unit)
   -> string list
   -> Result.t
