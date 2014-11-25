@@ -44,16 +44,9 @@ module Result = struct
     predictions : FileChange.t list;
   }
 
-  let filter_files ch r =
+  let files_changed res ch =
     List.map FileChange.path &
-      List.filter (fun fc -> fc.FileChange.change = ch) r.file_changes
-
-  let files_not_changed = filter_files FileChange.Not_changed
-  let files_created = filter_files FileChange.Created
-  let files_accessed = filter_files FileChange.Accessed
-  let files_modified = filter_files FileChange.Modified
-  let files_changed = filter_files FileChange.Changed
-  let files_deleted = filter_files FileChange.Deleted
+      List.filter (fun fc -> fc.FileChange.change = ch) res.file_changes
 
   let files_updated res =
     List.filter (fun fc ->
