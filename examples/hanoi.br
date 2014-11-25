@@ -10,4 +10,4 @@ def rec hanoi (n, from, to_, via) =
     hanoi (n - 1, via, to_, from)
   end
 
-def main () = hanoi (3, "A", "B", "C")
+def main _ = hanoi (3, "A", "B", "C")
