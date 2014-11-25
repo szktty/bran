@@ -69,6 +69,8 @@ module Env : sig
   val install : t -> string -> string
   (** Copy the file to the base directory *)
 
+  val write : t -> string -> (out_channel -> unit) -> unit
+
 end
 
 val run :

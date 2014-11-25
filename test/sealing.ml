@@ -262,6 +262,9 @@ module Env = struct
       dest
     | v -> Exn.failwithf "Env.install: copying file %s failed (exit %d)" src v
 
+  let write env path f =
+    with_oc (open_out path) f
+
 end
 
 let run 
