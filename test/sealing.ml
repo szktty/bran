@@ -51,6 +51,7 @@ module Env = struct
 
   type t = {
     mutable running : bool;
+    origdir : string;
     basedir : string;
     mutable workdir : string;
     vars : string Vars.t;
@@ -93,7 +94,10 @@ module Env = struct
           Unix.rmdir path
 
   let clear ?(force=false) env =
-    rm ~force env env.workdir
+    Xunix.with_chdir env.origdir
+      (fun () ->
+         Xunix.with_chdir env.basedir
+           (fun () -> List.iter (rm ~force env) & read_dir env "."))
 
   let create
       ?env
@@ -114,7 +118,8 @@ module Env = struct
       | Some s -> s
     in
     let ignore_files' = List.map Str.regexp ignore_files in
-    let e = { running = false; basedir; workdir; vars;
+    let e = { running = false; origdir = Unix.getcwd ();
+              basedir; workdir; vars;
               ignore_files = ignore_files';
               ignore_hidden; file_changes = [] } in
     if start_clear then
