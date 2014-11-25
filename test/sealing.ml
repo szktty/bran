@@ -83,6 +83,7 @@ module Env = struct
     List.filter (not ** ignore env) (Array.to_list & Sys.readdir path)
 
   let rec rm ~force env path =
+    (* FIXME: ~force is for whether delete files not managed by the env or not *)
     if not & ignore env path then
       match Sys.is_directory path, force with
       | false, _ -> Sys.remove path
