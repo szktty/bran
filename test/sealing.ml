@@ -69,9 +69,7 @@ module Env = struct
 
   let ignore env path =
     let (dir, base) =
-      match Filepath.dirbase
-            & Filepath.of_string Filepath.os path
-      with
+      match Filepath.dirbase & Filepath.of_string Filepath.os path with
       | _, None -> failwith "cannot delete root directory"
       | dir, Some base -> Filepath.to_string dir, base
     in
@@ -196,8 +194,8 @@ module Env = struct
       ?(expect_stderr=false)
       ?chdir
       ?(quiet=false)
-      ?f
-      env args =
+      env
+      ~f =
     not_run_check env;
     env.running <- true;
     let chdir =
@@ -207,7 +205,7 @@ module Env = struct
     in
     Xunix.with_chdir chdir
       (fun () ->
-         Option.iter (fun f -> f env) f;
+         let args = f env in
          let proc = Xunix.Command.execvp args in
          let outbuf = Buffer.create 256 in
          let errbuf = Buffer.create 256 in
@@ -244,17 +242,23 @@ module Env = struct
 
   let install env src =
     run_check env;
+    let dest =
+      match Filepath.dirbase & Filepath.of_string Filepath.os src with
+      | _, None -> failwith "cannot copy root directory"
+      | _, Some base -> base
+    in
     match Sys.command & Printf.sprintf "cp %s ." src with
     | 0 ->
       env.file_changes <- { FileChange.path = src;
                             change = Not_changed;
                             time = Sys.time () }
-                          :: env.file_changes
+                          :: env.file_changes;
+      dest
     | v -> Exn.failwithf "Env.install: copying file %s failed (exit %d)" src v
 
 end
 
-let with_run 
+let run 
     ?env
     ?chdir
     ?start_clear
@@ -265,14 +269,13 @@ let with_run
     ?chdir
     ?quiet
     ?(basedir="test_output")
-    ?f
-    args =
+    f =
   let env = Env.create ?env ?chdir ?start_clear ?ignore_files
       ?ignore_hidden basedir in
-  Env.run ?expect_error ?expect_stderr ?chdir ?quiet ?f env args
+  Env.run ?expect_error ?expect_stderr ?chdir ?quiet env ~f
 
 let _test () =
-  let res = with_run ["ls"] in
+  let res = run (fun _env -> ["ls"]) in
   print_endline res.stdout
 
 (* let _ = _test () *)

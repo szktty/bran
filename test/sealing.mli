@@ -62,17 +62,16 @@ module Env : sig
     -> ?expect_stderr:bool
     -> ?chdir:string
     -> ?quiet:bool
-    -> ?f:(t -> unit)
     -> t
-    -> string list
+    -> f:(t -> string list)
     -> Result.t
 
-  val install : t -> string -> unit
+  val install : t -> string -> string
   (** Copy the file to the base directory *)
 
 end
 
-val with_run :
+val run :
   ?env:((string * string) list)
   -> ?chdir:string
   -> ?start_clear:bool
@@ -83,6 +82,5 @@ val with_run :
   -> ?chdir:string
   -> ?quiet:bool
   -> ?basedir:string
-  -> ?f:(Env.t -> unit)
-  -> string list
+  -> (Env.t -> string list)
   -> Result.t
