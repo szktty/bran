@@ -78,6 +78,6 @@ val with_run :
   -> ?expect_stderr:bool
   -> ?chdir:string
   -> ?quiet:bool
-  -> string
+  -> ?basedir:string
   -> string list
   -> Result.t

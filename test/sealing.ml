@@ -234,13 +234,14 @@ let with_run
     ?expect_stderr
     ?chdir
     ?quiet
-    workdir args =
+    ?(basedir="test_output")
+    args =
   Env.run ?expect_error ?expect_stderr ?chdir ?quiet
-    (Env.create ?env ?chdir ?start_clear ?ignore_files ?ignore_hidden workdir)
+    (Env.create ?env ?chdir ?start_clear ?ignore_files ?ignore_hidden basedir)
     args
 
 let _test () =
-  let res = with_run "test_output" ["ls"] in
+  let res = with_run ["ls"] in
   print_endline res.stdout
 
 (* let _ = _test () *)
