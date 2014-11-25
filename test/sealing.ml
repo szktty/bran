@@ -91,7 +91,7 @@ module Result = struct
     | Unix.WEXITED _ -> true
     | _ -> false
 
-  let is_succeded res =
+  let is_succeeded res =
     match res.status with
     | Unix.WEXITED 0 -> true
     | _ -> false

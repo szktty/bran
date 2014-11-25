@@ -47,7 +47,7 @@ module Result : sig
 
   val return_code : t -> int option
   val is_exited : t -> bool
-  val is_succeded : t -> bool
+  val is_succeeded : t -> bool
 
   val prediction : t -> [`Success | `Failure]
 
