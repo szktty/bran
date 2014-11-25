@@ -103,7 +103,7 @@ module Env = struct
     in
     let workdir =
       match chdir with
-      | None -> Sys.getcwd ()
+      | None -> basedir
       | Some s -> s
     in
     let ignore_files' = List.map Str.regexp ignore_files in
@@ -112,7 +112,7 @@ module Env = struct
     if start_clear then
       clear e;
     if not & Sys.file_exists basedir then
-      Unix.mkdir basedir 0o644;
+      Unix.mkdir basedir 0o744;
     e
 
   let read_all_files env path =
@@ -135,7 +135,7 @@ module Env = struct
 
   let update_file_changes env =
     let open FileChange in
-    let files = read_all_files env env.basedir in
+    let files = read_all_files env "." in
     let changes =
       List.fold_left
         (fun accu fc ->
@@ -179,48 +179,49 @@ module Env = struct
       ?chdir
       ?(quiet=false)
       env args =
-    begin match chdir with
-      | None -> ()
-      | Some d ->
-        env.workdir <- d;
-        Unix.chdir d
-    end;
-    let proc = Xunix.Command.execvp args in
-    let outbuf = Buffer.create 256 in
-    let errbuf = Buffer.create 256 in
-    let (st, _) =
-      Xunix.Command.iter proc
-        ~f:(fun (ch, read) ->
-            match read with
-            | `EOF -> ()
-            | `Read s ->
-              let buf =
-                match ch with
-                | `Out -> outbuf
-                | `Err ->
-                  if not expect_stderr then
-                    failwith "Sealing.Env.run: stderr is not expected"
-                  else
-                    errbuf
-              in
-              Buffer.add_string buf s)
+    let chdir =
+      match chdir with
+      | None -> env.workdir
+      | Some d -> d
     in
-    if not expect_error && st <> (Unix.WEXITED 0) then
-      failwith "Sealing.Env.run: error is not expected";
-    if not quiet && st <> (Unix.WEXITED 0) then begin
-      Printf.printf "stdout: ";
-      Buffer.output_buffer stdout outbuf;
-      Printf.printf "\nstderr: ";
-      Buffer.output_buffer stderr errbuf;
-      Printf.printf "\n";
-      flush_all ();
-    end;
-    update_file_changes env;
-    { Result.stdout = Buffer.contents outbuf;
-      stderr = Buffer.contents errbuf;
-      status = st;
-      file_changes = env.file_changes;
-    }
+    Xunix.with_chdir chdir
+      (fun () ->
+         let proc = Xunix.Command.execvp args in
+         let outbuf = Buffer.create 256 in
+         let errbuf = Buffer.create 256 in
+         let (st, _) =
+           Xunix.Command.iter proc
+             ~f:(fun (ch, read) ->
+                 match read with
+                 | `EOF -> ()
+                 | `Read s ->
+                   let buf =
+                     match ch with
+                     | `Out -> outbuf
+                     | `Err ->
+                       if not expect_stderr then
+                         failwith "Sealing.Env.run: stderr is not expected"
+                       else
+                         errbuf
+                   in
+                   Buffer.add_string buf s)
+         in
+         if not expect_error && st <> (Unix.WEXITED 0) then
+           failwith "Sealing.Env.run: error is not expected";
+         if not quiet && st <> (Unix.WEXITED 0) then begin
+           Printf.printf "stdout: ";
+           Buffer.output_buffer stdout outbuf;
+           Printf.printf "\nstderr: ";
+           Buffer.output_buffer stderr errbuf;
+           Printf.printf "\n";
+           flush_all ();
+         end;
+         update_file_changes env;
+         { Result.stdout = Buffer.contents outbuf;
+           stderr = Buffer.contents errbuf;
+           status = st;
+           file_changes = env.file_changes;
+         })
 
 end
 
