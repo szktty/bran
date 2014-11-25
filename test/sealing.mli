@@ -96,3 +96,10 @@ val run :
   -> ?basedir:string
   -> (Env.t -> string list)
   -> Result.t
+
+val replace_extension : string -> string -> string
+(** [replace_extension path extension]
+  * replace extension of [path] with [extension].
+  * [replace_extension "hello.world.txt" ".bin" = "hello.world.bin"]
+  * [replace_extension "hello_world" ".txt" = "hello_world.txt"]
+  *)

@@ -335,6 +335,9 @@ let run
       ?ignore_hidden basedir in
   Env.run ?expect_error ?expect_stderr ?chdir ?quiet env ~f
 
+let replace_extension path ext =
+    (fst & Xfilename.split_extension path) ^ ext
+
 let _test () =
   let res = run (fun _env -> ["ls"]) in
   print_endline res.stdout
