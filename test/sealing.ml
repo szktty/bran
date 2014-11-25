@@ -21,6 +21,17 @@ module FileChange = struct
   let change fc = fc.change
   let time fc = fc.time
 
+  let change_to_string = function
+    | Not_changed -> "Not_changed"
+    | Accessed -> "Accessed"
+    | Created -> "Created"
+    | Modified -> "Modified"
+    | Changed -> "Changed"
+    | Deleted -> "Deleted"
+
+  let to_string ch =
+    Printf.sprintf "(%s, %s, %f)" ch.path (change_to_string ch.change) ch.time
+
 end
 
 module Result = struct
@@ -42,6 +53,47 @@ module Result = struct
   let files_modified = filter_files FileChange.Modified
   let files_changed = filter_files FileChange.Changed
   let files_deleted = filter_files FileChange.Deleted
+
+  let files_updated res =
+    List.filter (fun fc ->
+        match fc.FileChange.change with
+        | FileChange.Not_changed -> false
+        | _ -> true)
+      res.file_changes
+
+  let has_file_changes res =
+    List.length (files_updated res) > 0
+
+  let has_files_created_only res paths =
+    let open FileChange in
+    let (created, all) =
+      List.fold_left
+        (fun (accu, all) fc ->
+           match fc.change with
+           | Not_changed -> accu, all
+           | Created | Accessed -> fc.path :: accu, all
+           | _ -> accu, false)
+        ([], true) res.file_changes
+    in
+    if not all || (List.length created <> List.length paths) then
+      false
+    else
+      List.for_all (fun p -> List.mem p created) paths
+
+  let return_code res =
+    match res.status with
+    | Unix.WEXITED v -> Some v
+    | _ -> None
+
+  let is_exited res =
+    match res.status with
+    | Unix.WEXITED _ -> true
+    | _ -> false
+
+  let is_succeded res =
+    match res.status with
+    | Unix.WEXITED 0 -> true
+    | _ -> false
 
 end
 
@@ -154,7 +206,7 @@ module Env = struct
       List.fold_left
         (fun accu fc ->
            if not & List.mem fc.path files then
-             { fc with change = Deleted; time = Sys.time () } :: accu
+             { fc with change = Deleted; time = Unix.time () } :: accu
            else
              accu) [] env.file_changes
     in
@@ -169,7 +221,7 @@ module Env = struct
              | Some fc ->
                if fc.time >= (max stats.st_atime &
                               max stats.st_mtime stats.st_ctime) then
-                 { fc with change = Not_changed; time = Sys.time () }
+                 { fc with change = Not_changed; time = Unix.time () }
                else
                  match fc.change with
                  | Deleted ->
@@ -257,7 +309,7 @@ module Env = struct
     | 0 ->
       env.file_changes <- { FileChange.path = dest;
                             change = Not_changed;
-                            time = Sys.time () }
+                            time = Unix.time () }
                           :: env.file_changes;
       dest
     | v -> Exn.failwithf "Env.install: copying file %s failed (exit %d)" src v

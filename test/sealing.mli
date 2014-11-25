@@ -20,6 +20,9 @@ module FileChange : sig
   val change : t -> change
   val time : t -> float
 
+  val to_string : t -> string
+  val change_to_string : change -> string
+
 end
 
 module Result : sig
@@ -37,6 +40,13 @@ module Result : sig
   val files_modified : t -> string list
   val files_changed : t -> string list
   val files_deleted : t -> string list
+  val files_updated : t -> FileChange.t list
+  val has_file_changes : t -> bool
+  val has_files_created_only : t -> string list -> bool
+
+  val return_code : t -> int option
+  val is_exited : t -> bool
+  val is_succeded : t -> bool
 
 end
 
