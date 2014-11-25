@@ -22,7 +22,6 @@ let () =
     [("-c", Arg.Unit (fun () -> Config.compile_only := true),
       "compile only, output Erlang source");
      ("-d", Arg.Unit (fun () -> Config.debug := true), "print debug messages");
-     ("-dry-run", Arg.Unit (fun () -> Config.dry_run := true), "parse syntax only");
      ("-emu-args", Arg.String (fun v -> Config.emu_args := Some v),
       "Erlang emulator flag embedded into executable file");
      ("-erl", Arg.String (fun v -> Config.erl_opts := Some v),
@@ -34,6 +33,7 @@ let () =
      ("-I", Arg.String (fun v ->
                           Config.load_paths := !Config.load_paths @ [v]),
       "add the path to load path list");
+     ("-s", Arg.Unit (fun () -> Config.syntax_only := true), "check syntax only");
      ("-v", Arg.Unit (fun () -> Config.verbose := true), "print verbose messages");
      ("-V", Arg.Unit (fun () -> printf "%s\n" Version.version),
       "print version and exit");

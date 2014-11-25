@@ -64,8 +64,8 @@ let gen_sig_file fpath defs =
   Log.verbose "%s\n" s;
   Printf.fprintf oc "%s\n" s
 
-let compile_file fpath =
-  let typed = Typing.f & Utils.parse_file fpath in
+let compile_file' fpath defs =
+  let typed = Typing.f defs in
   let prog = Erlang.f & Closure.f & Alpha.f & KNormal.f typed in
   let mname = Utils.module_name fpath in
   let outbuf = Buffer.create 128 in
@@ -85,3 +85,8 @@ let compile_file fpath =
       compile_erl_file outfpath;
     Unix.unlink outfpath
   end
+
+let compile_file fpath =
+  let defs = Utils.parse_file fpath in
+  if not !Config.syntax_only then
+    compile_file' fpath defs
