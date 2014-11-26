@@ -4,11 +4,16 @@ USE_OCAMLFIND = true
 OCAMLFLAGS += -g -thread -w A-4-9-27-40-42-44-45 -warn-error A
 
 FILES[] =
+	program
+	run
 	sealing
+	xounit
+	test_parsing
 
-PROGRAM = test
+PROGRAM = run
 
 OCAMLPACKS[] +=
+	ounit
 	unix
 	spotlib
 
@@ -19,4 +24,4 @@ OCAMLPACKS[] +=
 	$(OCamlC) -i -c $< > $@
 
 clean:
-	rm -rf *.cm* *.o *.opt $(PROGRAM)
+	rm -rf *.cm* *.o *.opt *.log *.cache $(PROGRAM) test_output
