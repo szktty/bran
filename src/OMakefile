@@ -181,7 +181,9 @@ FILES[] =
 	version
 	xstring
 
+BINDIR = ../bin
 PROGRAM = bran
+
 # OCAML_LIBS +=
 # OCAML_CLIBS +=
 # OCAML_OTHER_LIBS +=
@@ -192,7 +194,10 @@ OCAMLPACKS[] +=
 	unix
 	spotlib
 
+
 all: $(OCamlProgram $(PROGRAM), $(FILES))
+	mkdir -p $(BINDIR)
+	cp $(PROGRAM) $(BINDIR)/$(PROGRAM)
 
 .DEFAULT: all
 
@@ -201,4 +206,4 @@ all: $(OCamlProgram $(PROGRAM), $(FILES))
 	$(OCamlC) -i -c $< > $@
 
 clean:
-	rm -rf *.cm* *.o *.opt *.automaton parser.ml parser.mli lexer.ml $(PROGRAM)
+	rm -rf *.cm* *.o *.opt *.automaton parser.ml parser.mli lexer.ml $(PROGRAM) $(BINDIR)
