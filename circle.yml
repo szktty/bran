@@ -1,0 +1,15 @@
+dependencies:
+  pre:
+    - bash ./circle/install-ocaml.sh
+    - cp /home/ubuntu/ocaml/4.02.1/bin/* /home/ubuntu/bin
+    - bash ./circle/install-opam.sh
+    - cp /home/ubuntu/.opam/system/bin/* /home/ubuntu/bin
+  cache_directories:
+    - /home/ubuntu/ocaml
+    - /home/ubuntu/opam
+    - /home/ubuntu/.opam
+
+test:
+  override:
+    - /home/ubuntu/.opam/system/bin/omake
+    - /home/ubuntu/.opam/system/bin/omake test
