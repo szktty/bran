@@ -1,7 +1,6 @@
 dependencies:
   pre:
     - bash ./circle/install-otp.sh
-    - cp /home/ubuntu/otp/17.3/bin/* /home/ubuntu/bin
     - bash ./circle/install-ocaml.sh
     - cp /home/ubuntu/ocaml/4.02.1/bin/* /home/ubuntu/bin
     - bash ./circle/install-opam.sh
