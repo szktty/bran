@@ -7,7 +7,7 @@ dependencies:
     - bash ./circle/install-opam.sh
     - cp /home/ubuntu/.opam/system/bin/* /home/ubuntu/bin
   cache_directories:
-    - /home/ubuntu/ocaml
+    - /home/ubuntu/otp
     - /home/ubuntu/ocaml
     - /home/ubuntu/opam
     - /home/ubuntu/.opam
