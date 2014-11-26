@@ -25,3 +25,7 @@ parser.ml
 parser.mli
 *.beam
 bran
+test/*.cache
+test/*.log
+test/run
+test/test_output
