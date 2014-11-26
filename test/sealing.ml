@@ -190,7 +190,7 @@ module Env = struct
               basedir; workdir; vars;
               ignore_files = ignore_files';
               ignore_hidden; file_changes = []; predictions = [] } in
-    if start_clear then
+    if start_clear && Sys.file_exists basedir then
       clear e;
     if not & Sys.file_exists basedir then
       Unix.mkdir basedir 0o744;
