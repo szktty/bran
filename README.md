@@ -8,6 +8,7 @@ A strongly-typed language with type inference running on Erlang VM, influenced b
 
 ## Requirements
 
+- Erlang/OTP 17.3
 - OCaml 4.02.1
 - Menhir 20140422
 - Spotlib 2.5.0
