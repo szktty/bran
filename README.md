@@ -8,28 +8,78 @@ A strongly-typed language with type inference running on Erlang VM, influenced b
 
 ## Requirements
 
+### For usage
+
 - Erlang/OTP 17.3
+
+### For build
+
 - OCaml 4.02.1
 - Menhir 20140422
 - Spotlib 2.5.0
 - OMake 0.9.8.6-0.rc1
-- OUnit2 2.0.0 (for test)
+
+## For test
+
+- OUnit2 2.0.0
 
 
-## Build
+## Building from source
 
 ```
 $ omake
 ```
 
+## Installation
+
+1. Execute `make` at `liberl` directory to compile Erlang sources used by compiled Bran modules.
+
+  ```
+  $ cd liberl
+  $ make
+  ```
+
+2. Copy this directory or create a symbolic link to installation destination.
+
+  ```
+  $ ln -s /home/yourname/bran /opt/local/bran
+  ```
+
+3. Add path of the `bin` directory to command line path. (environment variable `PATH`, etc.)
+
+  ```
+  # .bashrc, etc.
+  export PATH=/opt/local/bran/bin:$PATH
+  ```
+
+4. Set environment variable `BRAN_LIBS` to the `lib` directory including signature files of Bran.
+
+  ```
+  # .bashrc, etc.
+  export BRAN_LIBS=/opt/local/bran/lib
+  ```
+
+5. Add path of the `liberl/ebin` directory, including Erlang modules, to environment variable `ERL_LIBS`.
+
+  ```
+  # .bashrc, etc.
+  export ERL_LIBS=/opt/local/bran/liberl/ebin:$ERL_LIBS
+  ```
+
+6. OK, let's try `bran` command.
+
+  ```
+  $ bran
+  ```
+
 ## Usage
 
 ```
-# at "src" directory
+# compile
 $ ./bran fib.br
 
-# add internal library directory to library path (-pa)
-$ erl -pa erl
+# use as Erlang module
+$ erl
 ...
 1> fib:fib(10).
 89
