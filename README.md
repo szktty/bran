@@ -10,6 +10,7 @@ A strongly-typed language with type inference running on Erlang VM, influenced b
 - Menhir 20140422
 - Spotlib 2.5.0
 - OMake 0.9.8.6-0.rc1
+- OUnit2 2.0.0 (for test)
 
 
 ## Build
