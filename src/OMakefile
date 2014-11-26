@@ -181,7 +181,9 @@ FILES[] =
 	version
 	xstring
 
+BINDIR = ../bin
 PROGRAM = bran
+
 # OCAML_LIBS +=
 # OCAML_CLIBS +=
 # OCAML_OTHER_LIBS +=
@@ -192,11 +194,16 @@ OCAMLPACKS[] +=
 	unix
 	spotlib
 
-.DEFAULT: $(OCamlProgram $(PROGRAM), $(FILES))
+
+all: $(OCamlProgram $(PROGRAM), $(FILES))
+	mkdir -p $(BINDIR)
+	cp $(PROGRAM) $(BINDIR)/$(PROGRAM)
+
+.DEFAULT: all
 
 # omake xxx.auto.mli creates the mli file from xxx.ml automatically
 %.auto.mli: %.ml
 	$(OCamlC) -i -c $< > $@
 
 clean:
-	rm -rf *.cm* *.o *.opt *.automaton parser.ml parser.mli lexer.ml $(PROGRAM)
+	rm -rf *.cm* *.o *.opt *.automaton parser.ml parser.mli lexer.ml $(PROGRAM) $(BINDIR)

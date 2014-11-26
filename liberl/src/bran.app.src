@@ -1,0 +1,12 @@
+{application, bran,
+ [
+  {description, ""},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {modules, [bran, bran_lib_pervasives, bran_lib_erlang]},
+  {env, []}
+ ]}.

@@ -1,3 +1,5 @@
-.PHONY: all install clean
+.PHONY: all install clean test
 
-.SUBDIRS: src test libsrc
+.SUBDIRS: src test lib liberl
+
+.DEFAULT: all

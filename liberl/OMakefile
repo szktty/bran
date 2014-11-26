@@ -1,0 +1,10 @@
+.PHONY: all clean test
+
+all:
+	make
+
+clean:
+	make clean
+
+test:
+	make test

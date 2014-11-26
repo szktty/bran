@@ -1,9 +1,0 @@
-.PHONY: all install clean
-
-ERLC = erlc
-
-all:
-	$(ERLC) bran_lib_pervasives.erl
-	$(ERLC) bran_lib_erlang.erl
-
-.DEFAULT: all
