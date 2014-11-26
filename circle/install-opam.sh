@@ -6,6 +6,7 @@ if [ ! -e /home/ubuntu/opam/$VERSION/bin/opam ]; then
     tar xvfz opam-full-$VERSION.tar.gz
     cd opam-full-$VERSION
     ./configure --prefix=/home/ubuntu/opam/$VERSION --bindir=/home/ubuntu/bin
+    make lib-ext
     make
     make install
 
