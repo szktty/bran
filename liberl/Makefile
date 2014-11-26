@@ -1,4 +1,4 @@
-.PHONY: doc
+.PHONY: compile doc clean test
 
 all: compile
 
