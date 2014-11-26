@@ -192,7 +192,9 @@ OCAMLPACKS[] +=
 	unix
 	spotlib
 
-.DEFAULT: $(OCamlProgram $(PROGRAM), $(FILES))
+all: $(OCamlProgram $(PROGRAM), $(FILES))
+
+.DEFAULT: all
 
 # omake xxx.auto.mli creates the mli file from xxx.ml automatically
 %.auto.mli: %.ml
