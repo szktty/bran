@@ -19,12 +19,14 @@ let test_parsing file test_ctx =
   assert_success res;
   assert_no_file_changes res
 
-let parsing_files = ["def.br"]
+let parsing_files = [
+  ("simple_def", "def.br");
+]
 
 let suite =
   let auto =
-    List.map (fun file ->
-        ("test_parsing-" ^ file) >:: (test_parsing & "../parsing/" ^ file))
+    List.map (fun (name, file) ->
+        name >:: (test_parsing & "../parsing/" ^ file))
       parsing_files
   in
-  test_list auto
+  "parsing" >: (test_list auto)
