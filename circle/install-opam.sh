@@ -2,7 +2,7 @@ VERSION=1.2.0
 set -x
 set -e
 if [ ! -e /home/ubuntu/opam/$VERSION/bin/opam ]; then
-    curl -O https://github.com/ocaml/opam/releases/download/1.2.0/opam-full-$VERSION.tar.gz
+    curl -L -O https://github.com/ocaml/opam/releases/download/$VERSION/opam-full-$VERSION.tar.gz
     tar xvfz opam-full-$VERSION.tar.gz
     cd opam-full-$VERSION
     ./configure --prefix=/home/ubuntu/opam/$VERSION --bindir=/home/ubuntu/bin
