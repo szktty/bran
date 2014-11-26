@@ -13,7 +13,7 @@ FILES[] =
 PROGRAM = run
 
 OCAMLPACKS[] +=
-	ounit
+	oUnit
 	unix
 	spotlib
 
