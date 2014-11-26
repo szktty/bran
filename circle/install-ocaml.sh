@@ -1,4 +1,4 @@
-VERSION=$VERSION
+VERSION=4.02.1
 DISTDIR=ocaml-4.02
 set -x
 set -e
