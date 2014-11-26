@@ -146,7 +146,7 @@ OCamlGeneratedFiles(parser.ml lexer.ml)
 # Build an OCaml program
 #
 
-OCAMLFLAGS += -g -thread -w A-4-9-27-40-42-44-45 -warn-error A
+OCAMLFLAGS += -g -thread -w A-4-9-27-40-42-44-45-48 -warn-error A
 
 MENHIR_FLAGS += -v
 MENHIR_ENABLED = true
