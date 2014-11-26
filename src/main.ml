@@ -38,6 +38,11 @@ let () =
     ]
     (fun s -> files := !files @ [s])
     (sprintf "Usage: %s [options] file" Sys.argv.(0));
+  if List.length !files = 0 then begin
+    Printf.printf "Error: No input files\n";
+    Printf.printf "Try `-help' option for usage information.\n";
+    exit 1
+  end;
 
   (* getenv BRAN_LIBS *)
   Spotlib.Option.iter
