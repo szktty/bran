@@ -1,6 +1,8 @@
 Bran
 ====
 
+[![Circle CI](https://circleci.com/gh/szktty/bran.png?style=badge)](https://circleci.com/gh/szktty/bran)
+
 A strongly-typed language with type inference running on Erlang VM, influenced by OCaml.
 
 
