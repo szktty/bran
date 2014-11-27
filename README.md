@@ -139,6 +139,20 @@ $ erl
 # comment
 ```
 
+### Literals
+
+#### Atom
+
+```
+@atom
+@Atom
+@atom_ok
+@Atom_ok
+@"atom"
+@"a t o m"
+@"*a+t-o/m!?* :-@"
+```
+
 ### Variable bindings
 
 ```
