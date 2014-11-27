@@ -1,0 +1,7 @@
+def lower _ = @atom
+def upper _ = @Atom
+def lunder _ = @atom_ok
+def uunder _ = @Atom_ok
+def quotes _ = @"atom"
+def space _ = @"a t o m"
+def op _ = @"*a+t-o/m!?* :-@"

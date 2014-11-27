@@ -35,6 +35,7 @@ let rev_combine_list = function
 %token <int Locating.t> INT
 %token <float Locating.t> FLOAT
 %token <string Locating.t> STRING
+%token <string Locating.t> ATOM
 %token <Location.t> NOT
 %token <Location.t> MINUS
 %token <Location.t> MINUS_DOT
@@ -115,7 +116,7 @@ let rev_combine_list = function
 %left prec_app
 %nonassoc guard
 %nonassoc PIPE
-%nonassoc UIDENT LPAREN LBRACK INT IDENT BOOL STRING BEGIN RPAREN END
+%nonassoc UIDENT LPAREN LBRACK INT IDENT BOOL STRING ATOM BEGIN RPAREN END
 %left LBRACE
 
 /* 開始記号の定義 */
@@ -186,6 +187,8 @@ primary:
       { create $1.loc (add_type (Int $1.desc)) }
     | STRING
       { create $1.loc (add_type (String $1.desc)) }
+    | ATOM
+      { create $1.loc (add_type (Atom $1.desc)) }
     | IDENT
       { create $1.loc (add_type (Var $1.desc)) }
     | LBRACK list RBRACK

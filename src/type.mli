@@ -9,6 +9,7 @@ and tycon =
   | Bool 
   | Int 
   | String
+  | Atom
   | Arrow 
   | Tuple
   | Record of Id.t * Id.t list
