@@ -8,5 +8,5 @@ rm -rf bran $ZIP
 git clone https://github.com/szktty/bran.git
 cd bran
 omake --project
-omake --project test && rm -rf devbuild.sh circle.yml circle src test OMake* lib/OMake* liberl/OMake* && tar czf ../$ZIP .
+omake --project test && rm -rf .omakedb .omakedb.lock devbuild.sh circle.yml circle src test OMake* lib/OMake* liberl/OMake* && tar czf ../$ZIP .
 cd ..
