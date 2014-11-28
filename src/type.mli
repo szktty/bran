@@ -10,6 +10,7 @@ and tycon =
   | Int 
   | String
   | Atom
+  | Bitstring
   | Arrow 
   | Tuple
   | Record of Id.t * Id.t list

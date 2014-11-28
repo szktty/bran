@@ -5,6 +5,7 @@ type t =
   | Atom of string
   | Int of int
   | String of string
+  | Bitstring of Bitstring.t
   | Record of (Id.t * t) list
   | Field of t * Id.t
   | List of t list
@@ -70,6 +71,7 @@ let rec gen_exp (e, t) =
   | Closure.Int v -> Int v
   | Closure.String s -> String s
   | Closure.Atom s -> Atom s
+  | Closure.Bitstring s -> Bitstring s
   | Closure.Tuple ets -> Tuple (List.map gen_exp ets)
   | Closure.Not et -> Not (gen_exp et)
   | Closure.And (e1, e2) -> And (gen_exp e1, gen_exp e2)

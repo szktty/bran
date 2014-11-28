@@ -5,9 +5,14 @@ let print_error fpath loc msg =
   let end_line = Location.end_line loc + 1 in
   let start_col = Location.start_col loc + 1 in
   let end_col = Location.end_col loc in
-  if start_line = end_line then
-    Printf.printf "File \"%s\", line %d, characters %d-%d:\n"
-      fpath start_line start_col end_col
+  if start_line = end_line then begin
+    if start_col = end_col then
+      Printf.printf "File \"%s\", line %d, characters %d:\n"
+        fpath start_line start_col
+    else
+      Printf.printf "File \"%s\", line %d, characters %d-%d:\n"
+        fpath start_line start_col end_col
+    end
   else
     Printf.printf "File \"%s\", between line and characters %d:%d-%d:%d:\n"
       fpath start_line start_col end_line end_col;
@@ -60,7 +65,10 @@ let () =
        with
        | Lexer.Error (loc, msg) -> print_error fpath loc msg
        | Sig.Error (loc, msg) -> print_error fpath loc msg
-       | Syntax.Syntax_error loc -> print_error fpath loc "Syntax error"
+       | Syntax.Syntax_error (loc, None) ->
+         print_error fpath loc "Syntax error"
+       | Syntax.Syntax_error (loc, Some msg) ->
+         print_error fpath loc ("Syntax error: " ^ msg)
        | Syntax.Unbound_value_error (loc, x) ->
          print_error fpath loc ("Unbound value `" ^ x ^ "'")
        | Syntax.Unbound_module_error (loc, x) ->

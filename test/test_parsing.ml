@@ -24,6 +24,7 @@ let parsing_files = [
   ("atom", "atom.br");
   ("string", "string.br");
   ("bool", "bool.br");
+  ("bitstring", "bitstring.br");
 ]
 
 let suite =

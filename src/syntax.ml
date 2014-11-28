@@ -1,4 +1,4 @@
-exception Syntax_error of Location.t
+exception Syntax_error of Location.t * string option
 exception Unbound_value_error of Location.t * Id.t
 exception Unbound_module_error of Location.t * Id.t
 
@@ -9,6 +9,7 @@ and expr =
   | Int of int
   | String of string
   | Atom of string
+  | Bitstring of Bitstring.t
   | Record of (Id.t * t) list
   | Field of t * Id.t
   | Tuple of t list
@@ -73,6 +74,7 @@ and string_of_expr =
   | Int(n) -> "Int(" ^ (string_of_int n) ^ ")"
   | String s -> "String(" ^ s ^ ")"
   | Atom s -> "Atom(" ^ s ^ ")"
+  | Bitstring x -> "Bitstring(" ^ (Bitstring.to_string x) ^ ")"
   | Record(xs) -> "Record(" ^ (Xstring.concat_list "; " (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xs) ^ ")"
   | Field(e, x) -> "Field(" ^ (string_of_typed_expr e) ^ ", " ^ x ^ ")"
   | Tuple(es) -> "Tuple([" ^ (String.concat "; " (List.map string_of_typed_expr es)) ^ "])"

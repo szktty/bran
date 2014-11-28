@@ -17,6 +17,48 @@ let rec gen_exp oc = function
   | Atom s -> bprintf oc "'%s'" s
   | Int v -> bprintf oc "%d" v
   | String s -> bprintf oc "%s" (Erlang.literal_of_string s)
+  | Bitstring es ->
+    begin
+      let open Bitstring in
+      bprintf oc "<<";
+      bprintf oc "%s" & Xstring.concat_list ", "
+        (fun e ->
+          begin match e.Bits.value with
+            | Bits.Int v -> sprintf "%d" v
+            | Bits.Float v -> sprintf "%f" v
+            | Bits.String v -> sprintf "\"%s\"" v
+            | Bits.Var v -> sprintf "%s" (gen_var v)
+          end ^
+          begin match e.Bits.size with
+            | None -> ""
+            | Some v -> ":" ^ string_of_int v
+          end ^ "/" ^
+          begin match e.Bits.typ with
+            | `Int -> "integer"
+            | `Float -> "float"
+            | `Binary -> "binary"
+            | `Bitstring -> "bitstring"
+            | `UTF8 -> "utf8"
+            | `UTF16 -> "utf16"
+            | `UTF32 -> "utf32"
+          end ^
+          begin match e.Bits.sign with
+            | None -> ""
+            | Some `Unsigned -> "-unsigned"
+            | Some `Signed -> "-signed"
+          end ^
+          begin match e.Bits.endian with
+            | None -> ""
+            | Some `Big -> "-big"
+            | Some `Little -> "-little"
+            | Some `Native -> "-native"
+          end ^
+          begin match e.Bits.unit with
+            | None -> ""
+            | Some v -> sprintf "-unit:%d" v
+          end) es;
+      bprintf oc ">>";
+    end
   | Var x -> bprintf oc "%s" (gen_var x)
   | Tuple es ->
     bprintf oc "{";

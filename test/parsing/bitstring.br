@@ -1,0 +1,30 @@
+def bit1 _ = <<1, 17, 42>>
+def bit2 _ = <<0, "abc">>
+def bit3 _ = <<1,17,42:16>>
+def bit4 _ = <<b1, b2, b3>>
+def bit5 _ = <<r:8, g:8, b:8>>
+
+def bit6 _ = <<123/integer>>
+def bit7 _ = <<123/float>>
+def bit8 _ = <<123/binary>>
+def bit9 _ = <<123/bytes>>
+def bit10 _ = <<123/bitstring>>
+def bit11 _ = <<123/bits>>
+def bit12 _ = <<123/utf8>>
+def bit13 _ = <<123/utf16>>
+def bit14 _ = <<123/utf32>>
+
+def bit15 _ = <<123/int>>
+def bit16 _ = <<123/sint>>
+
+def bit17 _ = <<123/signed>>
+def bit18 _ = <<123/unsigned>>
+
+def bit19 _ = <<123/big>>
+def bit20 _ = <<123/little>>
+def bit21 _ = <<123/native>>
+def bit22 _ = <<1:8/unit:8>>
+
+def bit23 _ = <<123/int-native>>
+def bit24 _ = <<123/unsigned-big-integer>>
+def bit25 _ = <<"abc"/utf8>>

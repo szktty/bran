@@ -15,6 +15,7 @@ and expr =
   | Int of int
   | String of string
   | Atom of string
+  | Bitstring of Bitstring.t
   | Record of (Id.t * et) list
   | Field of et * Id.t
   | Module of Id.t
@@ -70,6 +71,7 @@ and string_of_expr =
   | Int(n) -> string_of_int n
   | String(s) -> "\"" ^ s ^ "\""
   | Atom(s) -> "@\"" ^ s ^ "\""
+  | Bitstring x -> Bitstring.to_string x
   | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
   | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
   | Module x -> "module type " ^ x
@@ -121,7 +123,7 @@ let rec vars_of_pattern =
       
 let rec fv_of_expr (e, _) = 
   match e with
-  | Bool(_) | Int(_) | String _ | Atom _ | Module _ -> S.empty
+  | Bool(_) | Int(_) | String _ | Atom _ | Bitstring _ | Module _ -> S.empty
   | Record(xes) -> List.fold_left (fun s (_, e) -> S.union s (fv_of_expr e)) S.empty xes
   | Field(e, _) -> fv_of_expr e
   | Tuple(es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
@@ -191,6 +193,7 @@ let rec h env known (expr, ty) =
     | KNormal.Int(i) -> Int(i)
     | KNormal.String s -> String s
     | KNormal.Atom s -> Atom s
+    | KNormal.Bitstring s -> Bitstring s
     | KNormal.Record(xes) -> Record(List.map (fun (x, e) -> x, h env known e) xes)
     | KNormal.Field(e, x) -> Field(h env known e, x)
     | KNormal.Module x -> Module x

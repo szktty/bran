@@ -1,4 +1,4 @@
-exception Syntax_error of Location.t
+exception Syntax_error of Location.t * string option
 exception Unbound_value_error of Location.t * Id.t
 exception Unbound_module_error of Location.t * Id.t
 
@@ -9,6 +9,7 @@ and expr =
   | Int of int
   | String of string
   | Atom of string
+  | Bitstring of Bitstring.t
   | Record of (Id.t * t) list
   | Field of t * Id.t
   | Tuple of t list

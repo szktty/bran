@@ -14,6 +14,7 @@ let rec h ids (e, t) =
     | Int(i) -> Int(i)
     | String s -> String s
     | Atom s -> Atom s
+    | Bitstring s -> Bitstring s
     | Record(xes) -> Record(List.map (fun (x, e) -> find x ids, (h ids e)) xes)
     | Field(e, x) -> Field(h ids e, find x ids)
     | Module x -> Module x

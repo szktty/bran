@@ -14,6 +14,7 @@ and expr =
   | Int of int
   | String of string
   | Atom of string
+  | Bitstring of Bitstring.t
   | Record of (Id.t * et) list
   | Field of et * Id.t
   | Module of Id.t

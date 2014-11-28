@@ -13,6 +13,7 @@ let predeftypes = [
     ("int", Type.TyFun([], Type.App(Type.Int, [])));
     ("string", Type.TyFun([], Type.App(Type.String, [])));
     ("atom", Type.TyFun([], Type.App(Type.Atom, [])));
+    ("bitstring", Type.TyFun([], Type.App(Type.Bitstring, [])));
     ("list", Type.TyFun(["a"], Type.App(Type.Variant("list", [("Nil", []); ("Cons", [Type.Var("a"); Type.App(Type.NameTycon("list", ref None), [Type.Var("a")])])]), [])));
 ]
 

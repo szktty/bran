@@ -12,6 +12,18 @@ let next_line lexbuf =
                pos_lnum = pos.pos_lnum + 1
     }
 
+let next_line_in_spaces lexbuf s =
+    let lines =  Spotlib.Xstring.lines s in
+    match List.length lines with
+    | 0 | 1 -> ()
+    | n ->
+      let pos = lexbuf.lex_curr_p in
+      lexbuf.lex_curr_p <-
+        { pos with pos_bol = String.length & fst & Spotlib.Xlist.last lines;
+                   pos_lnum = pos.pos_lnum + (n - 1)
+        }
+
+
 let revise_pos pos lexbuf =
   Position.of_lexing_pos
     { pos with pos_lnum = pos.pos_lnum - 1;
@@ -103,6 +115,8 @@ rule token = parse
     { MINUS (to_loc lexbuf) }
 | '+' (* +.より後回しにしなくても良い? 最長一致? *)
     { PLUS (to_loc lexbuf) }
+| '/'
+    { SLASH (to_loc lexbuf) }
 | "-."
     { MINUS_DOT (to_loc lexbuf) }
 | "+."
@@ -131,13 +145,14 @@ rule token = parse
     { IF (to_loc lexbuf) }
 | "then"
     { THEN (to_loc lexbuf) }
-| space* "else"
-    { ELSE (to_loc lexbuf) }
+| (space* as s) "else"
+    { next_line_in_spaces lexbuf s; ELSE (to_loc lexbuf) }
 | "in"
     { IN (to_loc lexbuf) }
 | "rec"
     { REC (to_loc lexbuf) }
-| space* "def" { DEF (to_loc lexbuf) }
+| (space* as s) "def"
+    { next_line_in_spaces lexbuf s; DEF (to_loc lexbuf) }
 | "external" { EXTERNAL (to_loc lexbuf) }
 | "var" { VAR (to_loc lexbuf) }
 | "import" { IMPORT (to_loc lexbuf) }
@@ -145,7 +160,8 @@ rule token = parse
 | "of" { OF (to_loc lexbuf) }
 | "with" { WITH (to_loc lexbuf) }
 | "match" { MATCH (to_loc lexbuf) }
-| space* "end" { END (to_loc lexbuf) }
+| (space* as s) "end"
+    { next_line_in_spaces lexbuf s; END (to_loc lexbuf) }
 | "done" { DONE (to_loc lexbuf) }
 | "for" { FOR (to_loc lexbuf) }
 | "while" { WHILE (to_loc lexbuf) }
@@ -176,8 +192,12 @@ rule token = parse
               (Spotlib.Xstring.drop 1 & lexeme lexbuf)) }
 | '@' '"'
     { ATOM (strlit_to_word lexbuf string) }
-| space* eof
-    { EOF (to_loc lexbuf) }
+| "<<"
+    { LESS_LESS (to_loc lexbuf) }
+| ">>"
+    { GREATER_GREATER (to_loc lexbuf) }
+| (space* as s) eof
+    { next_line_in_spaces lexbuf s; EOF (to_loc lexbuf) }
 | ident
     { IDENT (to_word lexbuf) }
 | uident
@@ -187,8 +207,8 @@ rule token = parse
         Printf.sprintf "unknown token '%s'" (lexeme lexbuf))) }
 
 and comment = parse
-| nl+
-    { () }
+| nl
+    { next_line lexbuf }
 | eof
     { Format.eprintf "warning: unterminated comment." }
 | _
