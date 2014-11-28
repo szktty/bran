@@ -1,0 +1,1 @@
+external to_binary : bitstring -> binary = "bran_lib_bitstring:to_binary"
