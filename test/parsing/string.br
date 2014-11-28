@@ -1,7 +1,7 @@
 def s1 _ = "string"
 def s2 _ = "42"
 def s3 _ = "string 42"
-def espace1 _ = "'\"\\"
+def espace1 _ = "'\'\"\\"
 def espace2 _ = "\b\d\e\f\n\r\s\t\v"
 def oct _ = "\0 \01 \012"
 def hex1 _ = "\x00\xff"
