@@ -17,8 +17,11 @@ OCAMLPACKS[] +=
 	unix
 	spotlib
 
-test: $(OCamlProgram $(PROGRAM), $(FILES))
-	./$(PROGRAM)
+test: $(OCamlProgram $(PROGRAM), $(FILES)) 
+	if $(not $(test -e ../src/bran))
+		println("Error: Compiler is not found. Do `omake'.")
+	else
+		./$(PROGRAM)
 
 # omake xxx.auto.mli creates the mli file from xxx.ml automatically
 %.auto.mli: %.ml
