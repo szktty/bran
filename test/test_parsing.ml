@@ -26,7 +26,7 @@ let parsing_files = [
 
 let suite =
   let auto =
-    List.map (fun (name, file) ->
+    List.rev & List.map (fun (name, file) ->
         name >:: (test_parsing & "../parsing/" ^ file))
       parsing_files
   in
