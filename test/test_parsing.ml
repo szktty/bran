@@ -23,6 +23,7 @@ let parsing_files = [
   ("simple_def", "def.br");
   ("atom", "atom.br");
   ("string", "string.br");
+  ("bool", "bool.br");
 ]
 
 let suite =
