@@ -1,6 +1,7 @@
 {
 open Lexing
 open Parser
+open Spotlib.Base
 
 exception Error of Location.t * string
 
@@ -56,8 +57,9 @@ let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let hexstr = '\\' 'x' hexdigit hexdigit
 let octstr = '\\' digit? digit? digit?
 let escape = '\\' ['\'' '"' '\\' 'a' 'b' 'f' 'n' 'r' 't' 'v']
-let dqstrchr = escape | hexstr | octstr | [^ '"' '\\' '\r' '\n']+
+let dqstrchr = escape | "\\\"" | [^ '"' '\\' '\r' '\n']
 let sqstrchr = escape | hexstr | octstr | [^ '\'' '\\' '\r' '\n']+
+let atom = ['a'-'z' 'A'-'Z' '0'-'9' '_']+
 let blank = [' ' '\t']*
 let space = blank | nl
 let dirname = [^' ' '\t' '\r' '\n']+
@@ -165,6 +167,11 @@ rule token = parse
     { SEMI (to_loc lexbuf) }
 | '"'
     { STRING (strlit_to_word lexbuf string) }
+| '@' atom
+    { ATOM (Locating.create (to_loc lexbuf)
+              (Spotlib.Xstring.drop 1 & lexeme lexbuf)) }
+| '@' '"'
+    { ATOM (strlit_to_word lexbuf string) }
 | space* eof
     { EOF (to_loc lexbuf) }
 | ident
@@ -185,12 +192,13 @@ and comment = parse
 
 and string buf =
   parse
-  | '"'       { Buffer.contents buf }
+  | '"'
+    { Buffer.contents buf }
   | nl as s
     { Buffer.add_string buf s;
       next_line lexbuf;
       string buf lexbuf }
-  | dqstrchr as s
+  | dqstrchr+ as s
     { Buffer.add_string buf s; string buf lexbuf }
   | _ { raise (Error (to_loc lexbuf, "Illegal string character: " ^ lexeme lexbuf)) }
   | eof { raise (Error (to_loc lexbuf, "String is not terminated")) }

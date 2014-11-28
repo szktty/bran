@@ -35,7 +35,8 @@ module Result : sig
     predictions : FileChange.t list;
   }
 
-  val files_changed : t -> FileChange.change -> string list
+  val changes : t -> FileChange.t list
+  val find_files_changed : t -> FileChange.change -> string list
   val files_updated : t -> FileChange.t list
   val has_file_changes : t -> bool
   val has_files_created_only : t -> string list -> bool
@@ -58,6 +59,7 @@ module Env : sig
     -> ?start_clear:bool
     -> ?ignore_files:string list
     -> ?ignore_hidden:bool
+    -> ?parallel:bool
     -> string
     -> t
   (** Create an environment at the base path *)
@@ -91,6 +93,7 @@ val run :
   -> ?start_clear:bool
   -> ?ignore_files:string list
   -> ?ignore_hidden:bool
+  -> ?parallel:bool
   -> ?expect_error:bool
   -> ?expect_stderr:bool
   -> ?chdir:string

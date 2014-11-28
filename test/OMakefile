@@ -2,6 +2,7 @@
 
 USE_OCAMLFIND = true
 OCAMLFLAGS += -g -thread -w A-4-9-27-40-42-44-45-48 -warn-error A
+OUNITFLAGS =
 
 FILES[] =
 	program
@@ -17,12 +18,15 @@ OCAMLPACKS[] +=
 	unix
 	spotlib
 
-test: $(OCamlProgram $(PROGRAM), $(FILES))
-	./$(PROGRAM)
+test: $(OCamlProgram $(PROGRAM), $(FILES)) 
+	if $(not $(test -e ../src/bran))
+		println("Error: Compiler is not found. Do `omake'.")
+	else
+		./$(PROGRAM) $(OUNITFLAGS)
 
 # omake xxx.auto.mli creates the mli file from xxx.ml automatically
 %.auto.mli: %.ml
 	$(OCamlC) -i -c $< > $@
 
 clean:
-	rm -rf *.cm* *.o *.opt *.log *.cache $(PROGRAM) test_output
+	rm -rf *.cm* *.o *.opt *.log *.cache $(PROGRAM) test_output*

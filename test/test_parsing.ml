@@ -21,11 +21,12 @@ let test_parsing file test_ctx =
 
 let parsing_files = [
   ("simple_def", "def.br");
+  ("atom", "atom.br");
 ]
 
 let suite =
   let auto =
-    List.map (fun (name, file) ->
+    List.rev & List.map (fun (name, file) ->
         name >:: (test_parsing & "../parsing/" ^ file))
       parsing_files
   in

@@ -8,6 +8,7 @@ and expr =
   | Bool of bool
   | Int of int
   | String of string
+  | Atom of string
   | Record of (Id.t * t) list
   | Field of t * Id.t
   | Tuple of t list
@@ -71,6 +72,7 @@ and string_of_expr =
   | Bool(b) -> "Bool(" ^ (string_of_bool b) ^ ")"
   | Int(n) -> "Int(" ^ (string_of_int n) ^ ")"
   | String s -> "String(" ^ s ^ ")"
+  | Atom s -> "Atom(" ^ s ^ ")"
   | Record(xs) -> "Record(" ^ (Xstring.concat_list "; " (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xs) ^ ")"
   | Field(e, x) -> "Field(" ^ (string_of_typed_expr e) ^ ", " ^ x ^ ")"
   | Tuple(es) -> "Tuple([" ^ (String.concat "; " (List.map string_of_typed_expr es)) ^ "])"

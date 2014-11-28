@@ -28,6 +28,6 @@ bran
 test/*.cache
 test/*.log
 test/run
-test/test_output
+test/test_output*
 .rebar
 ebin
