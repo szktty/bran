@@ -58,6 +58,7 @@ let () =
          | (_, ".bri") -> ignore & Sig.load_file fpath
          | (_, ext) -> Log.error "Unknown file extension %s\n" ext
        with
+       | Lexer.Error (loc, msg) -> print_error fpath loc msg
        | Sig.Error (loc, msg) -> print_error fpath loc msg
        | Syntax.Syntax_error loc -> print_error fpath loc "Syntax error"
        | Syntax.Unbound_value_error (loc, x) ->

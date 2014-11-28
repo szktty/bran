@@ -22,6 +22,7 @@ let test_parsing file test_ctx =
 let parsing_files = [
   ("simple_def", "def.br");
   ("atom", "atom.br");
+  ("string", "string.br");
 ]
 
 let suite =

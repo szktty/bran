@@ -153,6 +153,18 @@ $ erl
 @"*a+t-o/m!?* :-@"
 ```
 
+#### String
+
+Escape sequences are the same as one of Erlang.
+
+```
+"string"
+"42"
+"hello, world!\n"
+"\052"
+"\x00\xff"
+```
+
 ### Variable bindings
 
 ```
