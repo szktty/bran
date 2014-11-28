@@ -19,6 +19,7 @@ and expr =
   | Int of int
   | String of string
   | Atom of string
+  | Bitstring of Bitstring.t
   | Record of (Id.t * et) list
   | Field of et * Id.t
   | Module of Id.t
@@ -70,6 +71,7 @@ and string_of_expr =
   | Int(n) -> string_of_int n
   | String s -> "\"" ^ s ^ "\""
   | Atom s -> "@\"" ^ s ^ "\""
+  | Bitstring x -> Bitstring.to_string x
   | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
   | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
   | Module x -> "module type " ^ x
@@ -153,6 +155,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* Kæ­£è
     | Syntax.Int(n) -> Exp(Int(n), t)
     | Syntax.String(s) -> Exp(String(s), t)
     | Syntax.Atom(s) -> Exp(Atom(s), t)
+    | Syntax.Bitstring(x) -> Exp(Bitstring(x), t)
     | Syntax.Record(xes) ->
       insert_lets (List.map snd xes)
         (fun ets' -> Exp(Record(List.combine (List.map fst xes) ets'), t))

@@ -9,6 +9,7 @@ and expr =
   | Int of int
   | String of string
   | Atom of string
+  | Bitstring of Bitstring.t
   | Record of (Id.t * t) list
   | Field of t * Id.t
   | Tuple of t list

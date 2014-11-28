@@ -198,7 +198,7 @@ primary:
             create x.loc (add_type (Constr("Cons", [x; xs]))))
             $2 (create $3 (add_type (Constr("Nil", [])))) }
     | LESS_LESS bitstring GREATER_GREATER
-      { range $1 $3 & add_type Unit } (* TODO: Type.Bitstring *)
+      { range $1 $3 & add_type (Bitstring $2) }
     
 field_expr:
     | primary DOT IDENT

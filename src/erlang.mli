@@ -4,6 +4,7 @@ type t =
   | Atom of string
   | Int of int
   | String of string
+  | Bitstring of Bitstring.t
   | Record of (Id.t * t) list
   | Field of t * Id.t
   | List of t list
