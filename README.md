@@ -165,6 +165,19 @@ Escape sequences are the same as one of Erlang.
 "\x00\xff"
 ```
 
+#### Bitstring
+
+Basically bitstring syntax is the same as one of Erlang. See [Bit Syntax Expressions](http://www.erlang.org/doc/reference_manual/expressions.html#bit_syntax).
+
+```
+<<42>>
+<<"abc">>
+<<1,17,42:16>>
+<<123/int-native>>
+<<123/unsigned-big-integer>>
+<"abc"/utf8>>
+```
+
 ### Variable bindings
 
 ```
