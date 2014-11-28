@@ -43,6 +43,7 @@ let digit = ['0'-'9']
 let body = (digit|lower|upper|['_' '\''])*
 let ident = lower body
 let uident = upper body
+let octdigit = ['0'-'9']
 let hexdigit = ['0'-'9' 'a'-'f' 'A'-'F']
 let int = digit+ | hex hexdigit+
 let frac = '.' digit*
@@ -54,11 +55,14 @@ let float = fnum exp? | hex hexfnum binexp?
 let white = [' ' '\t']+
 let nl = '\r' | '\n' | "\r\n"
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
-let hexstr = '\\' 'x' hexdigit hexdigit
-let octstr = '\\' digit? digit? digit?
+let hexstr = hexdigit hexdigit
+let octstr = digit? digit? digit?
 let escape = '\\' ['\'' '"' '\\' 'b' 'd' 'e' 'f' 'n' 'r' 's' 't' 'v']
 let dqstrchr = escape | [^ '"' '\\' '\r' '\n']
 let sqstrchr = escape | hexstr | octstr | [^ '\'' '\\' '\r' '\n']+
+let octstr = octdigit octdigit? octdigit?
+let hexstr = hexdigit hexdigit | '{' hexdigit+ '}'
+let ctrlchr = ['a'-'z' 'A'-'Z']
 let atom = ['a'-'z' 'A'-'Z' '0'-'9' '_']+
 let blank = [' ' '\t']*
 let space = blank | nl
@@ -198,6 +202,12 @@ and string buf =
     { Buffer.add_string buf s;
       next_line lexbuf;
       string buf lexbuf }
+  | '\\' octstr
+    { Buffer.add_string buf (lexeme lexbuf); string buf lexbuf }
+  | '\\' 'x' hexstr
+    { Buffer.add_string buf (lexeme lexbuf); string buf lexbuf }
+  | '\\' '^' ctrlchr
+    { Buffer.add_string buf (lexeme lexbuf); string buf lexbuf }
   | dqstrchr+ as s
     { Buffer.add_string buf s; string buf lexbuf }
   | _ { raise (Error (to_loc lexbuf, "Illegal string character: " ^ lexeme lexbuf)) }
