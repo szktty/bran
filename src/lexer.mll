@@ -56,8 +56,8 @@ let nl = '\r' | '\n' | "\r\n"
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let hexstr = '\\' 'x' hexdigit hexdigit
 let octstr = '\\' digit? digit? digit?
-let escape = '\\' ['\'' '"' '\\' 'a' 'b' 'f' 'n' 'r' 't' 'v']
-let dqstrchr = escape | "\\\"" | [^ '"' '\\' '\r' '\n']
+let escape = '\\' ['\'' '"' '\\' 'b' 'd' 'e' 'f' 'n' 'r' 's' 't' 'v']
+let dqstrchr = escape | [^ '"' '\\' '\r' '\n']
 let sqstrchr = escape | hexstr | octstr | [^ '\'' '\\' '\r' '\n']+
 let atom = ['a'-'z' 'A'-'Z' '0'-'9' '_']+
 let blank = [' ' '\t']*
@@ -202,4 +202,3 @@ and string buf =
     { Buffer.add_string buf s; string buf lexbuf }
   | _ { raise (Error (to_loc lexbuf, "Illegal string character: " ^ lexeme lexbuf)) }
   | eof { raise (Error (to_loc lexbuf, "String is not terminated")) }
-
