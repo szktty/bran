@@ -35,7 +35,8 @@ module Result : sig
     predictions : FileChange.t list;
   }
 
-  val files_changed : t -> FileChange.change -> string list
+  val changes : t -> FileChange.t list
+  val find_files_changed : t -> FileChange.change -> string list
   val files_updated : t -> FileChange.t list
   val has_file_changes : t -> bool
   val has_files_created_only : t -> string list -> bool

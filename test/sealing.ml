@@ -30,7 +30,11 @@ module FileChange = struct
     | Deleted -> "Deleted"
 
   let to_string ch =
-    Printf.sprintf "(%s, %s, %f)" ch.path (change_to_string ch.change) ch.time
+    let open Spotlib.Temporal in
+    Printf.printf "(%s, %s, %s)\n" ch.path (change_to_string ch.change)
+      (Datetime.to_string & Datetime.of_utc_tm & Unix.localtime ch.time);
+    Printf.sprintf "(%s, %s, %s)" ch.path (change_to_string ch.change)
+      (Datetime.to_string & Datetime.of_utc_tm & Unix.localtime ch.time)
 
 end
 
@@ -44,7 +48,10 @@ module Result = struct
     predictions : FileChange.t list;
   }
 
-  let files_changed res ch =
+  let changes res =
+    List.filter (fun fc -> fc.FileChange.change <> Not_changed) res.file_changes
+
+  let find_files_changed res ch =
     List.map FileChange.path &
       List.filter (fun fc -> fc.FileChange.change = ch) res.file_changes
 
