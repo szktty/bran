@@ -65,7 +65,10 @@ let () =
        with
        | Lexer.Error (loc, msg) -> print_error fpath loc msg
        | Sig.Error (loc, msg) -> print_error fpath loc msg
-       | Syntax.Syntax_error loc -> print_error fpath loc "Syntax error"
+       | Syntax.Syntax_error (loc, None) ->
+         print_error fpath loc "Syntax error"
+       | Syntax.Syntax_error (loc, Some msg) ->
+         print_error fpath loc ("Syntax error: " ^ msg)
        | Syntax.Unbound_value_error (loc, x) ->
          print_error fpath loc ("Unbound value `" ^ x ^ "'")
        | Syntax.Unbound_module_error (loc, x) ->

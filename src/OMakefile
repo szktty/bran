@@ -154,6 +154,7 @@ MENHIR_ENABLED = true
 FILES[] =
 	alpha
 	#beta
+	bitstring
 	closure
 	compiler
 	config

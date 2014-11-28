@@ -115,6 +115,8 @@ rule token = parse
     { MINUS (to_loc lexbuf) }
 | '+' (* +.より後回しにしなくても良い? 最長一致? *)
     { PLUS (to_loc lexbuf) }
+| '/'
+    { SLASH (to_loc lexbuf) }
 | "-."
     { MINUS_DOT (to_loc lexbuf) }
 | "+."
@@ -190,6 +192,10 @@ rule token = parse
               (Spotlib.Xstring.drop 1 & lexeme lexbuf)) }
 | '@' '"'
     { ATOM (strlit_to_word lexbuf string) }
+| "<<"
+    { LESS_LESS (to_loc lexbuf) }
+| ">>"
+    { GREATER_GREATER (to_loc lexbuf) }
 | (space* as s) eof
     { next_line_in_spaces lexbuf s; EOF (to_loc lexbuf) }
 | ident

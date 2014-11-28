@@ -1,4 +1,4 @@
-exception Syntax_error of Location.t
+exception Syntax_error of Location.t * string option
 exception Unbound_value_error of Location.t * Id.t
 exception Unbound_module_error of Location.t * Id.t
 

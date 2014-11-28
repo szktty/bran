@@ -54,6 +54,8 @@ let rev_combine_list = function
 %token <Location.t> GREATER_EQUAL
 %token <Location.t> LESS
 %token <Location.t> GREATER
+%token <Location.t> LESS_LESS
+%token <Location.t> GREATER_GREATER
 %token <Location.t> IF
 %token <Location.t> THEN
 %token <Location.t> ELSE
@@ -116,7 +118,7 @@ let rev_combine_list = function
 %left prec_app
 %nonassoc guard
 %nonassoc PIPE
-%nonassoc UIDENT LPAREN LBRACK INT IDENT BOOL STRING ATOM BEGIN RPAREN END
+%nonassoc UIDENT LPAREN LBRACK INT IDENT BOOL STRING ATOM BEGIN RPAREN END LESS_LESS
 %left LBRACE
 
 /* 開始記号の定義 */
@@ -161,7 +163,7 @@ definition:
 | error
     { raise (Syntax_error (Location.create
                              (Position.of_lexing_pos $startpos)
-                             (Position.of_lexing_pos $endpos))) }
+                             (Position.of_lexing_pos $endpos), None)) }
 
 simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2html: parser_simple) */
     | primary { $1 }
@@ -195,6 +197,8 @@ primary:
       { List.fold_right (fun x xs ->
             create x.loc (add_type (Constr("Cons", [x; xs]))))
             $2 (create $3 (add_type (Constr("Nil", [])))) }
+    | LESS_LESS bitstring GREATER_GREATER
+      { range $1 $3 & add_type Unit } (* TODO: Type.Bitstring *)
     
 field_expr:
     | primary DOT IDENT
@@ -524,6 +528,91 @@ tail_pattern:
 | SEMI pattern tail_pattern
     { $2 :: $3 }
     
+bitstring:
+    | (* empty *)
+      { [] }
+    | rev_bitstring
+      { List.rev $1 }
+
+rev_bitstring:
+    | segment
+      { [$1] }
+    | rev_bitstring COMMA segment
+      { $3 :: $1 }
+
+segment:
+    | bits_value
+      { Bitstring.Bits.create $1 }
+    | bits_value COLON INT
+      { Bitstring.Bits.create $1 ~size:$3.desc }
+    | bits_value COLON INT SLASH bits_spec_list
+      { { $5 with Bitstring.Bits.value = $1;
+                  size = Some $3.desc } }
+    | bits_value SLASH bits_spec_list
+      { { $3 with Bitstring.Bits.value = $1; } }
+
+bits_value:
+    | INT { Bitstring.Bits.Int $1.desc }
+    | FLOAT { Bitstring.Bits.Float $1.desc }
+    | STRING { Bitstring.Bits.String $1.desc }
+    | IDENT { Bitstring.Bits.Var $1.desc }
+
+bits_spec_list:
+    | rev_bits_spec_list
+      { let open Bitstring.Bits in
+        List.fold_left
+          (fun v spec ->
+             match spec with
+             | `Int -> { v with typ = `Int }
+             | `Signed_int -> { v with typ = `Int; sign = Some `Signed }
+             | `Float -> { v with typ = `Float }
+             | `Binary -> { v with typ = `Binary }
+             | `Bitstring -> { v with typ = `Bitstring }
+             | `UTF8 -> { v with typ = `UTF8 }
+             | `UTF16 -> { v with typ = `UTF16 }
+             | `UTF32 -> { v with typ = `UTF32 }
+             | `Signed -> { v with sign = Some `Signed }
+             | `Unsigned -> { v with sign = Some `Unsigned }
+             | `Big -> { v with endian = Some `Big }
+             | `Little -> { v with endian = Some `Little }
+             | `Native -> { v with endian = Some `Native }
+             | `Unit size -> { v with unit = Some size })
+          (create (Int 0)) $1
+      }
+
+rev_bits_spec_list:
+    | bits_spec
+      { [$1] }
+    | rev_bits_spec_list MINUS bits_spec
+      { $3 :: $1 }
+
+bits_spec:
+    | IDENT
+      { match $1.desc with
+        | "int" -> `Int
+        | "integer" -> `Int
+        | "sint" -> `Signed_int
+        | "float" -> `Float
+        | "binary" -> `Binary
+        | "bytes" -> `Binary
+        | "bitstring" -> `Bitstring
+        | "bits" -> `Bitstring
+        | "utf8" -> `UTF8
+        | "utf16" -> `UTF16
+        | "utf32" -> `UTF32
+        | "big" -> `Big
+        | "little" -> `Little
+        | "native" -> `Native
+        | "signed" -> `Signed
+        | "unsigned" -> `Unsigned
+        | _ -> raise (Syntax_error ($1.loc, Some ("Unknown type " ^ $1.desc)))
+      }
+    | IDENT COLON INT
+      { match $1.desc with
+        | "unit" -> `Unit $3.desc
+        | _ -> raise (Syntax_error ($1.loc, Some ("Unknown type " ^ $1.desc)))
+      }
+
 sigdef:
     | IDENT COLON type_expr
       { { sig_name = ($1.desc, $3); sig_ext = None } }
