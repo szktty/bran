@@ -59,6 +59,7 @@ module Env : sig
     -> ?start_clear:bool
     -> ?ignore_files:string list
     -> ?ignore_hidden:bool
+    -> ?parallel:bool
     -> string
     -> t
   (** Create an environment at the base path *)
@@ -92,6 +93,7 @@ val run :
   -> ?start_clear:bool
   -> ?ignore_files:string list
   -> ?ignore_hidden:bool
+  -> ?parallel:bool
   -> ?expect_error:bool
   -> ?expect_stderr:bool
   -> ?chdir:string

@@ -31,8 +31,6 @@ module FileChange = struct
 
   let to_string ch =
     let open Spotlib.Temporal in
-    Printf.printf "(%s, %s, %s)\n" ch.path (change_to_string ch.change)
-      (Datetime.to_string & Datetime.of_utc_tm & Unix.localtime ch.time);
     Printf.sprintf "(%s, %s, %s)" ch.path (change_to_string ch.change)
       (Datetime.to_string & Datetime.of_utc_tm & Unix.localtime ch.time)
 
@@ -180,7 +178,14 @@ module Env = struct
       ?(start_clear=false)
       ?(ignore_files=[])
       ?(ignore_hidden=true)
+      ?(parallel=true)
       basedir =
+    let basedir' =
+      if parallel then
+        Printf.sprintf "%s-%d" basedir (Unix.getpid ())
+      else
+        basedir
+    in
     let vars =
       match env with
       | None -> Vars.empty
@@ -189,18 +194,18 @@ module Env = struct
     in
     let workdir =
       match chdir with
-      | None -> basedir
+      | None -> basedir'
       | Some s -> s
     in
     let ignore_files' = List.map Str.regexp ignore_files in
     let e = { running = false; origdir = Unix.getcwd ();
-              basedir; workdir; vars;
+              basedir = basedir'; workdir; vars;
               ignore_files = ignore_files';
               ignore_hidden; file_changes = []; predictions = [] } in
-    if start_clear && Sys.file_exists basedir then
+    if start_clear && Sys.file_exists basedir' then
       clear e;
-    if not & Sys.file_exists basedir then
-      Unix.mkdir basedir 0o744;
+    if not & Sys.file_exists basedir' then
+      Unix.mkdir basedir' 0o744;
     e
 
   let read_all_files env path =
@@ -269,6 +274,13 @@ module Env = struct
     Printf.printf "\n";
     flush_all ()
 
+  let init_file_changes env =
+    List.iter (fun path ->
+                 env.file_changes <- { FileChange.path;
+                                       change = FileChange.Not_changed;
+                                       time = Unix.time () } :: env.file_changes)
+      & read_all_files env env.basedir
+
   let run
       ?(expect_error=true)
       ?(expect_stderr=false)
@@ -283,6 +295,7 @@ module Env = struct
       | None -> env.basedir
       | Some d -> d
     in
+    init_file_changes env;
     Xunix.with_chdir chdir
       (fun () ->
          let args = f env in
@@ -351,6 +364,7 @@ let run
     ?start_clear
     ?ignore_files
     ?ignore_hidden
+    ?(parallel=true)
     ?expect_error
     ?expect_stderr
     ?chdir
@@ -358,7 +372,7 @@ let run
     ?(basedir="test_output")
     f =
   let env = Env.create ?env ?chdir ?start_clear ?ignore_files
-      ?ignore_hidden basedir in
+      ?ignore_hidden ~parallel basedir in
   Env.run ?expect_error ?expect_stderr ?chdir ?quiet env ~f
 
 let replace_extension path ext =
