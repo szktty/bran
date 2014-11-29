@@ -179,6 +179,18 @@ Basically bitstring syntax is the same as one of Erlang. See [Bit Syntax Express
 <"abc"/utf8>>
 ```
 
+#### Integer
+
+- Erlang's `base#value` is `base r value` (ex. 16rff). Because `#` is used by comment in Bran.
+- Integer has any number of digits.
+
+```
+42
+042 # -> 42
+2r101
+16r1f
+```
+
 ### Variable bindings
 
 ```
