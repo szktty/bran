@@ -13,6 +13,7 @@ and et =
 and expr = 
   | Bool of bool
   | Int of IntRepr.t
+  | Char of string
   | String of string
   | Atom of string
   | Bitstring of Bitstring.t
@@ -69,6 +70,7 @@ and string_of_expr =
   function
   | Bool(b) -> string_of_bool b
   | Int(n) -> IntRepr.to_string n
+  | Char(s) -> "'" ^ s ^ "'"
   | String(s) -> "\"" ^ s ^ "\""
   | Atom(s) -> "@\"" ^ s ^ "\""
   | Bitstring x -> Bitstring.to_string x
@@ -123,7 +125,7 @@ let rec vars_of_pattern =
       
 let rec fv_of_expr (e, _) = 
   match e with
-  | Bool(_) | Int(_) | String _ | Atom _ | Bitstring _ | Module _ -> S.empty
+  | Bool(_) | Int(_) | Char _ | String _ | Atom _ | Bitstring _ | Module _ -> S.empty
   | Record(xes) -> List.fold_left (fun s (_, e) -> S.union s (fv_of_expr e)) S.empty xes
   | Field(e, _) -> fv_of_expr e
   | Tuple(es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
@@ -191,6 +193,7 @@ let rec h env known (expr, ty) =
     match expr with
     | KNormal.Bool(b) -> Bool(b)
     | KNormal.Int(i) -> Int(i)
+    | KNormal.Char s -> Char s
     | KNormal.String s -> String s
     | KNormal.Atom s -> Atom s
     | KNormal.Bitstring s -> Bitstring s

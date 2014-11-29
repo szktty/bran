@@ -7,6 +7,7 @@ and expr =
     Unit
   | Bool of bool
   | Int of IntRepr.t
+  | Char of string
   | String of string
   | Atom of string
   | Bitstring of Bitstring.t

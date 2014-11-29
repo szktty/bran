@@ -12,6 +12,7 @@ let rec h ids (e, t) =
     match e with
     | Bool(b) -> Bool(b)
     | Int(i) -> Int(i)
+    | Char s -> Char s
     | String s -> String s
     | Atom s -> Atom s
     | Bitstring s -> Bitstring s

@@ -8,6 +8,7 @@ and tycon =
   | Unit
   | Bool
   | Int
+  | Char
   | String
   | Atom
   | Bitstring
@@ -43,6 +44,7 @@ and string_of_tycon reached =
   | Unit -> "Unit"
   | Bool -> "Bool"
   | Int -> "Int"
+  | Char -> "Char"
   | String -> "String"
   | Atom -> "Atom"
   | Bitstring -> "Bitstring"
@@ -79,6 +81,7 @@ and prefix_of_tycon =
   | Unit -> "u"
   | Bool -> "b"
   | Int -> "n"
+  | Char -> "c"
   | String -> "s"
   | Atom -> "a"
   | Bitstring -> "bit"
@@ -161,6 +164,7 @@ let rec name t =
   | App(Unit, []) -> "unit"
   | App(Bool, []) -> "bool"
   | App(Int, []) -> "int"
+  | App(Char, []) -> "char"
   | App(String, []) -> "string"
   | App(Atom, []) -> "atom"
   | App(Bitstring, []) -> "bitstring"
@@ -172,7 +176,7 @@ let rec name t =
   | Field(_, t) -> name t
   | App(TyFun([], t), []) -> name t
   | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _)
-  | App(String, _) | App(Atom, _) | App(Bitstring, _) | App(TyFun _, _)
+  | App(Char, _) | App(String, _) | App(Atom, _) | App(Bitstring, _) | App(TyFun _, _)
   | App(Module _, _) ->
     assert false (* impossible *)
   | App(NameTycon(x, _), _) -> x

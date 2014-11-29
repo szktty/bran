@@ -4,6 +4,7 @@ type closure = { entry : Id.l; actual_fv : Id.t list }
 type t =
   | Atom of string
   | Int of IntRepr.t
+  | Char of string
   | String of string
   | Bitstring of Bitstring.t
   | Record of (Id.t * t) list
@@ -69,6 +70,7 @@ let rec gen_exp (e, t) =
   | Closure.Bool true -> true_atom
   | Closure.Bool false -> false_atom
   | Closure.Int v -> Int v
+  | Closure.Char s -> Char s
   | Closure.String s -> String s
   | Closure.Atom s -> Atom s
   | Closure.Bitstring s -> Bitstring s
@@ -86,7 +88,7 @@ let rec gen_exp (e, t) =
   | Closure.LE (e1, e2) -> LE (gen_exp e1, gen_exp e2)
   | Closure.Var x -> Var x
   | Closure.AppDir (x, ets) -> AppDir (x, List.map gen_exp ets)
-  | _ -> assert false
+  | _ -> failwith & "not implemented: " ^ (Closure.string_of_expr e)
 
 let rec gen_ptn = function
   | Closure.PtUnit -> PtAtom "ok"

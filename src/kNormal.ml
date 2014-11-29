@@ -17,6 +17,7 @@ and et =
 and expr =
   | Bool of bool
   | Int of IntRepr.t
+  | Char of string
   | String of string
   | Atom of string
   | Bitstring of Bitstring.t
@@ -69,6 +70,7 @@ and string_of_expr =
   function
   | Bool(b) -> string_of_bool b
   | Int(n) -> IntRepr.to_string n
+  | Char s -> "'" ^ s ^ "'"
   | String s -> "\"" ^ s ^ "\""
   | Atom s -> "@\"" ^ s ^ "\""
   | Bitstring x -> Bitstring.to_string x
@@ -153,6 +155,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* Kæ­£è
     | Syntax.Unit -> Unit
     | Syntax.Bool(b) -> Exp(Bool(b), t)
     | Syntax.Int(n) -> Exp(Int(n), t)
+    | Syntax.Char(n) -> Exp(Char(n), t)
     | Syntax.String(s) -> Exp(String(s), t)
     | Syntax.Atom(s) -> Exp(Atom(s), t)
     | Syntax.Bitstring(x) -> Exp(Bitstring(x), t)

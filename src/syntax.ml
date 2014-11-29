@@ -9,6 +9,7 @@ and expr =
   | Unit
   | Bool of bool
   | Int of IntRepr.t
+  | Char of string
   | String of string
   | Atom of string
   | Bitstring of Bitstring.t
@@ -74,6 +75,7 @@ and string_of_expr =
   | Unit -> "Unit"
   | Bool(b) -> "Bool(" ^ (string_of_bool b) ^ ")"
   | Int (b, v) -> Printf.sprintf "Int(%d, %s)" b v
+  | Char s -> "Char(" ^ s ^ ")"
   | String s -> "String(" ^ s ^ ")"
   | Atom s -> "Atom(" ^ s ^ ")"
   | Bitstring x -> "Bitstring(" ^ (Bitstring.to_string x) ^ ")"

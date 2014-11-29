@@ -8,6 +8,7 @@ and tycon =
   | Unit 
   | Bool 
   | Int 
+  | Char
   | String
   | Atom
   | Bitstring

@@ -88,7 +88,7 @@ $ erl
 ## ToDo
 
 - Data types
-  - Character
+  - Map
   - Option
   - Reference
   - Exception
@@ -156,7 +156,8 @@ $ erl
 
 #### String
 
-Escape sequences are the same as one of Erlang.
+- On Bran, String is **not** a list of character type data. `string` and `char list` are different types.
+- Escape sequences are the same as one of Erlang.
 
 ```
 "string"
@@ -164,6 +165,19 @@ Escape sequences are the same as one of Erlang.
 "hello, world!\n"
 "\052"
 "\x00\xff"
+```
+
+#### Character
+
+- Character literals are single quote characters.
+
+```
+'0'
+'a'
+'Z'
+'\n'
+'\052'
+'\xff'
 ```
 
 #### Bitstring

@@ -3,6 +3,7 @@ type closure = { entry : Id.l; actual_fv : Id.t list }
 type t =
   | Atom of string
   | Int of IntRepr.t
+  | Char of string
   | String of string
   | Bitstring of Bitstring.t
   | Record of (Id.t * t) list

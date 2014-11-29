@@ -71,7 +71,7 @@ let hexstr = hexdigit hexdigit
 let octstr = digit? digit? digit?
 let escape = '\\' ['\'' '"' '\\' 'b' 'd' 'e' 'f' 'n' 'r' 's' 't' 'v']
 let dqstrchr = escape | [^ '"' '\\' '\r' '\n']
-let sqstrchr = escape | hexstr | octstr | [^ '\'' '\\' '\r' '\n']+
+let sqstrchr = escape | [^ '\'' '\\' '\r' '\n']
 let octstr = octdigit octdigit? octdigit?
 let hexstr = hexdigit hexdigit | '{' hexdigit+ '}'
 let ctrlchr = ['a'-'z' 'A'-'Z']
@@ -195,6 +195,8 @@ rule token = parse
     { COLON (to_loc lexbuf) }
 | ';'
     { SEMI (to_loc lexbuf) }
+| '\''
+    { CHAR (strlit_to_word lexbuf char) }
 | '"'
     { STRING (strlit_to_word lexbuf string) }
 | '@' atom
@@ -215,6 +217,23 @@ rule token = parse
 | _
     { raise (Error (to_loc lexbuf,
         Printf.sprintf "unknown token '%s'" (lexeme lexbuf))) }
+
+and char buf =
+  parse
+  | ('\\' octstr as s) '\''
+    { s }
+  | ('\\' 'x' hexstr as s) '\''
+    { s }
+  | ('\\' '^' ctrlchr as s) '\''
+    { s }
+  | (sqstrchr as s) '\''
+    { s }
+  | '\''
+    { raise (Error (to_loc lexbuf, "Empty character")) }
+  | [^ '\r' '\n']+ '\''
+    { raise (Error (to_loc lexbuf, "Character must be a letter")) }
+  | _ { raise (Error (to_loc lexbuf, "Illegal character: " ^ lexeme lexbuf)) }
+  | eof { raise (Error (to_loc lexbuf, "Character is not terminated")) }
 
 and string buf =
   parse
