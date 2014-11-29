@@ -1,4 +1,5 @@
 open Spotlib.Base
+open X
 
 exception Error of string
 
@@ -16,7 +17,7 @@ let compile_erl_file fpath =
 let create_exec_file fpath =
   let open Printf in
   let buf = Buffer.create 1 in
-  let (exec, _) = Spotlib.Xfilename.split_extension fpath in
+  let (exec, _) = Filename.split_extension fpath in
   bprintf buf "erl -boot start_clean -noinput -s init stop -eval '";
   bprintf buf "{ok, _, Beam} = compile:file(\"%s\", [binary, compressed, debug_info]), " fpath;
   bprintf buf "escript:create(\"%s\", [shebang, {beam, Beam}, " exec;
