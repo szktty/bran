@@ -16,6 +16,7 @@ and string_of_expr =
   function
   | Bool(b) -> string_of_bool b
   | Int(n) -> IntRepr.to_string n
+  | Float(v) -> string_of_float v
   | Char(s) -> "'" ^ s ^ "'"
   | String(s) -> "\"" ^ s ^ "\""
   | Atom(s) -> "@\"" ^ s ^ "\""
@@ -71,7 +72,7 @@ let rec vars_of_pattern =
       
 let rec fv_of_expr (e, _) = 
   match e with
-  | Bool(_) | Int(_) | Char _ | String _ | Atom _ | Bitstring _ | Module _ -> S.empty
+  | Bool(_) | Int(_) | Float _ | Char _ | String _ | Atom _ | Bitstring _ | Module _ -> S.empty
   | Record(xes) -> List.fold_left (fun s (_, e) -> S.union s (fv_of_expr e)) S.empty xes
   | Field(e, _) -> fv_of_expr e
   | Tuple(es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
@@ -139,6 +140,7 @@ let rec h env known (expr, ty) =
     match expr with
     | KNormal_t.Bool(b) -> Bool(b)
     | KNormal_t.Int(i) -> Int(i)
+    | KNormal_t.Float v -> Float v
     | KNormal_t.Char s -> Char s
     | KNormal_t.String s -> String s
     | KNormal_t.Atom s -> Atom s

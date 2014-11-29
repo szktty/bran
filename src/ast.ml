@@ -19,6 +19,7 @@ and string_of_expr =
   | Unit -> "Unit"
   | Bool(b) -> "Bool(" ^ (string_of_bool b) ^ ")"
   | Int (b, v) -> Printf.sprintf "Int(%d, %s)" b v
+  | Float v -> "Float(" ^ (string_of_float v) ^ ")"
   | Char s -> "Char(" ^ s ^ ")"
   | String s -> "String(" ^ s ^ ")"
   | Atom s -> "Atom(" ^ s ^ ")"

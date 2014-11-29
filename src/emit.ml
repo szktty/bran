@@ -17,6 +17,7 @@ let iter_with_sep oc sep f es =
 let rec gen_exp oc = function
   | Atom s -> bprintf oc "'%s'" s
   | Int (b, v) -> bprintf oc "%d#%s" b v
+  | Float v -> bprintf oc "%f" v
   | Char s -> bprintf oc "$%s" s
   | String s -> bprintf oc "%s" (Erlang.literal_of_string s)
   | Bitstring es ->

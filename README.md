@@ -130,6 +130,8 @@ $ erl
 - unit
 - bool
 - int
+- float
+- char
 - string
 - list (empty lists must be specified type. for example: `([] : int list)`)
 - bitstring
@@ -203,6 +205,15 @@ Basically bitstring syntax is the same as one of Erlang. See [Bit Syntax Express
 042 # -> 42
 2r101
 16r1f
+```
+
+### Float
+
+```
+2.3
+2.3e3
+2.3e-3
+7.000e+00
 ```
 
 ### Variable bindings

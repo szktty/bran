@@ -58,12 +58,8 @@ let ident = lower body
 let uident = upper body
 let octdigit = ['0'-'9']
 let hexdigit = ['0'-'9' 'a'-'f' 'A'-'F']
-let frac = '.' digit*
 let exp = ['e' 'E'] ['-' '+']? digit+
-let fnum = digit+ '.' digit* | ['.']? digit+
-let hexfnum = hexdigit+ '.' hexdigit* | ['.']? hexdigit+
-let binexp = ['p' 'P'] ['-' '+']? digit+
-let float = fnum exp? | hex hexfnum binexp?
+let float = digit+ '.' digit+ exp?
 let white = [' ' '\t']+
 let nl = '\r' | '\n' | "\r\n"
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
@@ -119,8 +115,8 @@ rule token = parse
     }
 | digit+
     { INT (Locating.create (to_loc lexbuf) (10, lexeme lexbuf)) }
-| digit+ ('.' digit*)? (['e' 'E'] ['+' '-']? digit+)?
-    { FLOAT (Locating.create (to_loc lexbuf) (float_of_string (Lexing.lexeme lexbuf))) }
+| float as s
+    { FLOAT (Locating.create (to_loc lexbuf) (float_of_string s)) }
 | '-' (* -.より後回しにしなくても良い? 最長一致? *)
     { MINUS (to_loc lexbuf) }
 | '+' (* +.より後回しにしなくても良い? 最長一致? *)

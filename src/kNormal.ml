@@ -20,6 +20,7 @@ and string_of_expr =
   function
   | Bool(b) -> string_of_bool b
   | Int(n) -> IntRepr.to_string n
+  | Float f -> string_of_float f
   | Char s -> "'" ^ s ^ "'"
   | String s -> "\"" ^ s ^ "\""
   | Atom s -> "@\"" ^ s ^ "\""
@@ -104,6 +105,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* Kæ­£è
     | Ast_t.Unit -> Unit
     | Ast_t.Bool(b) -> Exp(Bool(b), t)
     | Ast_t.Int(n) -> Exp(Int(n), t)
+    | Ast_t.Float(n) -> Exp(Float(n), t)
     | Ast_t.Char(n) -> Exp(Char(n), t)
     | Ast_t.String(s) -> Exp(String(s), t)
     | Ast_t.Atom(s) -> Exp(Atom(s), t)

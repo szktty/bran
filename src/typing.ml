@@ -155,7 +155,7 @@ let instantiate env ty =
 let rec deref_tycon ({ Env.tycons = tycons } as env) reached tycon =
   match tycon with
   | Type_t.Int | Type_t.Bool | Type_t.Char | Type_t.String | Type_t.Atom
-  | Type_t.Bitstring | Type_t.Unit
+  | Type_t.Bitstring | Type_t.Unit | Type_t.Float
   | Type_t.Arrow | Type_t.Tuple | Type_t.Module _ as tycon ->
     tycon, reached
   | Type_t.Record(x, _) as tycon -> tycon, M.add x tycon reached
@@ -259,7 +259,7 @@ let rec deref_typed_expr ({ Env.venv = venv } as env) le =
   set le (deref_expr env e, deref_type env t)
 
 and deref_expr ({ Env.venv = venv } as env) = function
-  | Int _ | Bool _ | Char _ | String _ | Atom _ | Bitstring _ | Unit | Var _ | Module _ as e -> e
+  | Int _ | Float _ | Bool _ | Char _ | String _ | Atom _ | Bitstring _ | Unit | Var _ | Module _ as e -> e
   | Record(xes) -> Record(List.map (fun (x, e) -> x, deref_typed_expr env e) xes)
   | Field(e, x) -> Field(deref_typed_expr env e, x)
   | Tuple(es) -> Tuple(List.map (deref_typed_expr env) es)
@@ -354,6 +354,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
       | Unit -> expr, Type_t.App(Type_t.Unit, [])
       | Bool(_) -> expr, Type_t.App(Type_t.Bool, [])
       | Int(_) -> expr, Type_t.App(Type_t.Int, [])
+      | Float(_) -> expr, Type_t.App(Type_t.Float, [])
       | Char(_) -> expr, Type_t.App(Type_t.Char, [])
       | String _ -> expr, Type_t.App(Type_t.String, [])
       | Atom _ -> expr, Type_t.App(Type_t.Atom, [])

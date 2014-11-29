@@ -12,6 +12,7 @@ let predeftypes = [
     ("unit", Type_t.TyFun([], Type_t.App(Type_t.Unit, [])));
     ("bool", Type_t.TyFun([], Type_t.App(Type_t.Bool, [])));
     ("int", Type_t.TyFun([], Type_t.App(Type_t.Int, [])));
+    ("float", Type_t.TyFun([], Type_t.App(Type_t.Float, [])));
     ("string", Type_t.TyFun([], Type_t.App(Type_t.String, [])));
     ("atom", Type_t.TyFun([], Type_t.App(Type_t.Atom, [])));
     ("bitstring", Type_t.TyFun([], Type_t.App(Type_t.Bitstring, [])));

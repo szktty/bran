@@ -21,6 +21,7 @@ and string_of_tycon reached =
   | Unit -> "Unit"
   | Bool -> "Bool"
   | Int -> "Int"
+  | Float -> "Float"
   | Char -> "Char"
   | String -> "String"
   | Atom -> "Atom"
@@ -58,6 +59,7 @@ and prefix_of_tycon =
   | Unit -> "u"
   | Bool -> "b"
   | Int -> "n"
+  | Float -> "d"
   | Char -> "c"
   | String -> "s"
   | Atom -> "a"
@@ -141,6 +143,7 @@ let rec name t =
   | App(Unit, []) -> "unit"
   | App(Bool, []) -> "bool"
   | App(Int, []) -> "int"
+  | App(Float, []) -> "float"
   | App(Char, []) -> "char"
   | App(String, []) -> "string"
   | App(Atom, []) -> "atom"
@@ -152,7 +155,7 @@ let rec name t =
   | App(Variant(x, _), _) -> x
   | Field(_, t) -> name t
   | App(TyFun([], t), []) -> name t
-  | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _)
+  | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _) | App(Float, _)
   | App(Char, _) | App(String, _) | App(Atom, _) | App(Bitstring, _) | App(TyFun _, _)
   | App(Module _, _) ->
     assert false (* impossible *)

@@ -122,7 +122,7 @@ let rev_combine_list = function
 %left prec_app
 %nonassoc guard
 %nonassoc PIPE
-%nonassoc UIDENT LPAREN LBRACK INT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS
+%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS
 %left LBRACE
 
 /* 開始記号の定義 */
@@ -191,6 +191,8 @@ primary:
       { create $1.loc (add_type (Bool $1.desc)) }
     | INT
       { create $1.loc (add_type (Int $1.desc)) }
+    | FLOAT
+      { create $1.loc (add_type (Float $1.desc)) }
     | CHAR
       { create $1.loc (add_type (Char $1.desc)) }
     | STRING

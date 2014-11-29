@@ -19,6 +19,7 @@ let rec gen_exp (e, t) =
   | Closure_t.Bool true -> true_atom
   | Closure_t.Bool false -> false_atom
   | Closure_t.Int v -> Int v
+  | Closure_t.Float v -> Float v
   | Closure_t.Char s -> Char s
   | Closure_t.String s -> String s
   | Closure_t.Atom s -> Atom s

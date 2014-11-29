@@ -18,6 +18,7 @@ and et = expr * Type_t.t
 and expr = 
   | Bool of bool
   | Int of IntRepr.t
+  | Float of float
   | Char of string
   | String of string
   | Atom of string

@@ -9,6 +9,7 @@ and tycon =
   | Unit
   | Bool
   | Int
+  | Float
   | Char
   | String
   | Atom
