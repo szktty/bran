@@ -1,12 +1,12 @@
 open Spotlib.Base
+open X
 
 exception Error of Location.t * string
 exception Pervasives_not_found
 
 let find_lib_file path =
-  let open Spotlib in
-  let open Filepath in
-  match Xlist.find_map_opt
+  let open Spotlib.Filepath in
+  match List.find_map_opt
           (fun dir ->
              let dir' = of_string os dir in
              let path' = to_string & dir' ^/ path in

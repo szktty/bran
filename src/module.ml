@@ -1,3 +1,5 @@
+open X
+
 type t = {
   name : Id.t;
   typs : (Id.t * Type.tycon) list;
@@ -11,7 +13,7 @@ let register m =
   modules := m :: !modules
 
 let find_opt x =
-  Spotlib.Xlist.find_opt (fun m -> m.name = x) !modules
+  List.find_opt (fun m -> m.name = x) !modules
 
 let find x =
   match find_opt x with
@@ -21,11 +23,11 @@ let find x =
 let mem x = find_opt x <> None
 
 let find_typ_opt m x =
-  Spotlib.Xlist.find_map_opt
+  List.find_map_opt
     (fun (ex, et) -> if x = ex then Some et else None) m.typs
 
 let find_val_opt m x =
-  Spotlib.Xlist.find_map_opt
+  List.find_map_opt
     (fun (ex, et) -> if x = ex then Some et else None) m.vals
 
 let find_val m x =
@@ -34,7 +36,7 @@ let find_val m x =
   | Some t -> t
 
 let find_ext_opt m x =
-  Spotlib.Xlist.find_map_opt
+  List.find_map_opt
     (fun (ex, et) -> if x = ex then Some et else None) m.exts
 
 let erl_name m = String.uncapitalize m.name

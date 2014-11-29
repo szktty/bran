@@ -3,6 +3,7 @@
 open Spotlib.Base
 open Syntax
 open Locating
+open X
 
 let add_type x = (x, Type.Meta(Type.newmetavar ()))
 
@@ -15,7 +16,7 @@ let constr_pattern_args = function
   | x -> [x]
 
 let range_from_list es desc =
-  range (List.hd es).loc (Spotlib.Xlist.last es).loc desc
+  range (List.hd es).loc (List.last es).loc desc
 
 let combine e1 e2 =
   (add_type
@@ -254,7 +255,7 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 | if_exp { $1 }
 | expr actual_args
     %prec prec_app
-    { range $1.loc (Spotlib.Xlist.last $2).loc (add_type (App($1, $2))) }
+    { range $1.loc (List.last $2).loc (add_type (App($1, $2))) }
 | UIDENT simple_expr
     { range $1.loc $2.loc (add_type (Constr($1.desc, constr_args $2))) }
 | LBRACE fields RBRACE
@@ -380,7 +381,7 @@ pattern:
 | IDENT
     { create $1.loc (PtVar($1.desc, Type.Meta(Type.newmetavar ()))) }
 | tuple_pattern
-    { range (List.hd $1).loc (Spotlib.Xlist.last $1).loc (PtTuple $1) }
+    { range (List.hd $1).loc (List.last $1).loc (PtTuple $1) }
 | LBRACE field_patterns RBRACE
     { range $1 $3 (PtRecord $2) }
 | UIDENT 

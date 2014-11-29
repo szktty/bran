@@ -1,4 +1,5 @@
 open Spotlib.Base
+open X
 
 type t = {
   venv   : Type.t M.t;
@@ -52,7 +53,7 @@ let import env m =
   { env'' with mods = m :: env''.mods }
 
 let find_module_of_val_opt env x =
-  Spotlib.Xlist.find_opt (fun m ->
+  List.find_opt (fun m ->
       match Module.find_val_opt m x with
       | Some _ -> true
       | None -> false) env.mods

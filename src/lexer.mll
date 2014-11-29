@@ -2,6 +2,7 @@
 open Lexing
 open Parser
 open Spotlib.Base
+open X
 
 exception Error of Location.t * string
 
@@ -19,7 +20,7 @@ let next_line_in_spaces lexbuf s =
     | n ->
       let pos = lexbuf.lex_curr_p in
       lexbuf.lex_curr_p <-
-        { pos with pos_bol = String.length & fst & Spotlib.Xlist.last lines;
+        { pos with pos_bol = String.length & fst & List.last lines;
                    pos_lnum = pos.pos_lnum + (n - 1)
         }
 

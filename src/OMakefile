@@ -180,6 +180,7 @@ FILES[] =
 	typing
 	utils
 	version
+	x
 	xstring
 
 BINDIR = ../bin
