@@ -158,6 +158,7 @@ FILES[] =
 	#beta
 	bitstring
 	closure
+	closure_t
 	compiler
 	config
 	emit

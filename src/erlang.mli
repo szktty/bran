@@ -1,4 +1,4 @@
-(* convert Closure.t to Erlang syntax *)
+(* convert Closure_t.t to Erlang syntax *)
 type closure = { entry : Id.l; actual_fv : Id.t list }
 type t =
   | Atom of string
@@ -54,4 +54,4 @@ type prog = Prog of def list
 val literal_of_string : string -> string
 val literal_of_float : float -> string
 
-val f : Closure.prog -> prog
+val f : Closure_t.prog -> prog
