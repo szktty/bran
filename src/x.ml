@@ -15,6 +15,11 @@ module Filename = struct
   include Spotlib.Xfilename
 end
 
+module Sys = struct
+  include Sys
+  include Spotlib.Xsys
+end
+
 module Unix = struct
   include Unix
   include Spotlib.Xunix
