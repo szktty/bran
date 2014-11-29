@@ -1,6 +1,8 @@
+open X
+
 let printf = function
   | true -> flush_all (); Printf.printf
-  | false -> Spotlib.Xprintf.zprintf
+  | false -> Printf.zprintf
 
 let debug f = printf !Config.debug f
 let verbose f = printf !Config.verbose f

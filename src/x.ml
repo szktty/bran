@@ -24,3 +24,8 @@ module Unix = struct
   include Unix
   include Spotlib.Xunix
 end
+
+module Printf = struct
+  include Printf
+  include Spotlib.Xprintf
+end
