@@ -211,7 +211,9 @@ Basically bitstring syntax is the same as one of Erlang. See [Bit Syntax Express
 var x = 1
 ```
 
-### Functions
+### Function
+
+#### Definition
 
 ```
 def f x y = x + y
@@ -227,6 +229,14 @@ signature (`.bri`):
 ```
 def f : int -> int -> int
 ```
+
+#### Call
+
+```
+f x y         # Call function "f" with "x" and "y" arguments
+f x $ g y z   # => f x (g y z)  Haskell's "$"
+```
+
 
 ### External functions
 

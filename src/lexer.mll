@@ -189,6 +189,8 @@ rule token = parse
         (Id.gentmp (Type.prefix (Type_t.App(Type_t.Unit, []))))) }
 | '.'
     { DOT (to_loc lexbuf) }
+| '$'
+    { DOL (to_loc lexbuf) }
 | "<-"
     { LARROW (to_loc lexbuf) }
 | ':'

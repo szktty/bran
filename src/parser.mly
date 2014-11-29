@@ -100,6 +100,7 @@ let rev_combine_list = function
 %token <Location.t> DOT
 %token <Location.t> COMMA
 %token <Location.t> PIPE
+%token <Location.t> DOL (* $ *)
 %token <Location.t> QUATE
 %token <Location.t> NL (* newline *)
 %token <Location.t> EOF
@@ -107,6 +108,7 @@ let rev_combine_list = function
 /* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) */
 %right prec_stmt
 %right SEMI NL
+%right DOL
 %nonassoc prec_tuple prec_tuple_pattern
 %left COMMA
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
@@ -253,6 +255,8 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1.loc $3.loc (add_type (LE($1, $3))) }
 | expr GREATER_EQUAL expr
     { range $1.loc $3.loc (add_type (LE($3, $1))) }
+| expr DOL expr
+    { range $1.loc $3.loc (add_type (App($1, [$3]))) }
 | tuple
     { range_from_list $1 (add_type (Tuple $1)) }
 | if_exp { $1 }
