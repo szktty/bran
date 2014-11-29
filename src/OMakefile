@@ -166,6 +166,7 @@ FILES[] =
 	id
 	intRepr
 	kNormal
+	kNormal_t
 	lexer
 	locating
 	location

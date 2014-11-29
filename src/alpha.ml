@@ -1,6 +1,6 @@
 (* rename identifiers to make them unique (alpha-conversion) *)
 
-open KNormal
+open KNormal_t
 
 let find x ids = try M.find x ids with Not_found -> x
 let genid x ids = if (M.mem x ids) then Id.genid x else x
@@ -101,4 +101,4 @@ let f =
         let ys = List.map fst yts in
         let ids' = add_list ys ids in
         ids, RecDef({ name = (x, t); args = List.map (fun (y, t) -> (find y ids', t)) yts; body = g ids' e1 }) :: defs in
-  fold f' M.empty
+  KNormal.fold f' M.empty

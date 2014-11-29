@@ -161,25 +161,25 @@ let ids_of_defs defs =
 let rec pattern env = 
 
   function
-  | KNormal.PtUnit -> env, PtUnit
-  | KNormal.PtBool(b) -> env, PtBool(b)
-  | KNormal.PtInt(n) -> env, PtInt(n)
-  | KNormal.PtVar(x, t) -> M.add x t env, PtVar(x, t)
-  | KNormal.PtTuple(ps) -> 
+  | KNormal_t.PtUnit -> env, PtUnit
+  | KNormal_t.PtBool(b) -> env, PtBool(b)
+  | KNormal_t.PtInt(n) -> env, PtInt(n)
+  | KNormal_t.PtVar(x, t) -> M.add x t env, PtVar(x, t)
+  | KNormal_t.PtTuple(ps) -> 
       let env, ps' = List.fold_left 
         (fun (env, ps) p -> 
           let env', p' = pattern env p in 
           env', p' :: ps) 
         (env, []) ps in
       env, PtTuple(List.rev ps')
-  | KNormal.PtField(xps) -> 
+  | KNormal_t.PtField(xps) -> 
       let env, xps' = List.fold_left 
         (fun (env, xps) (x, p) -> 
           let env', p' = pattern env p in 
           env', (x, p') :: xps) 
         (env, []) xps in
       env, PtRecord(List.rev xps')
-  | KNormal.PtConstr(x, ps) -> 
+  | KNormal_t.PtConstr(x, ps) -> 
       let env, ps' = List.fold_left 
         (fun (env, ps) p -> 
           let env', p' = pattern env p in 
@@ -188,36 +188,36 @@ let rec pattern env =
       env, PtConstr(x, List.rev ps')
 
 let rec h env known (expr, ty) = 
-  let () = Log.debug "Closure.h %s\n" (KNormal.string_of_expr expr) in
+  Log.debug "Closure.h %s\n" (KNormal.string_of_expr expr);
   let e' =
     match expr with
-    | KNormal.Bool(b) -> Bool(b)
-    | KNormal.Int(i) -> Int(i)
-    | KNormal.Char s -> Char s
-    | KNormal.String s -> String s
-    | KNormal.Atom s -> Atom s
-    | KNormal.Bitstring s -> Bitstring s
-    | KNormal.Record(xes) -> Record(List.map (fun (x, e) -> x, h env known e) xes)
-    | KNormal.Field(e, x) -> Field(h env known e, x)
-    | KNormal.Module x -> Module x
-    | KNormal.Tuple(es) -> Tuple(List.map (h env known) es)
-    | KNormal.Not(e) -> Not(h env known e)
-    | KNormal.Neg(e) -> Neg(h env known e)
-    | KNormal.And(e1, e2) -> And(h env known e1, h env known e2)
-    | KNormal.Or(e1, e2)  -> Or(h env known e1, h env known e2)
-    | KNormal.Add(e1, e2) -> Add(h env known e1, h env known e2)
-    | KNormal.Sub(e1, e2) -> Sub(h env known e1, h env known e2)
-    | KNormal.Mul(e1, e2) -> Mul(h env known e1, h env known e2)
-    | KNormal.Div(e1, e2) -> Div(h env known e1, h env known e2)
-    | KNormal.Concat(e1, e2) -> Concat(h env known e1, h env known e2)
-    | KNormal.Eq(e1, e2)  -> Eq(h env known e1, h env known e2)
-    | KNormal.LE(e1, e2)  -> LE(h env known e1, h env known e2)
-    | KNormal.Var(x) -> Var(x)
-    | KNormal.Constr(x, es) -> Constr(x, List.map (h env known) es)
-    | KNormal.App((KNormal.Var(x), ft), ys) when S.mem x known -> (* 関数適用の場合 (caml2html: closure_app) *)
+    | KNormal_t.Bool(b) -> Bool(b)
+    | KNormal_t.Int(i) -> Int(i)
+    | KNormal_t.Char s -> Char s
+    | KNormal_t.String s -> String s
+    | KNormal_t.Atom s -> Atom s
+    | KNormal_t.Bitstring s -> Bitstring s
+    | KNormal_t.Record(xes) -> Record(List.map (fun (x, e) -> x, h env known e) xes)
+    | KNormal_t.Field(e, x) -> Field(h env known e, x)
+    | KNormal_t.Module x -> Module x
+    | KNormal_t.Tuple(es) -> Tuple(List.map (h env known) es)
+    | KNormal_t.Not(e) -> Not(h env known e)
+    | KNormal_t.Neg(e) -> Neg(h env known e)
+    | KNormal_t.And(e1, e2) -> And(h env known e1, h env known e2)
+    | KNormal_t.Or(e1, e2)  -> Or(h env known e1, h env known e2)
+    | KNormal_t.Add(e1, e2) -> Add(h env known e1, h env known e2)
+    | KNormal_t.Sub(e1, e2) -> Sub(h env known e1, h env known e2)
+    | KNormal_t.Mul(e1, e2) -> Mul(h env known e1, h env known e2)
+    | KNormal_t.Div(e1, e2) -> Div(h env known e1, h env known e2)
+    | KNormal_t.Concat(e1, e2) -> Concat(h env known e1, h env known e2)
+    | KNormal_t.Eq(e1, e2)  -> Eq(h env known e1, h env known e2)
+    | KNormal_t.LE(e1, e2)  -> LE(h env known e1, h env known e2)
+    | KNormal_t.Var(x) -> Var(x)
+    | KNormal_t.Constr(x, es) -> Constr(x, List.map (h env known) es)
+    | KNormal_t.App((KNormal_t.Var(x), ft), ys) when S.mem x known -> (* 関数適用の場合 (caml2html: closure_app) *)
         Log.debug "directly applying %s\n" x;
         AppDir(Id.L(x), List.map (h env known) ys)
-    | KNormal.App((KNormal.Field ((Module mx, _), fx), ft), es) ->
+    | KNormal_t.App((KNormal_t.Field ((Module mx, _), fx), ft), es) ->
       Log.debug "# directly applying %s.%s\n" mx fx;
       let m = Module.find mx in
       let fx' =
@@ -227,22 +227,22 @@ let rec h env known (expr, ty) =
       in
       Log.debug "#    -> %s\n" fx';
       AppDir(Id.L(fx'), List.map (h env known) es)
-    | KNormal.App(e, es) -> 
+    | KNormal_t.App(e, es) -> 
         AppCls(h env known e, List.map (h env known) es)
-    | KNormal.ExtFunApp(x, ys) -> 
+    | KNormal_t.ExtFunApp(x, ys) -> 
         AppDir(Id.L(x), List.map (h env known) ys) in
   (e', ty)
   
 let rec g venv known (expr, ty) = (* クロージャ変換ルーチン本体 (caml2html: closure_g) *)
-  let () = Log.debug "Closure.g %s\n" (KNormal.string_of_term expr) in
+  Log.debug "Closure.g %s\n" (KNormal.string_of_term expr);
   let expr' = 
     match expr with 
-    | KNormal.Unit -> Unit
-    | KNormal.Exp(e) -> Exp(h venv known e)
-    | KNormal.If(e, e1, e2) -> If(h venv known e, g venv known e1, g venv known e2)
-    | KNormal.Match(x, pes) -> Match(x, (List.map (fun (p, e) -> let env', p' = pattern venv p in p', (g env' known e)) pes))
-    | KNormal.Let((x, t), e1, e2) -> Let((x, t), g venv known e1, g (M.add x t venv) known e2)
-    | KNormal.LetRec({ KNormal.name = (x, ty_f); KNormal.args = yts; KNormal.body = e1 }, e2) -> (* 関数定義の場合 (caml2html: closure_letrec) *)
+    | KNormal_t.Unit -> Unit
+    | KNormal_t.Exp(e) -> Exp(h venv known e)
+    | KNormal_t.If(e, e1, e2) -> If(h venv known e, g venv known e1, g venv known e2)
+    | KNormal_t.Match(x, pes) -> Match(x, (List.map (fun (p, e) -> let env', p' = pattern venv p in p', (g env' known e)) pes))
+    | KNormal_t.Let((x, t), e1, e2) -> Let((x, t), g venv known e1, g (M.add x t venv) known e2)
+    | KNormal_t.LetRec({ KNormal_t.name = (x, ty_f); KNormal_t.args = yts; KNormal_t.body = e1 }, e2) -> (* 関数定義の場合 (caml2html: closure_letrec) *)
         (* 関数定義let rec x y1 ... yn = e1 in e2の場合は、
 	       xに自由変数がない(closureを介さずdirectに呼び出せる)
 	       と仮定し、knownに追加してe1をクロージャ変換してみる *)
@@ -282,14 +282,14 @@ let f defs =
             (fun ({ Env.venv = venv; tenv = tenv } as env, defs) def ->
               let env', def' = 
                 match def with 
-                | KNormal.TypeDef(x, t) -> 
+                | KNormal_t.TypeDef(x, t) -> 
                     { env with 
                       Env.venv = M.add_list (Type.vars t) venv; 
                       Env.tenv = M.add_list (Type.types t) tenv }, 
                   TypeDef(x, t)
-                | KNormal.VarDef((x, t), e) -> 
+                | KNormal_t.VarDef((x, t), e) -> 
                     Env.add_var env x t, (VarDef((x, t), f' env e))
-                | KNormal.RecDef({ KNormal.name = (x, ty_f); args = yts; body = e1 }) ->
+                | KNormal_t.RecDef({ KNormal_t.name = (x, ty_f); args = yts; body = e1 }) ->
                     let env' = Env.add_var env x ty_f in
                     env', (FunDef({ name = (Id.L(x), ty_f); args = yts; formal_fv = []; body = f' env' e1 })) in
               toplevel := def' :: !toplevel;

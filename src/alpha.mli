@@ -1,2 +1,2 @@
-val f : KNormal.def list -> KNormal.def list
-val g : Id.t M.t -> KNormal.t -> KNormal.t (* for Inline.g *)
+val f : KNormal_t.def list -> KNormal_t.def list
+val g : Id.t M.t -> KNormal_t.t -> KNormal_t.t (* for Inline.g *)
