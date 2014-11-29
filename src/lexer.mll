@@ -186,7 +186,7 @@ rule token = parse
     { COMMA (to_loc lexbuf) }
 | '_'
     { IDENT (Locating.create (to_loc lexbuf)
-        (Id.gentmp (Type.prefix (Type.App(Type.Unit, []))))) }
+        (Id.gentmp (Type.prefix (Type_t.App(Type_t.Unit, []))))) }
 | '.'
     { DOT (to_loc lexbuf) }
 | "<-"

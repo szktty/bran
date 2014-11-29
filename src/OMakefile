@@ -181,6 +181,7 @@ FILES[] =
 	s
 	sig
 	type
+	type_t
 	typing
 	utils
 	version

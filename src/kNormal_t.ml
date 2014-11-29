@@ -1,14 +1,14 @@
-type t = term * Type.t
+type t = term * Type_t.t
 
 and term =
   | Unit
   | Exp of et
   | If of et * t * t 
   | Match of Id.t * (pattern * t) list
-  | Let of (Id.t * Type.t) * t * t
+  | Let of (Id.t * Type_t.t) * t * t
   | LetRec of fundef * t
 
-and et = expr * Type.t
+and et = expr * Type_t.t
 
 and expr =
   | Bool of bool
@@ -41,18 +41,18 @@ and pattern =
   | PtUnit
   | PtBool of bool
   | PtInt of IntRepr.t
-  | PtVar of Id.t * Type.t
+  | PtVar of Id.t * Type_t.t
   | PtTuple of pattern list
   | PtField of (Id.t * pattern) list
   | PtConstr of Id.t * pattern list
 
 and fundef = {
-  name : Id.t * Type.t;
-  args : (Id.t * Type.t) list;
+  name : Id.t * Type_t.t;
+  args : (Id.t * Type_t.t) list;
   body : t;
 }
 
 and def =
-  | TypeDef of (Id.t * Type.tycon)
-  | VarDef of (Id.t * Type.t) * t
+  | TypeDef of (Id.t * Type_t.tycon)
+  | VarDef of (Id.t * Type_t.t) * t
   | RecDef of fundef

@@ -2,20 +2,20 @@ open Spotlib.Base
 open X
 
 type t = {
-  venv   : Type.t M.t;
-  tenv   : Type.t M.t;
-  tycons : Type.tycon M.t;
+  venv   : Type_t.t M.t;
+  tenv   : Type_t.t M.t;
+  tycons : Type_t.tycon M.t;
   mods : Module.t list;
 }
 
 let predeftypes = [
-    ("unit", Type.TyFun([], Type.App(Type.Unit, [])));
-    ("bool", Type.TyFun([], Type.App(Type.Bool, [])));
-    ("int", Type.TyFun([], Type.App(Type.Int, [])));
-    ("string", Type.TyFun([], Type.App(Type.String, [])));
-    ("atom", Type.TyFun([], Type.App(Type.Atom, [])));
-    ("bitstring", Type.TyFun([], Type.App(Type.Bitstring, [])));
-    ("list", Type.TyFun(["a"], Type.App(Type.Variant("list", [("Nil", []); ("Cons", [Type.Var("a"); Type.App(Type.NameTycon("list", ref None), [Type.Var("a")])])]), [])));
+    ("unit", Type_t.TyFun([], Type_t.App(Type_t.Unit, [])));
+    ("bool", Type_t.TyFun([], Type_t.App(Type_t.Bool, [])));
+    ("int", Type_t.TyFun([], Type_t.App(Type_t.Int, [])));
+    ("string", Type_t.TyFun([], Type_t.App(Type_t.String, [])));
+    ("atom", Type_t.TyFun([], Type_t.App(Type_t.Atom, [])));
+    ("bitstring", Type_t.TyFun([], Type_t.App(Type_t.Bitstring, [])));
+    ("list", Type_t.TyFun(["a"], Type_t.App(Type_t.Variant("list", [("Nil", []); ("Cons", [Type_t.Var("a"); Type_t.App(Type_t.NameTycon("list", ref None), [Type_t.Var("a")])])]), [])));
 ]
 
 let empty = ref { 

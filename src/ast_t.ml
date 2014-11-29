@@ -2,7 +2,7 @@ exception Syntax_error of Location.t * string option
 exception Unbound_value_error of Location.t * Id.t
 exception Unbound_module_error of Location.t * Id.t
 
-type t = (expr * Type.t) Locating.t
+type t = (expr * Type_t.t) Locating.t
 and expr =
     Unit
   | Bool of bool
@@ -26,7 +26,7 @@ and expr =
   | LE of t * t
   | If of t * t * t
   | Match of t * (pattern * t) list
-  | LetVar of (Id.t * Type.t) * t * t
+  | LetVar of (Id.t * Type_t.t) * t * t
   | Var of Id.t
   | Concat of t * t
   | Constr of Id.t * t list
@@ -38,20 +38,20 @@ and pattern_desc =
   | PtUnit
   | PtBool of bool
   | PtInt of IntRepr.t
-  | PtVar of Id.t * Type.t
+  | PtVar of Id.t * Type_t.t
   | PtTuple of pattern list
   | PtRecord of (Id.t * pattern) list
   | PtConstr of Id.t * pattern list
-and fundef = { name : Id.t * Type.t; args : (Id.t * Type.t) list; body : t; }
+and fundef = { name : Id.t * Type_t.t; args : (Id.t * Type_t.t) list; body : t; }
 and sigdef = {
-  sig_name : Id.t * Type.t;
+  sig_name : Id.t * Type_t.t;
   sig_ext : string option;
 }
 and def = def_desc Locating.t
 and def_desc =
   | Nop
-  | TypeDef of Id.t * Type.tycon
-  | VarDef of (Id.t * Type.t) * t
+  | TypeDef of Id.t * Type_t.tycon
+  | VarDef of (Id.t * Type_t.t) * t
   | RecDef of fundef
   | SigDef of sigdef
 

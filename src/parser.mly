@@ -5,7 +5,7 @@ open Ast_t
 open Locating
 open X
 
-let add_type x = (x, Type.Meta(Type.newmetavar ()))
+let add_type x = (x, Type_t.Meta(Type.newmetavar ()))
 
 let constr_args = function
   | { Locating.desc = (Tuple(xs), _) } -> xs
@@ -149,7 +149,7 @@ definition:
 | VAR IDENT EQUAL nl_opt block
     { range $1 $5.loc (VarDef(add_type $2.desc, $5)) }
 | VAR LPAREN RPAREN EQUAL nl_opt block
-    { range $1 $4 (VarDef((Id.gentmp (Type.prefix (Type.App(Type.Unit, []))), (Type.App(Type.Unit, []))), $6)) }
+    { range $1 $4 (VarDef((Id.gentmp (Type.prefix (Type_t.App(Type_t.Unit, []))), (Type_t.App(Type_t.Unit, []))), $6)) }
 | DEF fundef
     { create $1 (RecDef $2) }
 | DEF REC fundef
@@ -382,7 +382,7 @@ pattern:
     { create $1.loc (PtInt $1.desc) }
 (* TODO: FLOAT *)
 | IDENT
-    { create $1.loc (PtVar($1.desc, Type.Meta(Type.newmetavar ()))) }
+    { create $1.loc (PtVar($1.desc, Type_t.Meta(Type.newmetavar ()))) }
 | tuple_pattern
     { range (List.hd $1).loc (List.last $1).loc (PtTuple $1) }
 | LBRACE field_patterns RBRACE
@@ -425,11 +425,11 @@ field_pattern:
 
 typedef:
 | type_params IDENT EQUAL nl_opt IDENT
-    { TypeDef($2.desc, Type.TyFun($1, (Type.App(Type.NameTycon($5.desc, ref None), [])))) }
+    { TypeDef($2.desc, Type_t.TyFun($1, (Type_t.App(Type_t.NameTycon($5.desc, ref None), [])))) }
 | type_params IDENT EQUAL nl_opt LBRACE nl_opt field_decls RBRACE
-    { TypeDef($2.desc, Type.TyFun($1, (Type.App(Type.Record($2.desc, List.map fst $7), List.map snd $7)))) }
+    { TypeDef($2.desc, Type_t.TyFun($1, (Type_t.App(Type_t.Record($2.desc, List.map fst $7), List.map snd $7)))) }
 | type_params IDENT EQUAL nl_opt variant_decls
-    { TypeDef($2.desc, Type.TyFun($1, (Type.App(Type.Variant($2.desc, $5), [])))) }
+    { TypeDef($2.desc, Type_t.TyFun($1, (Type_t.App(Type_t.Variant($2.desc, $5), [])))) }
 ;
 type_params:
 | /* empty */
@@ -451,7 +451,7 @@ type_expr:
     | rev_type_expr
       { match $1 with
         | [e] -> e
-        | es -> Type.App (Type.Arrow, List.rev es)
+        | es -> Type_t.App (Type_t.Arrow, List.rev es)
       }
 
 rev_type_expr:
@@ -462,11 +462,11 @@ rev_type_expr:
 
 type_expr_elt:
     | IDENT
-      { Type.App(Type.NameTycon($1.desc, ref None), []) }
+      { Type_t.App(Type_t.NameTycon($1.desc, ref None), []) }
     | QUATE IDENT
-      { Type.Var($2.desc) }
+      { Type_t.Var($2.desc) }
     | type_expr_elt IDENT
-      { Type.App(Type.NameTycon($2.desc, ref None), [$1]) }
+      { Type_t.App(Type_t.NameTycon($2.desc, ref None), [$1]) }
 
 field_decls:
 | field_decl field_decls_tail

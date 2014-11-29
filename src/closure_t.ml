@@ -3,17 +3,17 @@ type closure = {
   actual_fv : Id.t list;
 }
 
-type t = term * Type.t
+type t = term * Type_t.t
 
 and term =
   | Unit
   | Exp of et
   | If of et * t * t
   | Match of Id.t * (pattern * t) list
-  | Let of (Id.t * Type.t) * t * t
-  | MakeCls of (Id.t * Type.t) * closure * t
+  | Let of (Id.t * Type_t.t) * t * t
+  | MakeCls of (Id.t * Type_t.t) * closure * t
 
-and et = expr * Type.t
+and et = expr * Type_t.t
 
 and expr = 
   | Bool of bool
@@ -46,21 +46,21 @@ and pattern =
   | PtUnit
   | PtBool of bool
   | PtInt of IntRepr.t
-  | PtVar of Id.t * Type.t
+  | PtVar of Id.t * Type_t.t
   | PtTuple of pattern list
   | PtRecord of (Id.t * pattern) list
   | PtConstr of Id.t * pattern list
 
 type fundef = {
-  name : Id.l * Type.t;
-  args : (Id.t * Type.t) list;
-  formal_fv : (Id.t * Type.t) list;
+  name : Id.l * Type_t.t;
+  args : (Id.t * Type_t.t) list;
+  formal_fv : (Id.t * Type_t.t) list;
   body : t;
 }
 
 and def =
-  | TypeDef of Id.t * Type.tycon
-  | VarDef of (Id.t * Type.t) * t
+  | TypeDef of Id.t * Type_t.tycon
+  | VarDef of (Id.t * Type_t.t) * t
   | FunDef of fundef
 
 type prog = Prog of def list

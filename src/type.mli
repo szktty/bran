@@ -1,27 +1,4 @@
-type t = 
-  | Var of tyvar 
-  | Field of t * t
-  | App of tycon * t list 
-  | Poly of tyvar list * t
-  | Meta of t option ref
-and tycon = 
-  | Unit 
-  | Bool 
-  | Int 
-  | Char
-  | String
-  | Atom
-  | Bitstring
-  | Arrow 
-  | Tuple
-  | Record of Id.t * Id.t list
-  | Variant of Id.t * constr list
-  | TyFun of tyvar list * t
-  | NameTycon of Id.t * tycon option ref
-  | Module of Id.t
-and tyvar = Id.t
-and metavar = Id.t
-and constr = Id.t * t list
+open Type_t
 
 val newtyvar : unit -> Id.t
 val newmetavar : unit -> t option ref

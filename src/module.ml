@@ -2,8 +2,8 @@ open X
 
 type t = {
   name : Id.t;
-  typs : (Id.t * Type.tycon) list;
-  vals : (Id.t * Type.t) list;
+  typs : (Id.t * Type_t.tycon) list;
+  vals : (Id.t * Type_t.t) list;
   exts : (Id.t * string) list;
 }
 

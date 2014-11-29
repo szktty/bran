@@ -43,17 +43,17 @@ and pattern =
   | PtRecord of (Id.t * pattern) list
 
 type fundef = {
-  name : Id.l * Type.t;
-  args : (Id.t * Type.t) list;
-  formal_fv : (Id.t * Type.t) list;
+  name : Id.l * Type_t.t;
+  args : (Id.t * Type_t.t) list;
+  formal_fv : (Id.t * Type_t.t) list;
   body : t;
 }
 
 and def =
   | ModuleDef of Id.t
   | Export of Id.t list
-  | TypeDef of Id.t * Type.tycon
-  | VarDef of (Id.t * Type.t) * t
+  | TypeDef of Id.t * Type_t.tycon
+  | VarDef of (Id.t * Type_t.t) * t
   | FunDef of fundef
 
 type prog = Prog of def list
