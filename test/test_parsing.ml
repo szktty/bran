@@ -21,6 +21,7 @@ let test_parsing file test_ctx =
 
 let parsing_files = [
   ("simple_def", "def.br");
+  ("comment", "comment.br");
   ("atom", "atom.br");
   ("string", "string.br");
   ("bool", "bool.br");

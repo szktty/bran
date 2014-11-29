@@ -1,0 +1,2 @@
+# line comment
+def f x = x # inline comment
