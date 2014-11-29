@@ -8,7 +8,7 @@ exception Error of Location.t * string
 let next_line lexbuf =
   let pos = lexbuf.lex_curr_p in
   lexbuf.lex_curr_p <-
-    { pos with pos_bol = pos.pos_cnum;
+    { pos with pos_bol = 0;
                pos_lnum = pos.pos_lnum + 1
     }
 
@@ -79,6 +79,7 @@ let atom = ['a'-'z' 'A'-'Z' '0'-'9' '_']+
 let blank = [' ' '\t']*
 let space = blank | nl
 let dirname = [^' ' '\t' '\r' '\n']+
+let comment = [^ '\r' '\n']*
 
 
 rule token = parse
@@ -86,9 +87,11 @@ rule token = parse
     { token lexbuf }
 | nl
     { next_line lexbuf; NL (to_loc lexbuf) }
-| "#"
-    { comment lexbuf; (* ネストしたコメントのためのトリック *)
+| "#" comment nl
+    { next_line lexbuf;
       token lexbuf }
+| "#" comment eof
+    { EOF (to_loc lexbuf) }
 | '('
     { LPAREN (to_loc lexbuf) }
 | ')'
@@ -205,14 +208,6 @@ rule token = parse
 | _
     { raise (Error (to_loc lexbuf,
         Printf.sprintf "unknown token '%s'" (lexeme lexbuf))) }
-
-and comment = parse
-| nl
-    { next_line lexbuf }
-| eof
-    { Format.eprintf "warning: unterminated comment." }
-| _
-    { comment lexbuf }
 
 and string buf =
   parse
