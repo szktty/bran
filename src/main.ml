@@ -4,7 +4,7 @@ let print_error fpath loc msg =
   let start_line = Location.start_line loc + 1 in
   let end_line = Location.end_line loc + 1 in
   let start_col = Location.start_col loc + 1 in
-  let end_col = Location.end_col loc in
+  let end_col = Location.end_col loc + 1 in
   if start_line = end_line then begin
     if start_col = end_col then
       Printf.printf "File \"%s\", line %d, characters %d:\n"
