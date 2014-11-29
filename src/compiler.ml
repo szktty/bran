@@ -4,7 +4,7 @@ open X
 exception Error of string
 
 let compile_erl_file fpath =
-  let open Spotlib.Xunix.Command in
+  let open Unix.Command in
   let (dir, _) = Utils.dirbase fpath in
   let dir' = Spotlib.Filepath.to_string dir in
   let cmd_s = Printf.sprintf "erlc -o %s %s" dir' fpath in
@@ -25,8 +25,8 @@ let create_exec_file fpath =
     (Spotlib.Option.default !Config.emu_args (fun () -> ""));
   let cmd_s = Buffer.contents buf in
   Log.verbose "# $ %s\n" cmd_s;
-  let cmd = Spotlib.Xunix.Command.shell cmd_s in
-  match Spotlib.Xunix.Command.print ~prefix:"# erl" cmd with
+  let cmd = Unix.Command.shell cmd_s in
+  match Unix.Command.print ~prefix:"# erl" cmd with
   | (Unix.WEXITED 0, _) -> ()
   | _ -> raise (Error "Executable file creation failed")
 
