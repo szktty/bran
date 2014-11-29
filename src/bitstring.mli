@@ -39,3 +39,4 @@ type t = Bits.t list
 
 val create : Bits.t list -> t
 val to_string : t -> string
+val length : t -> int

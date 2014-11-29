@@ -86,3 +86,9 @@ let create l = l
 
 let to_string l =
   "<<" ^ (String.concat_map ", " Bits.to_string l) ^ ">>"
+
+let length bs =
+  List.fold_left (fun sum b ->
+                    match b.Bits.size with
+                    | None -> failwith "size is none"
+                    | Some v -> sum + v) 0 bs
