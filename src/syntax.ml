@@ -75,7 +75,7 @@ and string_of_expr =
   | String s -> "String(" ^ s ^ ")"
   | Atom s -> "Atom(" ^ s ^ ")"
   | Bitstring x -> "Bitstring(" ^ (Bitstring.to_string x) ^ ")"
-  | Record(xs) -> "Record(" ^ (Xstring.concat_list "; " (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xs) ^ ")"
+  | Record(xs) -> "Record(" ^ (Xstring.concat_map "; " (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xs) ^ ")"
   | Field(e, x) -> "Field(" ^ (string_of_typed_expr e) ^ ", " ^ x ^ ")"
   | Tuple(es) -> "Tuple([" ^ (String.concat "; " (List.map string_of_typed_expr es)) ^ "])"
   | Not(e) -> "Not(" ^ (string_of_typed_expr e) ^ ")"

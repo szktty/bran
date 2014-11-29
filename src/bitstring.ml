@@ -83,4 +83,4 @@ type t = Bits.t list
 let create l = l
 
 let to_string l =
-  "<<" ^ (Xstring.concat_list ", " Bits.to_string l) ^ ">>"
+  "<<" ^ (Xstring.concat_map ", " Bits.to_string l) ^ ">>"

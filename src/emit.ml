@@ -21,7 +21,7 @@ let rec gen_exp oc = function
     begin
       let open Bitstring in
       bprintf oc "<<";
-      bprintf oc "%s" & Xstring.concat_list ", "
+      bprintf oc "%s" & Xstring.concat_map ", "
         (fun e ->
           begin match e.Bits.value with
             | Bits.Int v -> sprintf "%d" v
@@ -127,7 +127,7 @@ and gen_ptn oc = function
 let gen_def oc = function
   | FunDef { name = (Id.L x, _); args = args; body = body } ->
     bprintf oc "%s(%s) -> " x
-      (Xstring.concat_list ", " gen_arg args);
+      (Xstring.concat_map ", " gen_arg args);
     gen_exp oc body;
     bprintf oc ".\n"
   | _ -> ()
