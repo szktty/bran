@@ -67,9 +67,9 @@ let () =
        | Lexer.Error (loc, msg) -> print_error fpath loc msg
        | Sig.Error (loc, msg) -> print_error fpath loc msg
        | Ast_t.Syntax_error (loc, None) ->
-         print_error fpath loc "Ast_t error"
+         print_error fpath loc "Syntax error"
        | Ast_t.Syntax_error (loc, Some msg) ->
-         print_error fpath loc ("Ast_t error: " ^ msg)
+         print_error fpath loc ("Syntax error: " ^ msg)
        | Ast_t.Unbound_value_error (loc, x) ->
          print_error fpath loc ("Unbound value `" ^ x ^ "'")
        | Ast_t.Unbound_module_error (loc, x) ->
