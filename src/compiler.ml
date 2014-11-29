@@ -46,9 +46,9 @@ let rec optimize n e =
  *)
 
 let gen_sig_file fpath defs =
-  let open Syntax in
+  let open Ast_t in
   Log.verbose "# generate signature file\n";
-  let lines = fold (fun (env, accu) def ->
+  let lines = Ast.fold (fun (env, accu) def ->
       match def.desc with
       | TypeDef (x, t) ->
         (* FIXME *)

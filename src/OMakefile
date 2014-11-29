@@ -153,6 +153,8 @@ MENHIR_ENABLED = true
 
 FILES[] =
 	alpha
+	ast
+	ast_t
 	#beta
 	bitstring
 	closure
@@ -175,7 +177,6 @@ FILES[] =
 	position
 	s
 	sig
-	syntax
 	type
 	typing
 	utils

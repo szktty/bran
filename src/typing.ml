@@ -1,6 +1,7 @@
 (* type inference/reconstruction *)
 
-open Syntax
+open Ast_t
+open Ast
 open Locating
 open Spotlib.Base
 open X
@@ -495,7 +496,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
       | Var(x) when M.mem x venv -> 
           expr, instantiate env (M.find x venv) (* 変数の型推論 (caml2html: typing_var) *)
       | Var(x) ->
-        raise (Syntax.Unbound_value_error (e.loc, x))
+        raise (Ast_t.Unbound_value_error (e.loc, x))
       | Constr(x, []) -> 
           expr, instantiate env (M.find x venv)
       | Constr(x, ets) -> 
@@ -516,7 +517,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
       | Module x when Module.mem x ->
         expr, instantiate env (Type.App(Type.Module x, []))
       | Module x ->
-        raise (Syntax.Unbound_module_error (e.loc, x))
+        raise (Ast_t.Unbound_module_error (e.loc, x))
       | LetRec({ name = (x, ty_f); args = yts; body = et1 }, et2) -> (* let recの型推論 (caml2html: typing_letrec) *)
           let t2 = Type.Meta(Type.newmetavar()) in
           let ty_f' = Type.App(Type.Arrow, ((List.map snd yts) @ [t2])) in

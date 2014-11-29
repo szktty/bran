@@ -66,13 +66,13 @@ let () =
        with
        | Lexer.Error (loc, msg) -> print_error fpath loc msg
        | Sig.Error (loc, msg) -> print_error fpath loc msg
-       | Syntax.Syntax_error (loc, None) ->
-         print_error fpath loc "Syntax error"
-       | Syntax.Syntax_error (loc, Some msg) ->
-         print_error fpath loc ("Syntax error: " ^ msg)
-       | Syntax.Unbound_value_error (loc, x) ->
+       | Ast_t.Syntax_error (loc, None) ->
+         print_error fpath loc "Ast_t error"
+       | Ast_t.Syntax_error (loc, Some msg) ->
+         print_error fpath loc ("Ast_t error: " ^ msg)
+       | Ast_t.Unbound_value_error (loc, x) ->
          print_error fpath loc ("Unbound value `" ^ x ^ "'")
-       | Syntax.Unbound_module_error (loc, x) ->
+       | Ast_t.Unbound_module_error (loc, x) ->
          print_error fpath loc ("Unbound module `" ^ x ^ "'")
        | Typing.Error (e, t1, t2) ->
          print_error fpath e.loc

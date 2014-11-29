@@ -20,7 +20,7 @@ let find_lib_file path =
   | Some p -> p
 
 let parse defs =
-  let open Syntax in
+  let open Ast_t in
   let open Locating in
   let parse' (typs, vals, exts) def =
     match def.desc with

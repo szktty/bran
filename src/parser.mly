@@ -1,7 +1,7 @@
 %{
 (* parserが利用する変数、関数、型などの定義 *)
 open Spotlib.Base
-open Syntax
+open Ast_t
 open Locating
 open X
 
@@ -124,7 +124,7 @@ let rev_combine_list = function
 %left LBRACE
 
 /* 開始記号の定義 */
-%type <Syntax.def list> prog
+%type <Ast_t.def list> prog
 %start prog
 
 %%

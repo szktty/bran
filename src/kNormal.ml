@@ -119,25 +119,24 @@ let rec insert_let (e, t) k = (* letを挿入する補助関数 (caml2html: knor
       Let((x, t), (e, t), (e', t))
 
 let rec pattern env p = 
-  let () = Log.debug "KNormal.pattern %s\n" (Syntax.string_of_pattern p) in
+  Log.debug "KNormal.pattern %s\n" (Ast.string_of_pattern p);
   match p.desc with
-  | Syntax.PtUnit -> env, PtUnit
-  | Syntax.PtBool(b) -> env, (PtBool(b))
-  | Syntax.PtInt(n) -> env, (PtInt(n))
-  | Syntax.PtVar(x, t) -> Env.add_var env x t, (PtVar(x, t))
-  | Syntax.PtTuple(ps) -> 
+  | Ast_t.PtUnit -> env, PtUnit
+  | Ast_t.PtBool(b) -> env, (PtBool(b))
+  | Ast_t.PtInt(n) -> env, (PtInt(n))
+  | Ast_t.PtVar(x, t) -> Env.add_var env x t, (PtVar(x, t))
+  | Ast_t.PtTuple(ps) -> 
       let env, ps' = List.fold_left (fun (env, ps) p -> let env', p' = pattern env p in env', p' :: ps) (env, []) (List.rev ps) in
       env, PtTuple(ps')
-  | Syntax.PtRecord(xps) -> 
+  | Ast_t.PtRecord(xps) -> 
       let env, xps' = List.fold_left (fun (env, xps) (x, p) -> let env', p' = pattern env p in env', (x, p') :: xps) (env, []) (List.rev xps) in
       env, PtField(xps')
-  | Syntax.PtConstr(x, ps) -> 
+  | Ast_t.PtConstr(x, ps) -> 
       let env, ps' = List.fold_left (fun (env, ps) p -> let env', p' = pattern env p in env', p' :: ps) (env, []) (List.rev ps) in
       env, PtConstr(x, ps')
         
 let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* K正規化ルーチン本体 (caml2html: knormal_g) *)
-  let _ = Log.debug "kNormal.g %s\n" (Syntax.string_of_expr e) in  
-
+  Log.debug "kNormal.g %s\n" (Ast.string_of_expr e);
   let insert_lets es k =
     let rec insert_lets' es k args =
       match es with
@@ -152,34 +151,34 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* K正�
 
   let e' = 
     match e with
-    | Syntax.Unit -> Unit
-    | Syntax.Bool(b) -> Exp(Bool(b), t)
-    | Syntax.Int(n) -> Exp(Int(n), t)
-    | Syntax.Char(n) -> Exp(Char(n), t)
-    | Syntax.String(s) -> Exp(String(s), t)
-    | Syntax.Atom(s) -> Exp(Atom(s), t)
-    | Syntax.Bitstring(x) -> Exp(Bitstring(x), t)
-    | Syntax.Record(xes) ->
+    | Ast_t.Unit -> Unit
+    | Ast_t.Bool(b) -> Exp(Bool(b), t)
+    | Ast_t.Int(n) -> Exp(Int(n), t)
+    | Ast_t.Char(n) -> Exp(Char(n), t)
+    | Ast_t.String(s) -> Exp(String(s), t)
+    | Ast_t.Atom(s) -> Exp(Atom(s), t)
+    | Ast_t.Bitstring(x) -> Exp(Bitstring(x), t)
+    | Ast_t.Record(xes) ->
       insert_lets (List.map snd xes)
         (fun ets' -> Exp(Record(List.combine (List.map fst xes) ets'), t))
-    | Syntax.Field(e, x) -> insert_let (g env e) (fun e' -> Exp(Field(e', x), t))
-    | Syntax.Module x -> Exp(Module x, t)
-    | Syntax.Tuple(es) -> insert_lets es (fun es' -> Exp(Tuple(es'), t))
-    | Syntax.Not(e) -> insert_let (g env e) (fun e' -> Exp(Not(e'), t))
-    | Syntax.And(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(And(e1', e2'), t))
-    | Syntax.Or(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Or(e1', e2'), t))
-    | Syntax.Neg(e) -> insert_let (g env e) (fun e' -> Exp(Neg(e'), t))
-    | Syntax.Add(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Add(e1', e2'), t)) (* 足し算のK正規化 (caml2html: knormal_add) *)
-    | Syntax.Sub(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Sub(e1', e2'), t))
-    | Syntax.Mul(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Mul(e1', e2'), t))
-    | Syntax.Div(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Div(e1', e2'), t))
-    | Syntax.Var(x) -> Exp(Var(x), t)
-    | Syntax.Concat(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Concat(e1', e2'), t))
-    | Syntax.Constr(x, es) -> insert_lets es (fun es' -> Exp(Constr(x, es'), t))
-    | Syntax.Eq(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Eq(e1', e2'), t))
-    | Syntax.LE(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(LE(e1', e2'), t))
-    | Syntax.If(e1, e2, e3) -> insert_let (g env e1) (fun e1' -> If(e1', (g env e2), (g env e3)))
-    | Syntax.Match({ desc = (Syntax.Var(x), _) }, pes) ->
+    | Ast_t.Field(e, x) -> insert_let (g env e) (fun e' -> Exp(Field(e', x), t))
+    | Ast_t.Module x -> Exp(Module x, t)
+    | Ast_t.Tuple(es) -> insert_lets es (fun es' -> Exp(Tuple(es'), t))
+    | Ast_t.Not(e) -> insert_let (g env e) (fun e' -> Exp(Not(e'), t))
+    | Ast_t.And(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(And(e1', e2'), t))
+    | Ast_t.Or(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Or(e1', e2'), t))
+    | Ast_t.Neg(e) -> insert_let (g env e) (fun e' -> Exp(Neg(e'), t))
+    | Ast_t.Add(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Add(e1', e2'), t)) (* 足し算のK正規化 (caml2html: knormal_add) *)
+    | Ast_t.Sub(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Sub(e1', e2'), t))
+    | Ast_t.Mul(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Mul(e1', e2'), t))
+    | Ast_t.Div(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Div(e1', e2'), t))
+    | Ast_t.Var(x) -> Exp(Var(x), t)
+    | Ast_t.Concat(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Concat(e1', e2'), t))
+    | Ast_t.Constr(x, es) -> insert_lets es (fun es' -> Exp(Constr(x, es'), t))
+    | Ast_t.Eq(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Eq(e1', e2'), t))
+    | Ast_t.LE(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(LE(e1', e2'), t))
+    | Ast_t.If(e1, e2, e3) -> insert_let (g env e1) (fun e1' -> If(e1', (g env e2), (g env e3)))
+    | Ast_t.Match({ desc = (Ast_t.Var(x), _) }, pes) ->
         let pes' = List.map 
           (fun (p, e) -> 
             let env', p' = pattern env p in
@@ -187,7 +186,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* K正�
             p', e')
           pes in
         Match(x, pes')
-    | Syntax.Match(e, pes) ->
+    | Ast_t.Match(e, pes) ->
         let e' = g env e in
         let pes' = List.map 
           (fun (p, e) -> 
@@ -197,19 +196,19 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* K正�
           pes in
         let x = Id.gentmp (Type.prefix t) in
         Let((x, t), e', (Match(x, pes'), t))
-    | Syntax.LetVar((x, t), e1, e2) ->
+    | Ast_t.LetVar((x, t), e1, e2) ->
         let e1' = g env e1 in
         let e2' = g (Env.add_var env x t) e2 in
         Let((x, t), e1', e2')
-    | Syntax.LetRec({ Syntax.name = (x, t); Syntax.args = yts; Syntax.body = e1 }, e2) ->
+    | Ast_t.LetRec({ Ast_t.name = (x, t); Ast_t.args = yts; Ast_t.body = e1 }, e2) ->
         let venv' = M.add x t venv in
         let e2' = g { env with Env.venv = venv' } e2 in
         let e1' = g { env with Env.venv = M.add_list yts venv' } e1 in
         LetRec({ name = (x, t); args = yts; body = e1' }, e2')
-    | Syntax.App({ desc = (Syntax.Var(f), _) }, e2s) when not (M.mem f venv) -> (* 外部関数の呼び出し (caml2html: knormal_extfunapp) *)
+    | Ast_t.App({ desc = (Ast_t.Var(f), _) }, e2s) when not (M.mem f venv) -> (* 外部関数の呼び出し (caml2html: knormal_extfunapp) *)
       Log.debug "# external variable `%s'\n" f;
       assert false
-    | Syntax.App({ desc = (Syntax.Var(f), _) }, e2s)
+    | Ast_t.App({ desc = (Ast_t.Var(f), _) }, e2s)
       when Env.is_module_val env f ->
       let m = Env.find_module_of_val env f in
       Log.debug "# applying %s.%s (full imported)\n" m.Module.name f;
@@ -219,7 +218,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* K正�
         | [] -> Exp(ExtFunApp(f', xs), t)
         | e2 :: e2s -> insert_let (g env e2) (fun x -> bind (xs @ [x]) e2s) in
       (bind [] e2s) (* left-to-right evaluation *)
-    | Syntax.App(e1, e2s) ->
+    | Ast_t.App(e1, e2s) ->
         insert_let (g env e1)
           (fun f ->
             let rec bind xs = (* "xs" are identifiers for the arguments *)
@@ -255,10 +254,10 @@ let map f defs =
 let f' env e = g env e
 
 let f defs =
-  Syntax.fold (fun (env, defs) def ->
+  Ast.fold (fun (env, defs) def ->
     match def.desc with
-    | Syntax.TypeDef(x, t) -> TypeDef(x, t) :: defs
-    | Syntax.VarDef((x, t), e) -> VarDef((x, t), f' env e) :: defs
-    | Syntax.RecDef({ Syntax.name = (x, t); args = yts; body = e }) ->
+    | Ast_t.TypeDef(x, t) -> TypeDef(x, t) :: defs
+    | Ast_t.VarDef((x, t), e) -> VarDef((x, t), f' env e) :: defs
+    | Ast_t.RecDef({ Ast_t.name = (x, t); args = yts; body = e }) ->
         RecDef({ name = (x, t); args = yts; body = f' env e }) :: defs
     | _ -> assert false) defs (Sig.create_env ())

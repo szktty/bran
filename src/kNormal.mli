@@ -48,7 +48,7 @@ and def =
   | TypeDef of (Id.t * Type.tycon)
   | VarDef of (Id.t * Type.t) * t
   | RecDef of fundef
-val f : Syntax.def list -> def list
+val f : Ast_t.def list -> def list
 val string_of_typed_expr : et -> Id.t
 val string_of_expr : expr -> Id.t
 val string_of_typed_term : t -> Id.t

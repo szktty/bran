@@ -34,5 +34,5 @@ let parse_file fpath =
   Log.verbose "# Parsing\n";
   let inchan = open_in fpath in
   let prog = Parser.prog Lexer.token (Lexing.from_channel inchan) in
-  Log.debug "# %s\n" (String.concat ";\n " (List.map Syntax.string_of_def prog));
+  Log.debug "# %s\n" (String.concat ";\n " (List.map Ast.string_of_def prog));
   prog

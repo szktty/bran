@@ -4,4 +4,4 @@ val replace_ext : string -> string -> string
 val module_name : string -> string
 val erl_path : string -> string
 val escript_path : string -> string
-val parse_file : string -> Syntax.def list
+val parse_file : string -> Ast_t.def list
