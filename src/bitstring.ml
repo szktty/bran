@@ -1,3 +1,5 @@
+open X
+
 module Bits = struct
 
   type t = {
@@ -83,4 +85,4 @@ type t = Bits.t list
 let create l = l
 
 let to_string l =
-  "<<" ^ (Xstring.concat_map ", " Bits.to_string l) ^ ">>"
+  "<<" ^ (String.concat_map ", " Bits.to_string l) ^ ">>"

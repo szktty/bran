@@ -14,7 +14,7 @@ let next_line lexbuf =
     }
 
 let next_line_in_spaces lexbuf s =
-    let lines =  Spotlib.Xstring.lines s in
+    let lines =  String.lines s in
     match List.length lines with
     | 0 | 1 -> ()
     | n ->
@@ -193,7 +193,7 @@ rule token = parse
     { STRING (strlit_to_word lexbuf string) }
 | '@' atom
     { ATOM (Locating.create (to_loc lexbuf)
-              (Spotlib.Xstring.drop 1 & lexeme lexbuf)) }
+              (String.drop 1 & lexeme lexbuf)) }
 | '@' '"'
     { ATOM (strlit_to_word lexbuf string) }
 | "<<"

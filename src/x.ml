@@ -1,3 +1,9 @@
+module String = struct
+  include String
+  include Spotlib.Xstring
+  include Xstring
+end
+
 module List = struct
   include List
   include Spotlib.Xlist
