@@ -163,7 +163,6 @@ FILES[] =
 	erlang
 	id
 	kNormal
-	l
 	lexer
 	locating
 	location
@@ -181,6 +180,7 @@ FILES[] =
 	utils
 	version
 	x
+	xlist
 	xstring
 
 BINDIR = ../bin

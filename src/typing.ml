@@ -3,6 +3,7 @@
 open Syntax
 open Locating
 open Spotlib.Base
+open X
 
 exception Unify of Type.t * Type.t
 exception Error of expr Locating.t * Type.t * Type.t
@@ -327,7 +328,7 @@ let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p =
             env, t
         | Type.App(Type.Arrow, ys) -> 
             begin 
-              match L.last ys with
+              match List.last ys with
               | Type.App(Type.Variant(_, constrs), _) as t -> 
                   List.iter
                     (function
@@ -506,8 +507,8 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
         begin
           match instantiate env (M.find x venv) with
           | Type.App(Type.Arrow, ys) -> 
-            List.iter2 (unify env) ts' (L.init ys);
-            Constr(x, ets'), (L.last ys)
+            List.iter2 (unify env) ts' (List.init ys);
+            Constr(x, ets'), (List.last ys)
           | t -> Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t); assert false
         end
       | Module x when Module.mem x ->
