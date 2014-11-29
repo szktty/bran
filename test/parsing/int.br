@@ -1,0 +1,5 @@
+def int1 _ = 42
+def int2 _ = 042
+def int3 _ = 12345678901234567890
+def int4 _ = 2r101
+def int5 _ = 16r1f

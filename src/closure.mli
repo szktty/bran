@@ -12,7 +12,7 @@ and et =
     expr * Type.t
 and expr = 
   | Bool of bool
-  | Int of int
+  | Int of IntRepr.t
   | String of string
   | Atom of string
   | Bitstring of Bitstring.t
@@ -38,7 +38,7 @@ and expr =
 and pattern =
   | PtUnit
   | PtBool of bool
-  | PtInt of int
+  | PtInt of IntRepr.t
   | PtVar of Id.t * Type.t
   | PtTuple of pattern list
   | PtRecord of (Id.t * pattern) list

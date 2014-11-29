@@ -162,6 +162,7 @@ FILES[] =
 	env
 	erlang
 	id
+	intRepr
 	kNormal
 	lexer
 	locating

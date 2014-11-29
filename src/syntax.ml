@@ -8,7 +8,7 @@ type t = (expr * Type.t) Locating.t
 and expr = 
   | Unit
   | Bool of bool
-  | Int of int
+  | Int of IntRepr.t
   | String of string
   | Atom of string
   | Bitstring of Bitstring.t
@@ -38,7 +38,7 @@ and pattern = pattern_desc Locating.t
 and pattern_desc =
   | PtUnit
   | PtBool of bool
-  | PtInt of int
+  | PtInt of IntRepr.t
   | PtVar of Id.t * Type.t
   | PtTuple of pattern list
   | PtRecord of (Id.t * pattern) list
@@ -60,7 +60,7 @@ let rec string_of_pattern { Locating.desc = p } =
   match p with
   | PtUnit -> "PtUnit"
   | PtBool(b) -> "PtBool(" ^ (string_of_bool b) ^ ")"
-  | PtInt(n) -> "PtInt(" ^ (string_of_int n) ^ ")"
+  | PtInt (b, v) -> Printf.sprintf "PtInt(%d, %s)" b v
   | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.string_of_t t) ^ ")"
   | PtTuple(ps) -> "PtTuple([" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
   | PtRecord(xps) -> "PtRecord([" ^ (String.concat "; " (List.map (fun (x, p) -> x ^ ", " ^ (string_of_pattern p)) xps)) ^ "])"
@@ -73,7 +73,7 @@ and string_of_expr =
   function
   | Unit -> "Unit"
   | Bool(b) -> "Bool(" ^ (string_of_bool b) ^ ")"
-  | Int(n) -> "Int(" ^ (string_of_int n) ^ ")"
+  | Int (b, v) -> Printf.sprintf "Int(%d, %s)" b v
   | String s -> "String(" ^ s ^ ")"
   | Atom s -> "Atom(" ^ s ^ ")"
   | Bitstring x -> "Bitstring(" ^ (Bitstring.to_string x) ^ ")"

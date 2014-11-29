@@ -58,7 +58,6 @@ let ident = lower body
 let uident = upper body
 let octdigit = ['0'-'9']
 let hexdigit = ['0'-'9' 'a'-'f' 'A'-'F']
-let int = digit+ | hex hexdigit+
 let frac = '.' digit*
 let exp = ['e' 'E'] ['-' '+']? digit+
 let fnum = digit+ '.' digit* | ['.']? digit+
@@ -111,8 +110,15 @@ rule token = parse
     { BOOL (Locating.create (to_loc lexbuf) false) }
 | "not"
     { NOT (to_loc lexbuf) }
-| digit+ (* 整数を字句解析するルール (caml2html: lexer_int) *)
-    { INT (Locating.create (to_loc lexbuf) (int_of_string (Lexing.lexeme lexbuf))) }
+| (digit+ as b) 'r' (['0'-'9' 'a'-'z' 'A'-'Z']+ as v)
+    { let b' = int_of_string b in
+      if not (2 <= b' && b' <= 36) then
+        raise (Error (to_loc lexbuf, "base must be in range 2..36"))
+      else
+        INT (Locating.create (to_loc lexbuf) (b', v))
+    }
+| digit+
+    { INT (Locating.create (to_loc lexbuf) (10, lexeme lexbuf)) }
 | digit+ ('.' digit*)? (['e' 'E'] ['+' '-']? digit+)?
     { FLOAT (Locating.create (to_loc lexbuf) (float_of_string (Lexing.lexeme lexbuf))) }
 | '-' (* -.より後回しにしなくても良い? 最長一致? *)

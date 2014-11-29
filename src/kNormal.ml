@@ -16,7 +16,7 @@ and et =
     expr * Type.t
 and expr =
   | Bool of bool
-  | Int of int
+  | Int of IntRepr.t
   | String of string
   | Atom of string
   | Bitstring of Bitstring.t
@@ -42,7 +42,7 @@ and expr =
 and pattern =
   | PtUnit
   | PtBool of bool
-  | PtInt of int
+  | PtInt of IntRepr.t
   | PtVar of Id.t * Type.t
   | PtTuple of pattern list
   | PtField of (Id.t * pattern) list
@@ -57,7 +57,7 @@ let rec ocaml_of_pattern =
   function
   | PtUnit -> "()"
   | PtBool(b) -> string_of_bool b
-  | PtInt(n) -> string_of_int n
+  | PtInt(n) -> IntRepr.to_string n
   | PtVar(x, t) -> x
   | PtTuple(ps) -> String.concat ", " (List.map ocaml_of_pattern ps)
   | PtField(xps) -> String.concat ", " (List.map (fun (x, p) -> x ^ " = " ^ (ocaml_of_pattern p)) xps)
@@ -68,7 +68,7 @@ let rec string_of_typed_expr (e, t) = (string_of_expr e) ^ " : " ^ (Type.string_
 and string_of_expr = 
   function
   | Bool(b) -> string_of_bool b
-  | Int(n) -> string_of_int n
+  | Int(n) -> IntRepr.to_string n
   | String s -> "\"" ^ s ^ "\""
   | Atom s -> "@\"" ^ s ^ "\""
   | Bitstring x -> Bitstring.to_string x

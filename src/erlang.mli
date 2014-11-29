@@ -2,7 +2,7 @@
 type closure = { entry : Id.l; actual_fv : Id.t list }
 type t =
   | Atom of string
-  | Int of int
+  | Int of IntRepr.t
   | String of string
   | Bitstring of Bitstring.t
   | Record of (Id.t * t) list
@@ -30,7 +30,7 @@ type t =
 and pattern =
   | PtAtom of string
   | PtBool of bool
-  | PtInt of int
+  | PtInt of IntRepr.t
   | PtString of string
   | PtVar of Id.t
   | PtList of pattern list

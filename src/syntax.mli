@@ -6,7 +6,7 @@ type t = (expr * Type.t) Locating.t
 and expr =
     Unit
   | Bool of bool
-  | Int of int
+  | Int of IntRepr.t
   | String of string
   | Atom of string
   | Bitstring of Bitstring.t
@@ -36,7 +36,7 @@ and pattern = pattern_desc Locating.t
 and pattern_desc =
   | PtUnit
   | PtBool of bool
-  | PtInt of int
+  | PtInt of IntRepr.t
   | PtVar of Id.t * Type.t
   | PtTuple of pattern list
   | PtRecord of (Id.t * pattern) list

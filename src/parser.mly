@@ -33,7 +33,7 @@ let rev_combine_list = function
 
 /* 字句を表すデータ型の定義 (caml2html: parser_token) */
 %token <bool Locating.t> BOOL
-%token <int Locating.t> INT
+%token <IntRepr.t Locating.t> INT
 %token <float Locating.t> FLOAT
 %token <string Locating.t> STRING
 %token <string Locating.t> ATOM
@@ -545,15 +545,15 @@ segment:
     | bits_value
       { Bitstring.Bits.create $1 }
     | bits_value COLON INT
-      { Bitstring.Bits.create $1 ~size:$3.desc }
+      { Bitstring.Bits.create $1 ~size:(IntRepr.to_int $3.desc) }
     | bits_value COLON INT SLASH bits_spec_list
       { { $5 with Bitstring.Bits.value = $1;
-                  size = Some $3.desc } }
+                  size = Some (IntRepr.to_int $3.desc) } }
     | bits_value SLASH bits_spec_list
       { { $3 with Bitstring.Bits.value = $1; } }
 
 bits_value:
-    | INT { Bitstring.Bits.Int $1.desc }
+    | INT { Bitstring.Bits.Int (IntRepr.to_int $1.desc) }
     | FLOAT { Bitstring.Bits.Float $1.desc }
     | STRING { Bitstring.Bits.String $1.desc }
     | IDENT { Bitstring.Bits.Var $1.desc }
@@ -610,7 +610,7 @@ bits_spec:
       }
     | IDENT COLON INT
       { match $1.desc with
-        | "unit" -> `Unit $3.desc
+        | "unit" -> `Unit (IntRepr.to_int $3.desc)
         | _ -> raise (Syntax_error ($1.loc, Some ("Unknown type " ^ $1.desc)))
       }
 

@@ -16,7 +16,7 @@ let iter_with_sep oc sep f es =
 
 let rec gen_exp oc = function
   | Atom s -> bprintf oc "'%s'" s
-  | Int v -> bprintf oc "%d" v
+  | Int (b, v) -> bprintf oc "%d#%s" b v
   | String s -> bprintf oc "%s" (Erlang.literal_of_string s)
   | Bitstring es ->
     begin
@@ -116,7 +116,7 @@ and gen_bin_exp oc e1 op e2 =
 and gen_ptn oc = function
   | PtAtom s -> bprintf oc "'%s'" s
   | PtBool v -> bprintf oc "%s" (string_of_bool v)
-  | PtInt v -> bprintf oc "%d" v
+  | PtInt (b, v) -> bprintf oc "%d#%s" b v
   | PtString s -> bprintf oc "\"%s\"" s
   | PtVar x -> bprintf oc "%s" (gen_var x)
   | PtTuple ps ->
