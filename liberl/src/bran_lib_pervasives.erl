@@ -2,4 +2,4 @@
 
 -export([print_string/1]).
 
-print_string(S) -> io:format("~p", [S]).
+print_string(S) -> io:fwrite(S).
