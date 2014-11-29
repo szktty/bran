@@ -164,6 +164,7 @@ FILES[] =
 	emit
 	env
 	erlang
+	erlang_t
 	id
 	intRepr
 	kNormal

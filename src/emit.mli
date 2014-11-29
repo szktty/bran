@@ -1,1 +1,1 @@
-val f : string -> Buffer.t -> Erlang.prog -> unit
+val f : string -> Buffer.t -> Erlang_t.prog -> unit
