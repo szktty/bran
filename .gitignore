@@ -11,6 +11,7 @@
 *.cmt
 *.cmti
 *.cmo
+*.auto.mli
 .omakedb
 .omakedb.lock
 *.omc
@@ -31,3 +32,4 @@ test/run
 test/test_output*
 .rebar
 ebin
+*.auto.bri
