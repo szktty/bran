@@ -77,7 +77,6 @@ let rev_combine_list = function
 %token <Location.t> MATCH
 %token <Location.t> WITH
 %token <Location.t> AND
-%token <Location.t> OR
 %token <Location.t> LARROW (* <- *)
 %token <Location.t> RARROW (* -> *)
 %token <Location.t> UARROW (* ^ *)
