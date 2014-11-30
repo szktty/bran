@@ -194,6 +194,8 @@ rule token = parse
     { COLON (to_loc lexbuf) }
 | ';'
     { SEMI (to_loc lexbuf) }
+| '|'
+    { PIPE (to_loc lexbuf) }
 | '\''
     { CHAR (strlit_to_word lexbuf char) }
 | '"'

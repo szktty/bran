@@ -1,4 +1,6 @@
+open Spotlib.Base
 open Closure_t
+open X
 
 let rec string_of_pattern =
   function
@@ -24,7 +26,8 @@ and string_of_expr =
   | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
   | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
   | Module x -> "module type " ^ x
-  | Tuple(es) -> "(" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
+  | Tuple(es) -> "(" ^ (String.concat_map ", " string_of_typed_expr es) ^ ")"
+  | Array(es) -> "[|" ^ (String.concat_map "; " string_of_typed_expr es) ^ "|]"
   | Not(e) -> "not " ^ (string_of_typed_expr e)
   | And(e1, e2) -> (string_of_typed_expr e1) ^ " && " ^ (string_of_typed_expr e2)
   | Or(e1, e2) -> (string_of_typed_expr e1) ^ " || " ^ (string_of_typed_expr e2)
@@ -40,6 +43,8 @@ and string_of_expr =
   | Constr(x, es) -> "Constr(" ^ x ^ ", [" ^ (String.concat "; " (List.map string_of_typed_expr es)) ^ "])"
   | AppCls(e, args) -> "AppCls(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat "; " (List.map string_of_typed_expr args)) ^ "])"
   | AppDir(Id.L(x), args) -> "AppDir(" ^ x ^ ", [" ^ (String.concat " " (List.map string_of_typed_expr args)) ^ "])"
+  | Get(e1, e2) -> "Get(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2)
+  | Put(e1, e2, e3) -> "Put(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2) ^ ", " ^ (string_of_typed_expr e3)
       
 let rec string_of_typed_term (e, t) = (string_of_term e) ^ " : " ^ (Type.string_of_t t)
 
@@ -76,14 +81,18 @@ let rec fv_of_expr (e, _) =
   | Record(xes) -> List.fold_left (fun s (_, e) -> S.union s (fv_of_expr e)) S.empty xes
   | Field(e, _) -> fv_of_expr e
   | Tuple(es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
+  | Array(es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
   | Not(e) | Neg(e) -> fv_of_expr e
   | And(e1, e2) | Or(e1, e2) 
   | Add(e1, e2) | Sub(e1, e2) | Mul(e1, e2) | Div(e1, e2) | Concat(e1, e2)
-  | Eq(e1, e2) | LE(e1, e2) -> S.union (fv_of_expr e1) (fv_of_expr e2)
+  | Eq(e1, e2) | LE(e1, e2) | Get(e1, e2) ->
+    S.union (fv_of_expr e1) (fv_of_expr e2)
   | Var(x) -> S.singleton x
   | Constr(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
   | AppCls(e, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty (e :: es)
   | AppDir(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
+  | Put(e1, e2, e3) ->
+    S.union (fv_of_expr e3) & S.union (fv_of_expr e1) (fv_of_expr e2)
       
 let rec fv (e, _) = 
   match e with
@@ -149,6 +158,7 @@ let rec h env known (expr, ty) =
     | KNormal_t.Field(e, x) -> Field(h env known e, x)
     | KNormal_t.Module x -> Module x
     | KNormal_t.Tuple(es) -> Tuple(List.map (h env known) es)
+    | KNormal_t.Array(es) -> Array(List.map (h env known) es)
     | KNormal_t.Not(e) -> Not(h env known e)
     | KNormal_t.Neg(e) -> Neg(h env known e)
     | KNormal_t.And(e1, e2) -> And(h env known e1, h env known e2)
@@ -178,7 +188,11 @@ let rec h env known (expr, ty) =
     | KNormal_t.App(e, es) -> 
         AppCls(h env known e, List.map (h env known) es)
     | KNormal_t.ExtFunApp(x, ys) -> 
-        AppDir(Id.L(x), List.map (h env known) ys) in
+        AppDir(Id.L(x), List.map (h env known) ys)
+    | KNormal_t.Get (e1, e2)  -> Get (h env known e1, h env known e2)
+    | KNormal_t.Put (e1, e2, e3) ->
+      Put (h env known e1, h env known e2, h env known e3)
+  in
   (e', ty)
   
 let rec g venv known (expr, ty) = (* クロージャ変換ルーチン本体 (caml2html: closure_g) *)

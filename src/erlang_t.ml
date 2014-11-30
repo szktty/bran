@@ -13,6 +13,7 @@ type t =
   | Record of (Id.t * t) list
   | Field of t * Id.t
   | List of t list
+  | Array of t list
   | Tuple of t list
   | Not of t
   | And of t * t

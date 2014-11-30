@@ -31,6 +31,7 @@ let parsing_files = [
   ("dollar", "dollar.br");
   ("list", "list.br");
   ("tuple", "tuple.br");
+  ("array", "array.br");
   ("topvar", "topvar.br");
 ]
 

@@ -21,6 +21,7 @@ let rec h ids (e, t) =
     | Field(e, x) -> Field(h ids e, find x ids)
     | Module x -> Module x
     | Tuple(es) -> Tuple(List.map (h ids) es)
+    | Array(es) -> Array(List.map (h ids) es)
     | Var(x) -> Var(find x ids)
     | Concat(e1, e2) -> Concat(h ids e1, h ids e2)
     | Constr(x, es) -> Constr(find x ids, List.map (h ids) es)
@@ -35,7 +36,10 @@ let rec h ids (e, t) =
     | Eq(e1, e2) -> Eq(h ids e1, h ids e2)
     | LE(e1, e2) -> LE(h ids e1, h ids e2)
     | App(e, ys) -> App(h ids e, List.map (h ids) ys)
-    | ExtFunApp(x, ys) -> ExtFunApp(x, List.map (h ids) ys) in
+    | ExtFunApp(x, ys) -> ExtFunApp(x, List.map (h ids) ys)
+    | Get(e1, e2) -> Get(h ids e1, h ids e2)
+    | Put(e1, e2, e3) -> Put(h ids e1, h ids e2, h ids e3)
+  in
   (e', t)
 
 let rec pattern ids =

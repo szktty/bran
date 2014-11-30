@@ -109,6 +109,7 @@ let rev_combine_list = function
 %right prec_stmt
 %right SEMI NL
 %right DOL
+%right LARROW
 %nonassoc prec_tuple prec_tuple_pattern
 %left COMMA
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
@@ -123,7 +124,7 @@ let rev_combine_list = function
 %nonassoc guard
 %nonassoc PIPE
 %nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS
-%left LBRACE
+%left DOT LBRACE
 
 /* 開始記号の定義 */
 %type <Ast_t.def list> prog
@@ -172,6 +173,7 @@ definition:
 simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2html: parser_simple) */
     | primary { $1 }
     | field_expr { $1 }
+    | array_expr { $1 }
     | simple_constr { $1 }
 
 primary:
@@ -205,6 +207,8 @@ primary:
       { List.fold_right (fun x xs ->
             create x.loc (add_type (Constr("Cons", [x; xs]))))
             $2 (create $3 (add_type (Constr("Nil", [])))) }
+    | LBRACK PIPE list PIPE RBRACK
+      { range $1 $5 (add_type (Array $3)) }
     | LESS_LESS bitstring GREATER_GREATER
       { range $1 $3 & add_type (Bitstring $2) }
     
@@ -214,6 +218,10 @@ field_expr:
     | UIDENT DOT IDENT
       { let m = create $1.loc (add_type (Module $1.desc)) in
         range $1.loc $3.loc (add_type (Field(m, $3.desc))) }
+
+array_expr:
+    | primary DOT LPAREN expr RPAREN
+      { range $1.loc $5 (add_type (Get ($1, $4))) }
 
 simple_constr:
     | UIDENT
@@ -275,6 +283,12 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1 $6.loc (add_type (LetRec($3, $6))) }
 | MATCH expr WITH nl_opt pattern_matching
     { create $1 (add_type (Match($2, $5))) }
+| array_expr LARROW expr
+    { match $1.desc with
+      | Get (e1, e2), _ ->
+        range $1.loc $3.loc (add_type (Put (e1, e2, $3)))
+      | _ -> assert false
+    }
 
 if_exp:
     | IF expr THEN nl_opt block ELSE nl_opt block END

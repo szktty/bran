@@ -67,6 +67,10 @@ let rec gen_exp oc = function
     bprintf oc "{";
     iter_with_sep oc ", " (gen_exp oc) es;
     bprintf oc "}"
+  | Array es ->
+    bprintf oc "array:from_list([";
+    iter_with_sep oc ", " (gen_exp oc) es;
+    bprintf oc "])"
   | Not e -> gen_prefix_exp oc "not" e
   | And (e1, e2) -> gen_bin_exp oc e1 "and" e2
   | Or (e1, e2) -> gen_bin_exp oc e1 "or" e2

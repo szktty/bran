@@ -15,6 +15,7 @@ and expr =
   | Record of (Id.t * t) list
   | Field of t * Id.t
   | Tuple of t list
+  | Array of t list
   | Not of t
   | And of t * t
   | Or of t * t
@@ -34,6 +35,8 @@ and expr =
   | Module of Id.t
   | LetRec of fundef * t
   | App of t * t list
+  | Get of t * t
+  | Put of t * t * t
 and pattern = pattern_desc Locating.t
 and pattern_desc =
   | PtUnit

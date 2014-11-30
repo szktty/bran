@@ -3,6 +3,7 @@
 
 open KNormal_t
 open Locating
+open X
 
 let rec ocaml_of_pattern =
   function
@@ -28,7 +29,8 @@ and string_of_expr =
   | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
   | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
   | Module x -> "module type " ^ x
-  | Tuple(es) -> "(" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
+  | Tuple(es) -> "(" ^ (String.concat_map ", " string_of_typed_expr es) ^ ")"
+  | Array(es) -> "[|" ^ (String.concat_map "; " string_of_typed_expr es) ^ "|]"
   | Not(e) -> "not " ^ (string_of_typed_expr e)
   | And(e1, e2) -> (string_of_typed_expr e1) ^ " && " ^ (string_of_typed_expr e2)
   | Or(e1, e2) -> (string_of_typed_expr e1) ^ " || " ^ (string_of_typed_expr e2)
@@ -44,6 +46,11 @@ and string_of_expr =
   | LE(e1, e2) -> (string_of_typed_expr e1) ^ " <= " ^ (string_of_typed_expr e2) 
   | App(e, args) -> "App(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr args)) ^ "])"
   | ExtFunApp(x, args) -> "ExtFunApp(" ^ x ^ ", [" ^ (String.concat " " (List.map string_of_typed_expr args)) ^ "])"
+  | Get (e1, e2) ->
+    Printf.sprintf "Get(%s, %s)" (string_of_typed_expr e1) (string_of_typed_expr e2)
+  | Put (e1, e2, e3) ->
+    Printf.sprintf "Put(%s, %s, %s)"
+      (string_of_typed_expr e1) (string_of_typed_expr e2) (string_of_typed_expr e3)
 
 let rec string_of_typed_term (e, t) = (string_of_term e) ^ " : " ^ (Type.string_of_t t)
 
@@ -95,6 +102,11 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* Kæ­£è
       | (e::es') -> insert_let (g env e) (fun et' -> insert_lets' es' k (args @ [et'])) in
     insert_lets' es k [] in
 
+  let triple_of_insert_lets e1 e2 e3 k =
+    insert_lets [e1; e2; e3]
+      (fun es -> k (List.nth es 0) (List.nth es 1) (List.nth es 2))
+  in
+
   let binop e1 e2 f =
     insert_let (g env e1)
       (fun e1' -> insert_let (g env e2)
@@ -116,6 +128,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* Kæ­£è
     | Ast_t.Field(e, x) -> insert_let (g env e) (fun e' -> Exp(Field(e', x), t))
     | Ast_t.Module x -> Exp(Module x, t)
     | Ast_t.Tuple(es) -> insert_lets es (fun es' -> Exp(Tuple(es'), t))
+    | Ast_t.Array(es) -> insert_lets es (fun es' -> Exp(Array(es'), t))
     | Ast_t.Not(e) -> insert_let (g env e) (fun e' -> Exp(Not(e'), t))
     | Ast_t.And(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(And(e1', e2'), t))
     | Ast_t.Or(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Or(e1', e2'), t))
@@ -178,9 +191,19 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* Kæ­£è
               | [] -> Exp(App(f, xs), t)
               | e2 :: e2s -> insert_let (g env e2) (fun x -> bind (xs @ [x]) e2s) in
             bind [] e2s) (* left-to-right evaluation *)
+    | Ast_t.Get (e1, e2) ->
+      begin match g env e1 with
+        | _, Type_t.App(Type_t.Array, [t]) as g_e1 ->
+          insert_let g_e1 (fun x -> insert_let (g env e2)
+                              (fun y -> Exp (Get(x, y), t)))
+        | _ -> assert false
+      end
+    | Ast_t.Put (e1, e2, e3) ->
+      triple_of_insert_lets e1 e2 e3
+        (fun x y z -> Exp (Put (x, y, z), Type.app_unit))
   in
   (e', t)
-        
+
 let fold f env defs = 
   let _, defs' = List.fold_left f (env, []) defs in
   List.rev defs'

@@ -156,7 +156,7 @@ let rec deref_tycon ({ Env.tycons = tycons } as env) reached tycon =
   match tycon with
   | Type_t.Int | Type_t.Bool | Type_t.Char | Type_t.String | Type_t.Atom
   | Type_t.Bitstring | Type_t.Unit | Type_t.Float
-  | Type_t.Arrow | Type_t.Tuple | Type_t.Module _ as tycon ->
+  | Type_t.Arrow | Type_t.Tuple | Type_t.Array | Type_t.Module _ as tycon ->
     tycon, reached
   | Type_t.Record(x, _) as tycon -> tycon, M.add x tycon reached
   | Type_t.Variant(x, _) when M.mem x reached -> 
@@ -263,6 +263,7 @@ and deref_expr ({ Env.venv = venv } as env) = function
   | Record(xes) -> Record(List.map (fun (x, e) -> x, deref_typed_expr env e) xes)
   | Field(e, x) -> Field(deref_typed_expr env e, x)
   | Tuple(es) -> Tuple(List.map (deref_typed_expr env) es)
+  | Array(es) -> Array(List.map (deref_typed_expr env) es)
   | Not(e) -> Not(deref_typed_expr env e)
   | And(e1, e2) -> And(deref_typed_expr env e1, deref_typed_expr env e2)
   | Or(e1, e2) -> Or(deref_typed_expr env e1, deref_typed_expr env e2)
@@ -285,6 +286,8 @@ and deref_expr ({ Env.venv = venv } as env) = function
              deref_typed_expr (Env.add_var env x t) e2)
   | App(e, es) -> App(deref_typed_expr env e, List.map (deref_typed_expr env) es)
   | Constr(x, es) -> Constr(x, List.map (deref_typed_expr env) es)
+  | Get(e1, e2) -> Get(deref_typed_expr env e1, deref_typed_expr env e2)
+  | Put(e1, e2, e3) -> Put(deref_typed_expr env e1, deref_typed_expr env e2, deref_typed_expr env e3)
 
 let deref_def env def =
   set def (match def.desc with
@@ -410,6 +413,15 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
             ([], []) (List.rev ets)
         in
         Tuple(ets'), Type_t.App(Type_t.Tuple, ts')
+      | Array(ets) ->
+        let ets', ts' =
+          List.fold_left
+            (fun (ets, ts) e ->
+               let e', t' = g env e in
+               (set e (e', t')) :: ets, t' :: ts)
+            ([], []) (List.rev ets)
+        in
+        Array(ets'), Type_t.App(Type_t.Array, ts')
       | Not(et) ->
         let e', t' = g env et in
         unify env (Type_t.App(Type_t.Bool, [])) t';
@@ -543,6 +555,24 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
           let result = Type_t.Meta(Type.newmetavar ()) in
           unify env t' (Type_t.App(Type_t.Arrow, ts' @ [result]));
           App(set et (e', t'), ets'), result
+      | Get(et1, et2) ->
+        (* TODO: unify et1 *)
+        let e1', t1' = g env et1 in
+        let e2', t2' = g env et2 in
+        unify env (Type_t.App(Type_t.Int, [])) t2';
+        begin match t1' with
+        | Type_t.App(Type_t.Array, [t]) ->
+          Get(set et1 (e1', t1'), set et2 (e2', t2')), t
+        | _ -> assert false
+        end
+      | Put(et1, et2, et3) ->
+        (* TODO: unify et1 *)
+        let e1', t1' = g env et1 in
+        let e2', t2' = g env et2 in
+        let e3', t3' = g env et3 in
+        unify env (Type_t.App(Type_t.Int, [])) t2';
+        unify env Type.app_unit t3';
+        Put(set et1 (e1', t1'), set et2 (e2', t2'), set et1 (e1', t1')), Type.app_unit
     in
     unify env ty ty';
     expr', ty'

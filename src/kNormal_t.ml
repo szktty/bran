@@ -22,6 +22,7 @@ and expr =
   | Field of et * Id.t
   | Module of Id.t
   | Tuple of et list
+  | Array of et list
   | Not of et
   | And of et * et
   | Or of et * et
@@ -37,6 +38,8 @@ and expr =
   | Constr of Id.t * et list
   | App of et * et list
   | ExtFunApp of Id.t * et list
+  | Get of et * et
+  | Put of et * et * et
 
 and pattern =
   | PtUnit

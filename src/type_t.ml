@@ -16,6 +16,7 @@ and tycon =
   | Bitstring
   | Arrow
   | Tuple
+  | Array
   | Record of Id.t * Id.t list (* 型名とフィールド識別子のリスト。型名はあとで名前引きやすいようにするため *)
   | Variant of Id.t * constr list (* 最初のId.tは型名。理由は同上 *)
   | TyFun of tyvar list * t

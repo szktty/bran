@@ -1,4 +1,5 @@
 open Type_t
+open X
 
 let counter = ref 0
 let newtyvar () = 
@@ -28,6 +29,7 @@ and string_of_tycon reached =
   | Bitstring -> "Bitstring"
   | Arrow -> "Arrow"
   | Tuple -> "Tuple"
+  | Array -> "Array"
   | Module x -> "Module(" ^ x ^ ")"
   | Record(x, fs) -> "Record(" ^ x ^ ", {" ^ (String.concat ", " fs) ^ "})"
   | Variant(x, constrs) when S.mem x reached -> "Variant(" ^ x ^ ")"
@@ -66,6 +68,7 @@ and prefix_of_tycon =
   | Bitstring -> "bit"
   | Arrow -> "pfn"
   | Tuple -> "t"
+  | Array -> "y"
   | Module _ -> "m"
   | Record _ -> "st"
   | Variant _ -> "v"
@@ -148,8 +151,9 @@ let rec name t =
   | App(String, []) -> "string"
   | App(Atom, []) -> "atom"
   | App(Bitstring, []) -> "bitstring"
-  | App(Arrow, ts) -> "fun_of_" ^ (String.concat "_" (List.map name ts))
-  | App(Tuple, ts) -> "tuple_of_" ^ (String.concat "_" (List.map name ts))
+  | App(Arrow, ts) -> "fun_of_" ^ (String.concat_map "_" name ts)
+  | App(Tuple, ts) -> "tuple_of_" ^ (String.concat_map "_" name ts)
+  | App(Array, ts) -> "array_of_" ^ (String.concat_map "_" name ts)
   | App(Module x, []) -> x
   | App(Record(x, _), _) -> x
   | App(Variant(x, _), _) -> x

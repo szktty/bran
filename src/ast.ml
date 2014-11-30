@@ -27,6 +27,7 @@ and string_of_expr =
   | Record(xs) -> "Record(" ^ (String.concat_map "; " (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xs) ^ ")"
   | Field(e, x) -> "Field(" ^ (string_of_typed_expr e) ^ ", " ^ x ^ ")"
   | Tuple(es) -> "Tuple([" ^ (String.concat "; " (List.map string_of_typed_expr es)) ^ "])"
+  | Array(es) -> "Array([" ^ (String.concat "; " (List.map string_of_typed_expr es)) ^ "])"
   | Not(e) -> "Not(" ^ (string_of_typed_expr e) ^ ")"
   | And(e1, e2) -> "And(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2) ^ ")"
   | Or(e1, e2) -> "Or(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2) ^ ")"
@@ -46,6 +47,12 @@ and string_of_expr =
   | Module x -> "Module(" ^ x ^ ")"
   | LetRec({ name = (x, t); args = yts; body = e1 }, e2) -> "LetRec(" ^ x ^ "(" ^ (String.concat ", " (List.map (fun (y, t) -> y ^ " : " ^ (Type.string_of_t t)) yts)) ^ ") : " ^ (Type.string_of_t t) ^ " = " ^ (string_of_typed_expr e1) ^ " in " ^ (string_of_typed_expr e2) ^ ")"
   | App(e, es) -> "App(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ "])"
+  | Get (e1, e2) ->
+    Printf.sprintf "Get(%s, %s)" (string_of_typed_expr e1)
+      (string_of_typed_expr e2)
+  | Put (e1, e2, e3) ->
+    Printf.sprintf "Put(%s, %s, %s)" (string_of_typed_expr e1)
+      (string_of_typed_expr e2) (string_of_typed_expr e3)
 
 let string_of_fundef { name = (x, t); args = yts; body = e } =
   x ^ " " ^ (String.concat " " (List.map (fun (y, t) -> y) yts)) ^ " : " ^ (Type.string_of_t t) ^ " = " ^ (string_of_typed_expr e) 
