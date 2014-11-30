@@ -178,6 +178,8 @@ rule token = parse
 | "try" { TRY (to_loc lexbuf) }
 | "type" { TYPE (to_loc lexbuf) }
 | "module" { MODULE (to_loc lexbuf) }
+| "perform" { PERFORM (to_loc lexbuf) }
+| "return" { RETURN (to_loc lexbuf) }
 | "and" { AND (to_loc lexbuf) }
 | ','
     { COMMA (to_loc lexbuf) }

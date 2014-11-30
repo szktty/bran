@@ -33,6 +33,7 @@ let parsing_files = [
   ("tuple", "tuple.br");
   ("array", "array.br");
   ("topvar", "topvar.br");
+  ("monad", "monad.br");
 ]
 
 let suite =

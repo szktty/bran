@@ -288,6 +288,10 @@ and deref_expr ({ Env.venv = venv } as env) = function
   | Constr(x, es) -> Constr(x, List.map (deref_typed_expr env) es)
   | Get(e1, e2) -> Get(deref_typed_expr env e1, deref_typed_expr env e2)
   | Put(e1, e2, e3) -> Put(deref_typed_expr env e1, deref_typed_expr env e2, deref_typed_expr env e3)
+  | Perform e -> Perform (deref_typed_expr env e)
+  | Bind ((x, t), e) -> 
+    Bind (deref_id_type env (x, t), deref_typed_expr env e)
+  | Return e -> Return (deref_typed_expr env e)
 
 let deref_def env def =
   set def (match def.desc with
@@ -573,6 +577,9 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
         unify env (Type_t.App(Type_t.Int, [])) t2';
         unify env Type.app_unit t3';
         Put(set et1 (e1', t1'), set et2 (e2', t2'), set et1 (e1', t1')), Type.app_unit
+      | Perform _ -> failwith "not implemented"
+      | Bind _ -> failwith "not implemented"
+      | Return _ -> failwith "not implemented"
     in
     unify env ty ty';
     expr', ty'

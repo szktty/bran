@@ -201,6 +201,9 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* Kæ­£è
     | Ast_t.Put (e1, e2, e3) ->
       triple_of_insert_lets e1 e2 e3
         (fun x y z -> Exp (Put (x, y, z), Type.app_unit))
+    | Ast_t.Perform _ -> failwith "not implemented"
+    | Ast_t.Bind _ -> failwith "not implemented"
+    | Ast_t.Return _ -> failwith "not implemented"
   in
   (e', t)
 

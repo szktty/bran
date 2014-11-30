@@ -53,6 +53,10 @@ and string_of_expr =
   | Put (e1, e2, e3) ->
     Printf.sprintf "Put(%s, %s, %s)" (string_of_typed_expr e1)
       (string_of_typed_expr e2) (string_of_typed_expr e3)
+  | Perform e -> Printf.sprintf "Perform(%s)" (string_of_typed_expr e)
+  | Bind ((x, t), e) ->
+    Printf.sprintf "Bind(%s:%s = %s)" x (Type.string_of_t t) (string_of_typed_expr e) 
+  | Return e -> Printf.sprintf "Return(%s)" (string_of_typed_expr e)
 
 let string_of_fundef { name = (x, t); args = yts; body = e } =
   x ^ " " ^ (String.concat " " (List.map (fun (y, t) -> y) yts)) ^ " : " ^ (Type.string_of_t t) ^ " = " ^ (string_of_typed_expr e) 

@@ -37,6 +37,9 @@ and expr =
   | App of t * t list
   | Get of t * t
   | Put of t * t * t
+  | Perform of t
+  | Bind of (Id.t * Type_t.t) * t
+  | Return of t
 and pattern = pattern_desc Locating.t
 and pattern_desc =
   | PtUnit

@@ -76,6 +76,8 @@ let rev_combine_list = function
 %token <Location.t> TO
 %token <Location.t> MATCH
 %token <Location.t> WITH
+%token <Location.t> PERFORM
+%token <Location.t> RETURN
 %token <Location.t> AND
 %token <Location.t> LARROW (* <- *)
 %token <Location.t> RARROW (* -> *)
@@ -288,6 +290,12 @@ expr: /* 一般の式 (caml2html: parser_expr) */
         range $1.loc $3.loc (add_type (Put (e1, e2, $3)))
       | _ -> assert false
     }
+| PERFORM nl_opt block END
+    { range $1 $4 (add_type (Perform $3))  }
+| IDENT LARROW expr
+    { range $1.loc $3.loc (add_type (Bind (add_type $1.desc, $3))) }
+| RETURN expr %prec prec_app
+    { range $1 $2.loc (add_type (Return $2)) }
 
 if_exp:
     | IF expr THEN nl_opt block ELSE nl_opt block END
