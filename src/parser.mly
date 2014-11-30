@@ -148,10 +148,10 @@ rev_definitions:
       { $2 :: $1 }
 
 definition:
-| VAR IDENT EQUAL nl_opt block
+| VAR IDENT EQUAL nl_opt expr
     { range $1 $5.loc (VarDef(add_type $2.desc, $5)) }
-| VAR LPAREN RPAREN EQUAL nl_opt block
-    { range $1 $4 (VarDef((Id.gentmp (Type.prefix (Type_t.App(Type_t.Unit, []))), (Type_t.App(Type_t.Unit, []))), $6)) }
+(*| VAR LPAREN RPAREN EQUAL nl_opt expr
+    { range $1 $4 (VarDef((Id.gentmp (Type.prefix (Type_t.App(Type_t.Unit, []))), (Type_t.App(Type_t.Unit, []))), $6)) }*)
 | DEF fundef
     { create $1 (RecDef $2) }
 | DEF REC fundef

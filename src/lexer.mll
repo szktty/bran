@@ -160,7 +160,8 @@ rule token = parse
 | (space* as s) "def"
     { next_line_in_spaces lexbuf s; DEF (to_loc lexbuf) }
 | "external" { EXTERNAL (to_loc lexbuf) }
-| "var" { VAR (to_loc lexbuf) }
+| (space* as s) "var"
+    { next_line_in_spaces lexbuf s; VAR (to_loc lexbuf) }
 | "import" { IMPORT (to_loc lexbuf) }
 | "as" { AS (to_loc lexbuf) }
 | "of" { OF (to_loc lexbuf) }
