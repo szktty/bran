@@ -207,13 +207,37 @@ Basically bitstring syntax is the same as one of Erlang. See [Bit Syntax Express
 16r1f
 ```
 
-### Float
+#### Float
 
 ```
 2.3
 2.3e3
 2.3e-3
 7.000e+00
+```
+
+#### List
+
+```
+[]
+[1]
+[1; 2; 3]
+[1; 2; 3;]
+```
+
+#### Tuple
+
+```
+(1, "a")
+```
+
+#### Array
+
+```
+[||]
+[|1|]
+[|1; 2; 3|]
+[|1; 2; 3;|]
 ```
 
 ### Variable bindings
@@ -257,6 +281,14 @@ f x $ g y z   # => f x (g y z)  Haskell's "$"
 external print_bool : bool -> unit = "bran_lib_pervasives:print_bool"
 ```
 
+### Calling Erlang functions
+
+use `Erlang.eval : string -> string`.
+
+```
+var result = Erlang.eval "ok."
+```
+
 ### Conditional
 
 ```
@@ -267,11 +299,13 @@ else
 end
 ```
 
-### Calling Erlang functions
-
-use `Erlang.eval : string -> string`.
+### Monad
 
 ```
-var result = Erlang.eval "ok."
+perform
+  x1 <- action1
+  x2 <- action2
+  action3 x1 x2
+  return x1
+end
 ```
-
