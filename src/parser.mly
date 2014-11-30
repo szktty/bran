@@ -513,19 +513,21 @@ variant_var_decls_tail:
     { [] }
 | AST type_expr variant_var_decls_tail
     { $2::$3 }
-;
+
 list: 
-| /* empty */
-    { [] }
-| expr tail
-    { $1 :: $2 }
-;
-tail: 
-| 
-    { [] }
-| SEMI expr tail
-    { $2 :: $3 }
-;
+    | (* empty *)
+      { [] }
+    | rev_list_elts
+      { List.rev $1 }
+    | rev_list_elts SEMI
+      { List.rev $1 }
+
+rev_list_elts:
+    | expr
+      { [$1] }
+    | rev_list_elts SEMI expr
+      { $3 :: $1 }
+
 list_pattern: 
 | /* empty */
     { [] }

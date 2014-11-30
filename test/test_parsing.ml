@@ -29,6 +29,7 @@ let parsing_files = [
   ("float", "float.br");
   ("bitstring", "bitstring.br");
   ("dollar", "dollar.br");
+  ("list", "list.br");
   ("topvar", "topvar.br");
 ]
 
