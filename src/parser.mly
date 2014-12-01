@@ -91,6 +91,7 @@ let rev_combine_list = function
 %token <Location.t> DO
 %token <Location.t> DONE
 %token <Location.t> FOR
+%token <Location.t> FUN
 %token <Location.t> WHILE
 %token <Location.t> DEFER
 %token <Location.t> RAISE
@@ -112,7 +113,8 @@ let rev_combine_list = function
 %right SEMI NL
 %right DOL
 %right LARROW
-%nonassoc prec_tuple prec_tuple_pattern
+%nonassoc RARROW
+%nonassoc prec_tuple prec_tuple_pattern prec_pattern
 %left COMMA
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %right LAND
@@ -308,6 +310,12 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 | RAISE expr %prec prec_app
     (* TODO *)
     { range $1 $2.loc (add_type Unit) }
+| FUN nl_opt rev_formal_args RARROW nl_opt block END
+    (* TODO *)
+    { range $1 $7 (add_type Unit) }
+| FUN nl_opt pattern_matching END
+    (* TODO *)
+    { range $1 $1 (add_type Unit) }
 
 if_exp:
     | IF expr THEN nl_opt multi_exps_block END
@@ -393,7 +401,7 @@ rev_formal_args:
       { add_type $2.desc :: $1 }
 
 formal_arg:
-    | pattern { create Location.zero $1 (* TODO: location *) }
+    | pattern %prec prec_pattern { create Location.zero $1 (* TODO: location *) }
 
 actual_args:
 | actual_args simple_expr

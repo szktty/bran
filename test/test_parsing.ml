@@ -38,6 +38,7 @@ let parsing_files = [
   ("match", "match.br");
   ("for", "for.br");
   ("try", "try.br");
+  ("fun", "fun.br");
 ]
 
 let suite =

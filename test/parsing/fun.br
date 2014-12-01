@@ -1,0 +1,20 @@
+def f1 x =
+  fun y -> x + y end
+
+def f2 x =
+  fun y z -> x + y + z end
+
+def f3 x =
+  fun (y, z) -> x + y + z end
+
+def f4 x =
+  fun
+    y z ->
+      x + y + z
+  end
+
+def f5 x =
+  fun
+  | 0 -> 0
+  | y -> x + y
+  end
