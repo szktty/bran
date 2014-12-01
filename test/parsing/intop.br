@@ -3,3 +3,9 @@ def sub x y = x - y
 def mul x y = x * y
 def div x y = x / y
 def mod_ x y = x mod y
+
+def add x y = 1 + 1
+def sub x y = 1 - 1
+def mul x y = 1 * 1
+def div x y = 1 / 1
+def mod_ x y = 1 mod 1
