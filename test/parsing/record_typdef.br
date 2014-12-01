@@ -1,0 +1,14 @@
+type r = { a : int }
+type r = { a : int, }
+
+type r = { a : int, b : float, c : string }
+type r = { a : int, b : float, c : string, }
+
+type r =
+  { a : int }
+
+type r = {
+  a : int,
+  b : float,
+  c : string
+}

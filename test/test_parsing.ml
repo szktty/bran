@@ -20,8 +20,20 @@ let test_parsing file test_ctx =
   assert_no_file_changes res
 
 let parsing_files = [
-  ("simple_def", "def.br");
   ("comment", "comment.br");
+
+  (* definitions *)
+  ("top_def", "def.br");
+  ("top_var", "topvar.br");
+  (*("local_def", "local_def.br");*)
+  (*("local_var", "local_var.br");*)
+
+  (* signatures *)
+  (*("sig_def", "sig_def.bri");*)
+  (*("sig_var", "sig_var.bri");*)
+  (*("external", "external.bri");*)
+
+  (* literals *)
   ("atom", "atom.br");
   ("string", "string.br");
   ("bool", "bool.br");
@@ -32,16 +44,26 @@ let parsing_files = [
   ("list", "list.br");
   ("tuple", "tuple.br");
   ("array", "array.br");
-  ("topvar", "topvar.br");
-  ("monad", "monad.br");
+  (*("record", "record.br");*)
+
+  (* operators *)
+  ("intop", "intop.br");
+  ("floatop", "floatop.br");
+
+  (* controls *)
   ("if", "if.br");
   ("match", "match.br");
   ("for", "for.br");
   ("try", "try.br");
   ("fun", "fun.br");
+  ("monad", "monad.br");
   ("assert", "assert.br");
-  ("intop", "intop.br");
-  ("floatop", "floatop.br");
+  (* ("exception", "exception.br"); *)
+
+  (* type definitions *)
+  (*("simple_typdef", "simple_typdef.br");*)
+  (*("variant_typdef", "varint_typdef.br");*)
+  
 ]
 
 let suite =

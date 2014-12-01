@@ -1,0 +1,5 @@
+type a = int
+type b = string
+type 'a c = 'a
+type d = int * string * 'a
+type 'a e = ('a -> unit)

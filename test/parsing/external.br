@@ -1,0 +1,2 @@
+external print_string : string -> unit = "bran_lib_pervasives:print_string"
+external foobar : int -> int -> unit = "foobar:foobar"

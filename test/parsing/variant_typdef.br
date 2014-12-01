@@ -1,0 +1,15 @@
+type a = A of int
+
+type b = A of int | B of float | C
+
+type c =
+    A of int
+  | B of float
+  | C
+
+type d =
+  | A of int
+  | B of float
+  | C
+
+type 'a e = A of 'a | B | C

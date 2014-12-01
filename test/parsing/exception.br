@@ -1,0 +1,3 @@
+exception My_error
+exception My_error of string
+exception My_error of string * int * string
