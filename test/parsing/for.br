@@ -1,0 +1,12 @@
+def f x =
+  for i = 1 to max do
+    print_int i
+    print_int i
+  end
+
+  for i = 1 to
+    max
+      do
+        print_int i
+        print_int i
+      end
