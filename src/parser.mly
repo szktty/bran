@@ -38,6 +38,7 @@ let rev_combine_list = function
 %token <string Locating.t> CHAR
 %token <string Locating.t> STRING
 %token <string Locating.t> ATOM
+%token <Location.t> ASSERT
 %token <Location.t> NOT
 %token <Location.t> MINUS
 %token <Location.t> MINUS_DOT
@@ -312,6 +313,9 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 | FUN nl_opt pattern_matching END
     (* TODO *)
     { range $1 $1 (add_type Unit) }
+| ASSERT expr %prec prec_app
+    (* TODO *)
+    { range $1 $2.loc (add_type Unit) }
 
 if_exp:
     | IF expr THEN nl_opt multi_exps_block END

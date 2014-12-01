@@ -39,6 +39,7 @@ let parsing_files = [
   ("for", "for.br");
   ("try", "try.br");
   ("fun", "fun.br");
+  ("assert", "assert.br");
 ]
 
 let suite =

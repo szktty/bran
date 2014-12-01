@@ -104,6 +104,8 @@ rule token = parse
     { BOOL (Locating.create (to_loc lexbuf) true) }
 | "false"
     { BOOL (Locating.create (to_loc lexbuf) false) }
+| "assert"
+    { ASSERT (to_loc lexbuf) }
 | "not"
     { NOT (to_loc lexbuf) }
 | (digit+ as b) 'r' (['0'-'9' 'a'-'z' 'A'-'Z']+ as v)

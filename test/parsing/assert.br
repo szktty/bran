@@ -1,0 +1,11 @@
+def f1 x =
+  assert x > 0
+
+def f2 x =
+  assert true
+
+def f3 x =
+  assert false
+
+def f4 x y =
+  assert f x y
