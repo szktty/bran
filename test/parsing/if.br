@@ -1,0 +1,18 @@
+def f x =
+  if x then
+    print_string "true"
+    true
+  else
+    print_string "false"
+    false
+  end
+
+  if x then true else false
+
+  if x then true
+  else false
+
+  if x then
+    true
+  else
+    false

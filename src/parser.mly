@@ -298,8 +298,10 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1 $2.loc (add_type (Return $2)) }
 
 if_exp:
-    | IF expr THEN nl_opt block ELSE nl_opt block END
-    { range $1 $8.loc (add_type (If($2, $5, $8))) }
+    | IF simple_expr THEN nl_opt multi_exps_block ELSE nl_opt multi_exps_block END
+      { range $1 $9 (add_type (If($2, $5, $8))) }
+    | IF simple_expr THEN nl_opt simple_expr ELSE nl_opt simple_expr
+      { range $1 $8.loc (add_type (If($2, $5, $8))) }
 
 nl_opt:
     | (* empty *) {}
@@ -308,6 +310,9 @@ nl_opt:
 nl:
     | NL {}
     | nl NL {}
+
+multi_exps_block:
+    | rev_stmts terms expr { rev_combine_list ($3 :: $1) }
 
 block:
     | rev_stmts %prec prec_stmt { rev_combine_list $1 }
