@@ -1,0 +1,20 @@
+def f1 x =
+  match x with
+    0 -> print_int 0
+  | 1 -> print_int 1
+  | n -> print_int n
+  end
+
+def f2 x =
+  match x with
+  | 0 -> print_int 0
+  | 1 -> print_int 1
+  | n -> print_int n
+  end
+
+def f4 x =
+  match x with
+  | 0 -> print_int 0
+  | 1 -> print_int 1
+  | _ -> print_int n
+  end

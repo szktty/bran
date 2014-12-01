@@ -124,8 +124,6 @@ let rev_combine_list = function
 %right prec_unary_minus
 %nonassoc prec_simple_if
 %left prec_app
-%nonassoc prec_pattern
-%nonassoc PIPE
 %nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS
 %left DOT LBRACE
 
@@ -287,8 +285,8 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1 $8.loc (add_type (LetVar(add_type $2.desc, $5, $8))) }
 | DEF REC fundef IN nl_opt block
     { range $1 $6.loc (add_type (LetRec($3, $6))) }
-| MATCH expr WITH nl_opt pattern_matching
-    { create $1 (add_type (Match($2, $5))) }
+| MATCH nl_opt expr WITH nl_opt pattern_matching END
+    { create $1 (add_type (Match($3, $6))) }
 | array_expr LARROW expr
     { match $1.desc with
       | Get (e1, e2), _ ->
@@ -410,11 +408,12 @@ field:
 ;
 
 pattern_matching:
-    | pattern_matching_elts { $1 }
-    | PIPE pattern_matching_elts { $2 }
+    | rev_pattern_matching
+      { List.rev $1 }
 
-pattern_matching_elts:
-    | rev_pattern_matching_elts %prec prec_pattern { List.rev $1 }
+rev_pattern_matching:
+    | rev_pattern_matching_elts { $1 }
+    | PIPE rev_pattern_matching_elts { $2 }
 
 rev_pattern_matching_elts:
     | pattern_matching_elt
@@ -454,7 +453,6 @@ pattern:
     { List.fold_right (fun x xs ->
       create $1 (PtConstr("Cons", [x; xs])))
     $2 (create $3 (PtConstr("Nil", []))) }
-;
 
 tuple_pattern:
     | rev_tuple_pattern %prec prec_tuple_pattern
