@@ -119,8 +119,8 @@ let rev_combine_list = function
 %right LOR
 %right UARROW
 %right CONS
-%left PLUS MINUS
-%left AST SLASH
+%left PLUS MINUS PLUS_DOT MINUS_DOT
+%left AST SLASH AST_DOT SLASH_DOT
 %right prec_unary_minus
 %nonassoc prec_simple_if
 %left prec_app
@@ -235,13 +235,25 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1 $2.loc (add_type (Not($2))) }
 | MINUS expr %prec prec_unary_minus
     { range $1 $2.loc (add_type (Neg($2))) }
-| expr PLUS expr /* 足し算を構文解析するルール (caml2html: parser_add) */
+| expr PLUS expr
     { range $1.loc $3.loc (add_type (Add($1, $3))) }
 | expr MINUS expr
     { range $1.loc $3.loc (add_type (Sub($1, $3))) }
 | expr AST expr
     { range $1.loc $3.loc (add_type (Mul($1, $3))) }
 | expr SLASH expr
+    { range $1.loc $3.loc (add_type (Div($1, $3))) }
+| expr PLUS_DOT expr
+    (* TODO: FAdd *)
+    { range $1.loc $3.loc (add_type (Add($1, $3))) }
+| expr MINUS_DOT expr
+    (* TODO: FSub *)
+    { range $1.loc $3.loc (add_type (Sub($1, $3))) }
+| expr AST_DOT expr
+    (* TODO: FMul *)
+    { range $1.loc $3.loc (add_type (Mul($1, $3))) }
+| expr SLASH_DOT expr
+    (* TODO: FDiv *)
     { range $1.loc $3.loc (add_type (Div($1, $3))) }
 | expr UARROW expr
     { range $1.loc $3.loc (add_type (Concat($1, $3))) }
