@@ -18,3 +18,13 @@ def f4 x =
   | 1 -> print_int 1
   | _ -> print_int n
   end
+
+def f5 x =
+  match x with
+    0 -> print_int 0
+  end
+
+def f6 x =
+  match x with
+  | 0 -> print_int 0
+  end
