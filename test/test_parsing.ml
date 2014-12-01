@@ -40,6 +40,7 @@ let parsing_files = [
   ("try", "try.br");
   ("fun", "fun.br");
   ("assert", "assert.br");
+  ("intop", "intop.br");
 ]
 
 let suite =

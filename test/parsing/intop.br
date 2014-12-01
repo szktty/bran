@@ -1,0 +1,5 @@
+def add x y = x + y
+def sub x y = x - y
+def mul x y = x * y
+def div x y = x / y
+def mod_ x y = x mod y

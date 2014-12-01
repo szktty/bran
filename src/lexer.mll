@@ -119,10 +119,12 @@ rule token = parse
     { INT (Locating.create (to_loc lexbuf) (10, lexeme lexbuf)) }
 | float as s
     { FLOAT (Locating.create (to_loc lexbuf) (float_of_string s)) }
-| '-' (* -.より後回しにしなくても良い? 最長一致? *)
+| '-'
     { MINUS (to_loc lexbuf) }
-| '+' (* +.より後回しにしなくても良い? 最長一致? *)
+| '+'
     { PLUS (to_loc lexbuf) }
+| '*'
+    { AST (to_loc lexbuf) }
 | '/'
     { SLASH (to_loc lexbuf) }
 | "-."
