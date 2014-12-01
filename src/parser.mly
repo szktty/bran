@@ -124,7 +124,7 @@ let rev_combine_list = function
 %right prec_unary_minus
 %nonassoc prec_simple_if
 %left prec_app
-%nonassoc guard
+%nonassoc prec_pattern
 %nonassoc PIPE
 %nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS
 %left DOT LBRACE
@@ -410,21 +410,22 @@ field:
 ;
 
 pattern_matching:
-| opt_pipe pattern RARROW nl_opt block pattern_matching_tail
-    { ($2, $5) :: $6 }
-;
-pattern_matching_tail:
-| /* empty */ %prec guard
-    { [] }
-| PIPE pattern_matching
-    { $2 }
-;
-opt_pipe:
-| /* empty */ 
-    {  }
-| PIPE
-    {  }
-;
+    | pattern_matching_elts { $1 }
+    | PIPE pattern_matching_elts { $2 }
+
+pattern_matching_elts:
+    | rev_pattern_matching_elts %prec prec_pattern { List.rev $1 }
+
+rev_pattern_matching_elts:
+    | pattern_matching_elt
+      { [$1] }
+    | rev_pattern_matching_elts PIPE pattern_matching_elt
+      { $3 :: $1 }
+
+pattern_matching_elt:
+    | pattern RARROW nl_opt block
+      { ($1, $4) }
+
 pattern:
 | LPAREN pattern RPAREN
     { $2 }
