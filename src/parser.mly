@@ -89,11 +89,8 @@ let rev_combine_list = function
 %token <Location.t> BEGIN
 %token <Location.t> END
 %token <Location.t> DO
-%token <Location.t> DONE
 %token <Location.t> FOR
 %token <Location.t> FUN
-%token <Location.t> WHILE
-%token <Location.t> DEFER
 %token <Location.t> RAISE
 %token <Location.t> TRY
 %token <Location.t> LBRACE
@@ -126,8 +123,8 @@ let rev_combine_list = function
 %right prec_unary_minus
 %nonassoc prec_simple_if
 %left prec_app
-%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS DO RAISE
-%left DOT LBRACE
+%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS DO
+%left LBRACE
 
 /* 開始記号の定義 */
 %type <Ast_t.def list> prog
@@ -277,7 +274,6 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     %prec prec_app
     { range $1.loc (List.last $2).loc (add_type (App($1, $2))) }
 | expr actual_args do_block
-    %prec prec_app
     { range $1.loc (List.last $2).loc (add_type (App($1, $2))) }
 | UIDENT simple_expr
     { range $1.loc $2.loc (add_type (Constr($1.desc, constr_args $2))) }
