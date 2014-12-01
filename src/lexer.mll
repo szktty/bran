@@ -165,7 +165,8 @@ rule token = parse
 | "import" { IMPORT (to_loc lexbuf) }
 | "as" { AS (to_loc lexbuf) }
 | "of" { OF (to_loc lexbuf) }
-| "with" { WITH (to_loc lexbuf) }
+| (space* as s) "with"
+    { next_line_in_spaces lexbuf s; WITH (to_loc lexbuf) }
 | "match" { MATCH (to_loc lexbuf) }
 | (space* as s) "end"
     { next_line_in_spaces lexbuf s; END (to_loc lexbuf) }

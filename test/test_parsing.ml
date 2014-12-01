@@ -37,6 +37,7 @@ let parsing_files = [
   ("if", "if.br");
   ("match", "match.br");
   ("for", "for.br");
+  ("try", "try.br");
 ]
 
 let suite =

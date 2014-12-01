@@ -124,7 +124,7 @@ let rev_combine_list = function
 %right prec_unary_minus
 %nonassoc prec_simple_if
 %left prec_app
-%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS DO
+%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS DO RAISE
 %left DOT LBRACE
 
 /* 開始記号の定義 */
@@ -302,6 +302,12 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 | FOR IDENT EQUAL expr TO nl_opt expr DO nl_opt block END
     (* TODO *)
     { range $1 $11 (add_type Unit) }
+| TRY nl_opt expr WITH nl_opt pattern_matching END
+    (* TODO *)
+    { range $1 $7 (add_type Unit) }
+| RAISE expr %prec prec_app
+    (* TODO *)
+    { range $1 $2.loc (add_type Unit) }
 
 if_exp:
     | IF expr THEN nl_opt multi_exps_block END

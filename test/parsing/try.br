@@ -1,0 +1,20 @@
+def f x =
+  raise g x
+
+def g x =
+  try x with e -> e end
+
+  try
+    x
+  with
+    e -> e
+  end
+
+  try
+    x
+  with
+    | Not_found ->
+      e
+    | e ->
+      e
+  end
