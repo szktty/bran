@@ -2,6 +2,11 @@ def f x =
   if x then
     print_string "true"
     true
+  end
+
+  if x then
+    print_string "true"
+    true
   else
     print_string "false"
     false

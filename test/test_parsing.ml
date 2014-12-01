@@ -34,6 +34,7 @@ let parsing_files = [
   ("array", "array.br");
   ("topvar", "topvar.br");
   ("monad", "monad.br");
+  ("if", "if.br");
 ]
 
 let suite =

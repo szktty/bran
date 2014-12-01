@@ -291,12 +291,41 @@ var result = Erlang.eval "ok."
 
 ### Conditional
 
+Conditional expression syntax is:
+
 ```
-if [exp] then
-  ...
-else
-  ...
+if [bool-exp] then [block] end
+if [bool-exp] then [block] else [block] end
+if [bool-exp] then [expr] else [expr]
+```
+
+"`end`" can be omitted when blocks have only an expression.
+
+Examples:
+
+```
+if x then
+  print_string "true"
+  true
 end
+
+if x then
+  print_string "true"
+  true
+else
+  print_string "false"
+  false
+end
+
+if x then true else false
+
+if x then true
+else false
+
+if x then
+  true
+else
+  false
 ```
 
 ### Monad

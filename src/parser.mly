@@ -121,6 +121,7 @@ let rev_combine_list = function
 %left PLUS MINUS
 %left AST SLASH
 %right prec_unary_minus
+%nonassoc prec_simple_if
 %left prec_app
 %nonassoc guard
 %nonassoc PIPE
@@ -298,9 +299,13 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1 $2.loc (add_type (Return $2)) }
 
 if_exp:
-    | IF simple_expr THEN nl_opt multi_exps_block ELSE nl_opt multi_exps_block END
+    | IF expr THEN nl_opt multi_exps_block END
+      { let other = create $1 (Unit, Type.app_unit) in
+        range $1 $6 (add_type (If($2, $5, other))) }
+    | IF expr THEN nl_opt multi_exps_block ELSE nl_opt multi_exps_block END
       { range $1 $9 (add_type (If($2, $5, $8))) }
-    | IF simple_expr THEN nl_opt simple_expr ELSE nl_opt simple_expr
+    | IF expr THEN nl_opt expr ELSE nl_opt expr
+      %prec prec_simple_if 
       { range $1 $8.loc (add_type (If($2, $5, $8))) }
 
 nl_opt:
