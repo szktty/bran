@@ -221,8 +221,8 @@ Basically bitstring syntax is the same as one of Erlang. See [Bit Syntax Express
 ```
 []
 [1]
-[1; 2; 3]
-[1; 2; 3;]
+[1, 2, 3]
+[1, 2, 3,]
 ```
 
 #### Tuple
@@ -236,8 +236,8 @@ Basically bitstring syntax is the same as one of Erlang. See [Bit Syntax Express
 ```
 [||]
 [|1|]
-[|1; 2; 3|]
-[|1; 2; 3;|]
+[|1, 2, 3|]
+[|1, 2, 3,|]
 ```
 
 ### Variable bindings
