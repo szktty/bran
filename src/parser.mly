@@ -110,7 +110,7 @@ let rev_combine_list = function
 %right DOL
 %right LARROW
 %nonassoc RARROW
-%nonassoc prec_tuple prec_tuple_pattern prec_pattern
+%nonassoc prec_tuple_pattern prec_pattern
 %left COMMA
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %right LAND
@@ -376,8 +376,8 @@ term:
     | NL {}
 
 tuple:
-    | rev_tuple %prec prec_tuple
-      { List.rev $1 }
+    | LPAREN rev_tuple RPAREN
+      { List.rev $2 }
 
 rev_tuple:
     | rev_tuple COMMA expr
@@ -589,13 +589,13 @@ list:
       { [] }
     | rev_list_elts
       { List.rev $1 }
-    | rev_list_elts SEMI
+    | rev_list_elts COMMA
       { List.rev $1 }
 
 rev_list_elts:
     | expr
       { [$1] }
-    | rev_list_elts SEMI expr
+    | rev_list_elts COMMA expr
       { $3 :: $1 }
 
 list_pattern: 
