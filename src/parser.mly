@@ -328,19 +328,10 @@ if_exp:
       { range $1 $8.loc (add_type (If($2, $5, $8))) }
 
 do_block:
-    | DO nl_opt simple_formal_args RARROW nl_opt block END
+    | DO nl_opt rev_formal_args RARROW nl_opt block END
       { create $1 (Unit, Type.app_unit) (* TODO *) }
-    | DO nl_opt PIPE pattern_matching END
+    | DO nl_opt pattern_matching END
       { create $1 (Unit, Type.app_unit) (* TODO *) }
-
-simple_formal_args:
-    | rev_simple_formal_args { List.rev $1 }
-
-rev_simple_formal_args:
-    | IDENT
-      { [$1] }
-    | rev_simple_formal_args IDENT
-      { $2 :: $1 }
 
 nl_opt:
     | (* empty *) {}
