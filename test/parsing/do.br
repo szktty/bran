@@ -1,0 +1,20 @@
+def f1 x = List.map x do x -> x end
+
+def f2 x =
+  List.map x do x ->
+    print_int x
+    x
+  end
+
+def f3 x =
+  List.fold_left 0 x do init x ->
+    print_int x
+    x
+  end
+
+def f4 x =
+  List.map x do
+    | 0 -> print_int 0
+    | 1 -> print_int 1
+    | n -> print_int n
+  end

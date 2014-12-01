@@ -88,6 +88,7 @@ let rev_combine_list = function
 %token <Location.t> RPAREN
 %token <Location.t> BEGIN
 %token <Location.t> END
+%token <Location.t> DO
 %token <Location.t> DONE
 %token <Location.t> FOR
 %token <Location.t> WHILE
@@ -275,6 +276,9 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 | expr actual_args
     %prec prec_app
     { range $1.loc (List.last $2).loc (add_type (App($1, $2))) }
+| expr actual_args do_block
+    %prec prec_app
+    { range $1.loc (List.last $2).loc (add_type (App($1, $2))) }
 | UIDENT simple_expr
     { range $1.loc $2.loc (add_type (Constr($1.desc, constr_args $2))) }
 | LBRACE fields RBRACE
@@ -307,6 +311,21 @@ if_exp:
     | IF expr THEN nl_opt expr ELSE nl_opt expr
       %prec prec_simple_if 
       { range $1 $8.loc (add_type (If($2, $5, $8))) }
+
+do_block:
+    | DO nl_opt simple_formal_args RARROW nl_opt block END
+      { create $1 (Unit, Type.app_unit) (* TODO *) }
+    | DO nl_opt PIPE pattern_matching END
+      { create $1 (Unit, Type.app_unit) (* TODO *) }
+
+simple_formal_args:
+    | rev_simple_formal_args { List.rev $1 }
+
+rev_simple_formal_args:
+    | IDENT
+      { [$1] }
+    | rev_simple_formal_args IDENT
+      { $2 :: $1 }
 
 nl_opt:
     | (* empty *) {}
@@ -391,8 +410,8 @@ field:
 ;
 
 pattern_matching:
-| opt_pipe pattern RARROW block pattern_matching_tail
-    { ($2, $4) :: $5 }
+| opt_pipe pattern RARROW nl_opt block pattern_matching_tail
+    { ($2, $5) :: $6 }
 ;
 pattern_matching_tail:
 | /* empty */ %prec guard

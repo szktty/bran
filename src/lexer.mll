@@ -169,6 +169,7 @@ rule token = parse
 | "match" { MATCH (to_loc lexbuf) }
 | (space* as s) "end"
     { next_line_in_spaces lexbuf s; END (to_loc lexbuf) }
+| "do" { DO (to_loc lexbuf) }
 | "done" { DONE (to_loc lexbuf) }
 | "for" { FOR (to_loc lexbuf) }
 | "while" { WHILE (to_loc lexbuf) }
@@ -196,8 +197,8 @@ rule token = parse
     { COLON (to_loc lexbuf) }
 | ';'
     { SEMI (to_loc lexbuf) }
-| '|'
-    { PIPE (to_loc lexbuf) }
+| (space* as s) '|'
+    { next_line_in_spaces lexbuf s; PIPE (to_loc lexbuf) }
 | '\''
     { CHAR (strlit_to_word lexbuf char) }
 | '"'
