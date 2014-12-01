@@ -80,6 +80,7 @@ let rev_combine_list = function
 %token <Location.t> PERFORM
 %token <Location.t> RETURN
 %token <Location.t> AND
+%token <Location.t> MOD
 %token <Location.t> LARROW (* <- *)
 %token <Location.t> RARROW (* -> *)
 %token <Location.t> UARROW (* ^ *)
@@ -120,7 +121,7 @@ let rev_combine_list = function
 %right UARROW
 %right CONS
 %left PLUS MINUS PLUS_DOT MINUS_DOT
-%left AST SLASH AST_DOT SLASH_DOT
+%left AST SLASH MOD AST_DOT SLASH_DOT
 %right prec_unary_minus
 %nonassoc prec_simple_if
 %left prec_app
@@ -242,6 +243,9 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 | expr AST expr
     { range $1.loc $3.loc (add_type (Mul($1, $3))) }
 | expr SLASH expr
+    { range $1.loc $3.loc (add_type (Div($1, $3))) }
+| expr MOD expr
+    (* TODO *)
     { range $1.loc $3.loc (add_type (Div($1, $3))) }
 | expr PLUS_DOT expr
     (* TODO: FAdd *)

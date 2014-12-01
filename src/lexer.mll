@@ -182,6 +182,7 @@ rule token = parse
 | "to" { TO (to_loc lexbuf) }
 | "try" { TRY (to_loc lexbuf) }
 | "type" { TYPE (to_loc lexbuf) }
+| "mod" { MOD (to_loc lexbuf) }
 | "module" { MODULE (to_loc lexbuf) }
 | "perform" { PERFORM (to_loc lexbuf) }
 | "return" { RETURN (to_loc lexbuf) }
