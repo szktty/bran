@@ -41,6 +41,7 @@ let parsing_files = [
   ("fun", "fun.br");
   ("assert", "assert.br");
   ("intop", "intop.br");
+  ("floatop", "floatop.br");
 ]
 
 let suite =
