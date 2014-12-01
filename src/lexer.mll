@@ -166,8 +166,6 @@ rule token = parse
 | "external" { EXTERNAL (to_loc lexbuf) }
 | (space* as s) "var"
     { next_line_in_spaces lexbuf s; VAR (to_loc lexbuf) }
-| "import" { IMPORT (to_loc lexbuf) }
-| "as" { AS (to_loc lexbuf) }
 | "of" { OF (to_loc lexbuf) }
 | (space* as s) "with"
     { next_line_in_spaces lexbuf s; WITH (to_loc lexbuf) }
@@ -183,7 +181,6 @@ rule token = parse
 | "try" { TRY (to_loc lexbuf) }
 | "type" { TYPE (to_loc lexbuf) }
 | "mod" { MOD (to_loc lexbuf) }
-| "module" { MODULE (to_loc lexbuf) }
 | "perform" { PERFORM (to_loc lexbuf) }
 | "return" { RETURN (to_loc lexbuf) }
 | "and" { AND (to_loc lexbuf) }

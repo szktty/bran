@@ -67,9 +67,6 @@ let rev_combine_list = function
 %token <Location.t> DEF
 %token <Location.t> VAR
 %token <Location.t> EXTERNAL
-%token <Location.t> IMPORT
-%token <Location.t> MODULE
-%token <Location.t> AS
 %token <Location.t> IN
 %token <Location.t> REC
 %token <Location.t> TYPE
