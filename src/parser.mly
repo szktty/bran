@@ -203,11 +203,11 @@ primary:
       { create $1.loc (add_type (Atom $1.desc)) }
     | IDENT
       { create $1.loc (add_type (Var $1.desc)) }
-    | LBRACK list RBRACK
+    | LBRACK list_ RBRACK
       { List.fold_right (fun x xs ->
             create x.loc (add_type (Constr("Cons", [x; xs]))))
             $2 (create $3 (add_type (Constr("Nil", [])))) }
-    | LBRACK PIPE list PIPE RBRACK
+    | LBRACK PIPE list_ PIPE RBRACK
       { range $1 $5 (add_type (Array $3)) }
     | LESS_LESS bitstring GREATER_GREATER
       { range $1 $3 & add_type (Bitstring $2) }
@@ -591,7 +591,7 @@ variant_var_decls_tail:
 | AST type_expr variant_var_decls_tail
     { $2::$3 }
 
-list: 
+list_: 
     | (* empty *)
       { [] }
     | rev_list_elts
