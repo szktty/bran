@@ -65,6 +65,7 @@ let rev_combine_list = function
 %token <Id.t Locating.t> IDENT
 %token <Id.t Locating.t> UIDENT
 %token <Location.t> DEF
+%token <Location.t> TOPDEF
 %token <Location.t> VAR
 %token <Location.t> EXTERNAL
 %token <Location.t> IN
@@ -122,7 +123,7 @@ let rev_combine_list = function
 %right prec_unary_minus
 %nonassoc prec_simple_if
 %left prec_app
-%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS DO
+%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS DO VAR
 %left LBRACE
 
 /* 開始記号の定義 */
@@ -152,13 +153,13 @@ definition:
     { range $1 $5.loc (VarDef(add_type $2.desc, $5)) }
 (*| VAR LPAREN RPAREN EQUAL nl_opt expr
     { range $1 $4 (VarDef((Id.gentmp (Type.prefix (Type_t.App(Type_t.Unit, []))), (Type_t.App(Type_t.Unit, []))), $6)) }*)
-| DEF fundef
+| TOPDEF fundef
     { create $1 (RecDef $2) }
-| DEF REC fundef
+| TOPDEF REC fundef
     { create $1 (RecDef $3) }
 | TYPE typedef    
     { create $1 $2 }
-| DEF sigdef
+| TOPDEF sigdef
     { create $1 (SigDef $2) }
 | EXTERNAL ext_sigdef
     { create $1 (SigDef $2) }
@@ -295,6 +296,8 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1 $3 (add_type (Record($2))) }
 | VAR IDENT EQUAL nl_opt block IN nl_opt block
     { range $1 $8.loc (add_type (LetVar(add_type $2.desc, $5, $8))) }
+| DEF fundef IN nl_opt block
+    { range $1 $5.loc (add_type (LetRec($2, $5))) }
 | DEF REC fundef IN nl_opt block
     { range $1 $6.loc (add_type (LetRec($3, $6))) }
 | MATCH nl_opt expr WITH nl_opt pattern_matching END
@@ -354,15 +357,19 @@ nl:
     | NL {}
     | nl NL {}
 
+(* expand term (SEMI and NL) to solve reduce/reduce conflict *)
 multi_exps_block:
-    | rev_stmts terms expr { rev_combine_list ($3 :: $1) }
+    | rev_stmts SEMI expr { rev_combine_list ($3 :: $1) }
+    | rev_stmts NL expr { rev_combine_list ($3 :: $1) }
 
 block:
     | rev_stmts %prec prec_stmt { rev_combine_list $1 }
+    | rev_stmts NL %prec prec_stmt { rev_combine_list $1 }
 
 rev_stmts:
     | stmt { [$1] }
-    | rev_stmts terms stmt { $3 :: $1 }
+    | rev_stmts SEMI stmt { $3 :: $1 }
+    | rev_stmts NL stmt { $3 :: $1 }
 
 stmt:
     | expr %prec prec_stmt { $1 }

@@ -1,1 +1,3 @@
-def main x = 0
+def f1 x = 0
+def f2 x = 0
+def f3 x = 0

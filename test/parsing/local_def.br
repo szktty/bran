@@ -1,0 +1,18 @@
+def f1 x =
+  def g y =
+    x + y
+  in
+  g x
+
+def f2 x =
+  def g y = x + y in
+  g x
+
+def f3 x =
+  def g y =
+    def h z =
+      x + y + z
+    in
+    h x
+  in
+  g x

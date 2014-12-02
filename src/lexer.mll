@@ -72,22 +72,19 @@ let octstr = octdigit octdigit? octdigit?
 let hexstr = hexdigit hexdigit | '{' hexdigit+ '}'
 let ctrlchr = ['a'-'z' 'A'-'Z']
 let atom = ['a'-'z' 'A'-'Z' '0'-'9' '_']+
-let blank = [' ' '\t']*
+let blank = [' ' '\t']
 let space = blank | nl
 let dirname = [^' ' '\t' '\r' '\n']+
 let comment = [^ '\r' '\n']*
 
 
 rule token = parse
-| blank
+| blank+
     { token lexbuf }
-| nl
-    { next_line lexbuf; NL (to_loc lexbuf) }
-| "#" comment nl
-    { next_line lexbuf;
-      token lexbuf }
-| "#" comment eof
-    { EOF (to_loc lexbuf) }
+| nl+ as s
+    { next_line_in_spaces lexbuf s; NL (to_loc lexbuf) }
+| "#" comment
+    { token lexbuf }
 | '('
     { LPAREN (to_loc lexbuf) }
 | ')'
@@ -161,8 +158,16 @@ rule token = parse
     { IN (to_loc lexbuf) }
 | "rec"
     { REC (to_loc lexbuf) }
-| (space* as s) "def"
+| blank* (nl+ as s) "def"
+    { next_line_in_spaces lexbuf s; TOPDEF (to_loc lexbuf) }
+| (space+ blank+ as s) "def"
     { next_line_in_spaces lexbuf s; DEF (to_loc lexbuf) }
+| "def"
+    { if lexbuf.lex_start_p.pos_cnum = 0 then
+        TOPDEF (to_loc lexbuf)
+      else
+        DEF (to_loc lexbuf)
+    }
 | "external" { EXTERNAL (to_loc lexbuf) }
 | (space* as s) "var"
     { next_line_in_spaces lexbuf s; VAR (to_loc lexbuf) }
