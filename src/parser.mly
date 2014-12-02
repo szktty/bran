@@ -86,7 +86,6 @@ let rev_combine_list = function
 %token <Location.t> COLON
 %token <Location.t> LPAREN
 %token <Location.t> RPAREN
-%token <Location.t> BEGIN
 %token <Location.t> END
 %token <Location.t> DO
 %token <Location.t> FOR
@@ -123,7 +122,7 @@ let rev_combine_list = function
 %left AST SLASH MOD AST_DOT SLASH_DOT
 %right prec_unary_minus
 %left prec_app
-%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS DO VAR
+%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO VAR
 %left LBRACE
 
 /* 開始記号の定義 */
@@ -179,15 +178,7 @@ simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2
 primary:
     | LPAREN expr RPAREN
       { $2 }
-    | BEGIN expr END
-      { $2 }
-    | LPAREN block RPAREN
-      { $2 }
-    | BEGIN block END
-      { $2 }
     | LPAREN RPAREN
-      { range $1 $2 (add_type Unit) }
-    | BEGIN END
       { range $1 $2 (add_type Unit) }
     | BOOL
       { create $1.loc (add_type (Bool $1.desc)) }
@@ -452,8 +443,6 @@ pattern_matching_elt:
 
 pattern:
 | LPAREN pattern RPAREN
-    { $2 }
-| BEGIN pattern END
     { $2 }
 | LPAREN RPAREN
     { range $1 $2 PtUnit }
