@@ -1,0 +1,11 @@
+def f x = g x
+and g x = f x
+
+type t1 = t2
+and t2 = t1
+
+def f x = g x
+and g x = f x
+
+type t1 = t2
+and t2 = t1

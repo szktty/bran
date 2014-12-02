@@ -107,7 +107,8 @@ let rev_combine_list = function
 
 /* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) */
 %right prec_stmt
-%nonassoc prec_simple_expr
+%nonassoc prec_simple_expr prec_mutual_def
+%nonassoc AND
 %right SEMI NL
 %right DOL
 %right LARROW
@@ -151,11 +152,16 @@ rev_definitions:
 definition:
 | TOPVAR IDENT EQUAL nl_opt expr
     { range $1 $5.loc (VarDef(add_type $2.desc, $5)) }
-| TOPDEF fundef
+| TOPDEF fundef mutual_fundefs_opt
+    (* TODO: mutual *)
     { create $1 (RecDef $2) }
-| TOPDEF REC fundef
+| TOPDEF REC fundef mutual_fundefs_opt
+    (* TODO: mutual *)
     { create $1 (RecDef $3) }
-| TYPE typedef    
+| TYPE typedef 
+    { create $1 $2 }
+| AND typedef
+    (* TODO: mutual *)
     { create $1 $2 }
 | TOPDEF sigdef
     { create $1 (SigDef $2) }
@@ -167,6 +173,23 @@ definition:
     { raise (Syntax_error (Location.create
                              (Position.of_lexing_pos $startpos)
                              (Position.of_lexing_pos $endpos), None)) }
+
+mutual_fundefs_opt:
+    | (* empty *)
+      %prec prec_mutual_def
+      { [] }
+    | rev_mutual_fundefs
+      %prec prec_mutual_def
+      { List.rev $1 }
+
+rev_mutual_fundefs:
+    | mutual_fundef
+      { [$1] }
+    | rev_mutual_fundefs NL mutual_fundef
+      { $3 :: $1 }
+
+mutual_fundef:
+    | AND fundef { $2 }
 
 simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2html: parser_simple) */
     | primary { $1 }

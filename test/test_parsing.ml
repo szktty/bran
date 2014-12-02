@@ -27,6 +27,7 @@ let parsing_files = [
   ("top_var", "topvar.br");
   ("local_def", "local_def.br");
   ("local_var", "local_var.br");
+  ("circular_ref", "circular_ref.br");
 
   (* signatures *)
   (*("sig_def", "sig_def.bri");*)
