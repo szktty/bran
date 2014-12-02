@@ -36,6 +36,7 @@ let parsing_files = [
 
   (* literals *)
   ("atom", "atom.br");
+  ("char", "char.br");
   ("string", "string.br");
   ("bool", "bool.br");
   ("int", "int.br");
