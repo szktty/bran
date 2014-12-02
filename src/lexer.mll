@@ -175,8 +175,8 @@ rule token = parse
 | (space* as s) "with"
     { next_line_in_spaces lexbuf s; WITH (to_loc lexbuf) }
 | "match" { MATCH (to_loc lexbuf) }
-| (space* as s) "end"
-    { next_line_in_spaces lexbuf s; END (to_loc lexbuf) }
+| "end"
+    { END (to_loc lexbuf) }
 | (space* as s) "do"
     { next_line_in_spaces lexbuf s; DO (to_loc lexbuf) }
 | "for" { FOR (to_loc lexbuf) }

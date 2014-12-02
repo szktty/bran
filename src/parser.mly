@@ -360,7 +360,9 @@ nl:
 (* expand term (SEMI and NL) to solve reduce/reduce conflict *)
 multi_exps_block:
     | rev_stmts SEMI expr { rev_combine_list ($3 :: $1) }
+    | rev_stmts SEMI expr NL { rev_combine_list ($3 :: $1) }
     | rev_stmts NL expr { rev_combine_list ($3 :: $1) }
+    | rev_stmts NL expr NL { rev_combine_list ($3 :: $1) }
 
 block:
     | rev_stmts %prec prec_stmt { rev_combine_list $1 }
