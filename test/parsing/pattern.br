@@ -1,0 +1,21 @@
+def f x =
+  match x with
+  | foobar -> 0
+  | _ -> 0
+  | _ as wildcard -> 0
+  | (foobar) -> 0
+  | (foobar:string) -> 0
+  | None -> 0
+  | Some v -> v
+  | (foo, bar, baz) -> 0
+  | { foo = x, bar = y, baz = z } -> 0
+  | { foo = x, bar = y, baz = z, } -> 0
+  | [] -> 0
+  | [0, 1, 2] -> 0
+  | [0, 1, 2,] -> 0
+  | hd :: tl -> 0
+  | hd :: tl :: tl -> 0
+  | [||] -> 0
+  | [|0, 1, 2|] -> 0
+  | [|0, 1, 2,|] -> 0
+  end

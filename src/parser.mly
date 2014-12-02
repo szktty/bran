@@ -38,6 +38,7 @@ let rev_combine_list = function
 %token <string Locating.t> CHAR
 %token <string Locating.t> STRING
 %token <string Locating.t> ATOM
+%token <Location.t> AS
 %token <Location.t> ASSERT
 %token <Location.t> NOT
 %token <Location.t> MINUS
@@ -117,8 +118,7 @@ let rev_combine_list = function
 %right DOL
 %right LARROW
 %left RARROW
-%nonassoc prec_tuple_pattern prec_pattern
-%left COMMA
+%nonassoc prec_pattern
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %right LAND
 %right LOR
@@ -128,8 +128,9 @@ let rev_combine_list = function
 %left AST SLASH MOD AST_DOT SLASH_DOT
 %right prec_unary_minus
 %left prec_app
-%nonassoc UIDENT LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO ASSIGN EXCL
-%left LPAREN LBRACE
+%right UIDENT
+%nonassoc INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO ASSIGN EXCL AS
+%left LPAREN LBRACE LBRACK
 
 %nonassoc prec_type_expr_tuple
 %nonassoc RPAREN
@@ -483,34 +484,48 @@ pattern_matching_elt:
       { ($1, $4) }
 
 pattern:
-| LPAREN pattern RPAREN
-    { $2 }
-| LPAREN RPAREN
-    { range $1 $2 PtUnit }
-| BOOL
-    { create $1.loc (PtBool $1.desc) }
-| INT
-    { create $1.loc (PtInt $1.desc) }
-(* TODO: FLOAT *)
-| IDENT
-    { create $1.loc (PtVar($1.desc, Type_t.Meta(Type.newmetavar ()))) }
-| tuple_pattern
-    { range (List.hd $1).loc (List.last $1).loc (PtTuple $1) }
-| LBRACE field_patterns RBRACE
-    { range $1 $3 (PtRecord $2) }
-| UIDENT 
-    { create $1.loc (PtConstr($1.desc, [])) }
-| UIDENT pattern
-    { range $1.loc $2.loc (PtConstr($1.desc, constr_pattern_args $2)) }
-| pattern CONS pattern
-    { range $1.loc $3.loc (PtConstr("Cons", [$1; $3])) }
-| LBRACK list_pattern RBRACK
-    { List.fold_right (fun x xs ->
-      create $1 (PtConstr("Cons", [x; xs])))
-    $2 (create $3 (PtConstr("Nil", []))) }
+    | value_name
+      { create $1.loc (PtVar($1.desc, Type_t.Meta(Type.newmetavar ()))) }
+    | LPAREN RPAREN
+      { range $1 $2 PtUnit }
+    | BOOL
+      { create $1.loc (PtBool $1.desc) }
+    | INT
+      { create $1.loc (PtInt $1.desc) }
+    | FLOAT
+      (* TODO *)
+      { create $1.loc PtUnit }
+    | pattern AS value_name
+      (* TODO *)
+      { create $1.loc PtUnit }
+    | LPAREN pattern RPAREN
+      { $2 }
+    | LPAREN pattern COLON type_expr RPAREN
+      (* TODO *)
+      { $2 }
+    | LPAREN tuple_pattern RPAREN
+      { range $1 $3 (PtTuple $2) }
+    | LBRACE field_patterns RBRACE
+      { range $1 $3 (PtRecord $2) }
+    | UIDENT 
+      { create $1.loc (PtConstr($1.desc, [])) }
+    | UIDENT pattern
+      { range $1.loc $2.loc (PtConstr($1.desc, constr_pattern_args $2)) }
+    | LBRACK list_pattern RBRACK
+      { List.fold_right (fun x xs ->
+          create $1 (PtConstr("Cons", [x; xs])))
+            $2 (create $3 (PtConstr("Nil", []))) }
+    | pattern CONS pattern
+      { range $1.loc $3.loc (PtConstr("Cons", [$1; $3])) }
+    | LBRACK PIPE list_pattern PIPE RBRACK
+      (* TODO *)
+      { create $1 PtUnit }
+
+value_name:
+    | IDENT { $1 }
 
 tuple_pattern:
-    | rev_tuple_pattern %prec prec_tuple_pattern
+    | rev_tuple_pattern
       { List.rev $1 }
 
 rev_tuple_pattern:
@@ -520,18 +535,20 @@ rev_tuple_pattern:
       { [$3; $1] }
 
 field_patterns:
-    | rev_field_patterns { List.rev $1 }
+    | field_pattern COMMA rev_field_patterns
+      { List.rev ($1 :: $3) }
+    | field_pattern COMMA rev_field_patterns COMMA
+      { List.rev ($1 :: $3) }
 
 rev_field_patterns:
-    | rev_field_patterns SEMI field_pattern
+    | field_pattern
+      { [$1] }
+    | rev_field_patterns COMMA field_pattern
       { $3 :: $1 }
-    | field_pattern SEMI field_pattern
-      { [$3; $1] }
 
 field_pattern:
-| IDENT EQUAL pattern
-    { ($1.desc, $3) }
-;
+    | IDENT EQUAL pattern
+      { ($1.desc, $3) }
 
 (* TODO: include type_params in TypeDef *)
 typedef:
@@ -654,17 +671,16 @@ rev_list_elts:
       { $3 :: $1 }
 
 list_pattern: 
-| /* empty */
-    { [] }
-| pattern tail_pattern
-    { $1 :: $2 }
-;
-tail_pattern: 
-| 
-    { [] }
-| SEMI pattern tail_pattern
-    { $2 :: $3 }
-    
+    | (* empty *) { [] }
+    | rev_list_pattern_elts { List.rev $1 }
+    | rev_list_pattern_elts COMMA { List.rev $1 }
+
+rev_list_pattern_elts:
+    | pattern
+      { [$1] }
+    | rev_list_pattern_elts COMMA pattern
+      { $3 :: $1 }
+
 bitstring:
     | (* empty *)
       { [] }

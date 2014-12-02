@@ -101,6 +101,8 @@ rule token = parse
     { BOOL (Locating.create (to_loc lexbuf) false) }
 | "assert"
     { ASSERT (to_loc lexbuf) }
+| "as"
+    { AS (to_loc lexbuf) }
 | "not"
     { NOT (to_loc lexbuf) }
 | (digit+ as b) 'r' (['0'-'9' 'a'-'z' 'A'-'Z']+ as v)
@@ -203,6 +205,8 @@ rule token = parse
     { LARROW (to_loc lexbuf) }
 | ':'
     { COLON (to_loc lexbuf) }
+| "::"
+    { CONS (to_loc lexbuf) }
 | ":="
     { ASSIGN (to_loc lexbuf) }
 | ';'

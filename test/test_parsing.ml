@@ -52,9 +52,13 @@ let parsing_files = [
   ("intop", "intop.br");
   ("floatop", "floatop.br");
 
+  (* pattern matching *)
+  ("match", "match.br");
+  ("pattern", "pattern.br");
+  ("message", "message.br");
+
   (* controls *)
   ("if", "if.br");
-  ("match", "match.br");
   ("for", "for.br");
   ("try", "try.br");
   ("fun", "fun.br");
@@ -62,7 +66,6 @@ let parsing_files = [
   ("assert", "assert.br");
   ("exception", "exception.br");
   ("ref", "ref.br");
-  ("message", "message.br");
 
   (* type definitions *)
   ("simple_typdef", "simple_typdef.br");
