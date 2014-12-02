@@ -32,7 +32,7 @@ let parsing_files = [
   (* signatures *)
   (*("sig_def", "sig_def.bri");*)
   (*("sig_var", "sig_var.bri");*)
-  (*("external", "external.bri");*)
+  ("external", "external.bri");
 
   (* literals *)
   ("atom", "atom.br");
