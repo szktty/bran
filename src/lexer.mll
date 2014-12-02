@@ -217,8 +217,8 @@ rule token = parse
     { LESS_LESS (to_loc lexbuf) }
 | ">>"
     { GREATER_GREATER (to_loc lexbuf) }
-| (space* as s) eof
-    { next_line_in_spaces lexbuf s; EOF (to_loc lexbuf) }
+| eof
+    { EOF (to_loc lexbuf) }
 | ident
     { IDENT (to_word lexbuf) }
 | uident
