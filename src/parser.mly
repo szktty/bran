@@ -108,7 +108,7 @@ let rev_combine_list = function
 
 /* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) */
 %right prec_stmt
-%nonassoc prec_simple_expr prec_mutual_def
+%nonassoc prec_simple_expr prec_mutual_def prec_constr_decl
 %nonassoc AND
 %right SEMI NL
 %right DOL
@@ -375,7 +375,7 @@ do_block:
       { create $1 (Unit, Type.app_unit) (* TODO *) }
 
 nl_opt:
-    | (* empty *) {}
+    | (* empty *) %prec prec_constr_decl {}
     | NL {}
 
 (* expand term (SEMI and NL) to solve reduce/reduce conflict *)
@@ -623,15 +623,15 @@ rev_constr_decls:
       { $3 :: $1 }
 
 constr_decl:
-    | UIDENT constr_decl_type
+    | UIDENT constr_decl_type nl_opt
       { ($1.desc, $2) }
     (* | LPAREN RPAREN constr_decl_type *) (* TODO *)
 
 constr_decl_type:
     | (* empty *)
       { [] }
-    | OF type_expr_tuple
-      { $2 }
+    | OF type_expr
+      { [$2] }
 
 list_: 
     | (* empty *)
