@@ -170,8 +170,8 @@ rule token = parse
         VAR (to_loc lexbuf)
     }
 | "of" { OF (to_loc lexbuf) }
-| (space* as s) "with"
-    { next_line_in_spaces lexbuf s; WITH (to_loc lexbuf) }
+| "with"
+    { WITH (to_loc lexbuf) }
 | "match" { MATCH (to_loc lexbuf) }
 | "end"
     { END (to_loc lexbuf) }
@@ -202,8 +202,8 @@ rule token = parse
     { COLON (to_loc lexbuf) }
 | ';'
     { SEMI (to_loc lexbuf) }
-| (space* as s) '|'
-    { next_line_in_spaces lexbuf s; PIPE (to_loc lexbuf) }
+| '|'
+    { PIPE (to_loc lexbuf) }
 | '\''
     { CHAR (strlit_to_word lexbuf char) }
 | '"'

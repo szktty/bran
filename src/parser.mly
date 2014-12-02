@@ -307,9 +307,9 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 | FOR IDENT EQUAL expr TO nl_opt expr nl_opt DO nl_opt block END
     (* TODO *)
     { range $1 $12 (add_type Unit) }
-| TRY nl_opt expr WITH nl_opt pattern_matching END
+| TRY nl_opt expr nl_opt WITH nl_opt pattern_matching END
     (* TODO *)
-    { range $1 $7 (add_type Unit) }
+    { range $1 $8 (add_type Unit) }
 | RAISE expr %prec prec_app
     (* TODO *)
     { range $1 $2.loc (add_type Unit) }
