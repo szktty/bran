@@ -188,6 +188,7 @@ rule token = parse
 | "mod" { MOD (to_loc lexbuf) }
 | "perform" { PERFORM (to_loc lexbuf) }
 | "return" { RETURN (to_loc lexbuf) }
+| "receive" { RECEIVE (to_loc lexbuf) }
 | "and" { AND (to_loc lexbuf) }
 | ','
     { COMMA (to_loc lexbuf) }

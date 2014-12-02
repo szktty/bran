@@ -62,6 +62,7 @@ let parsing_files = [
   ("assert", "assert.br");
   ("exception", "exception.br");
   ("ref", "ref.br");
+  ("message", "message.br");
 
   (* type definitions *)
   ("simple_typdef", "simple_typdef.br");

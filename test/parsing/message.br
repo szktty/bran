@@ -1,13 +1,12 @@
 def store pid food =
-  send pid (Tuple [self (), [Atom @store, String food]])
+  receive n -> n end
+
   receive
-  | Tuple [pid', msg] when pid = pid’ -> Some msg
-  | _ -> None
+    0 -> 0
+  | _ -> 1
   end
 
-def take pid food =
-  send pid (Tuple [self (), [Atom @take, String food]])
   receive
-  | Tuple [pid', msg] when pid = pid’ -> Some msg
-  | _ -> None
+  | 0 -> 0
+  | _ -> 1
   end

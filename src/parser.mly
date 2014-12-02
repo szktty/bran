@@ -81,6 +81,7 @@ let rev_combine_list = function
 %token <Location.t> WITH
 %token <Location.t> PERFORM
 %token <Location.t> RETURN
+%token <Location.t> RECEIVE
 %token <Location.t> AND
 %token <Location.t> MOD
 %token <Location.t> LARROW (* <- *)
@@ -364,6 +365,9 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 | IDENT ASSIGN nl_opt expr
     (* TODO *)
     { range $1.loc $4.loc (add_type Unit) }
+| RECEIVE nl_opt pattern_matching END
+    (* TODO *)
+    { range $1 $4 (add_type Unit) }
 
 if_exp:
     | IF expr THEN nl_opt multi_exps_block END
