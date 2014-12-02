@@ -67,6 +67,7 @@ let rev_combine_list = function
 %token <Location.t> DEF
 %token <Location.t> TOPDEF
 %token <Location.t> VAR
+%token <Location.t> TOPVAR
 %token <Location.t> EXTERNAL
 %token <Location.t> IN
 %token <Location.t> REC
@@ -122,7 +123,7 @@ let rev_combine_list = function
 %left AST SLASH MOD AST_DOT SLASH_DOT
 %right prec_unary_minus
 %left prec_app
-%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO VAR
+%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO
 %left LBRACE
 
 /* 開始記号の定義 */
@@ -148,10 +149,8 @@ rev_definitions:
       { $2 :: $1 }
 
 definition:
-| VAR IDENT EQUAL nl_opt expr
+| TOPVAR IDENT EQUAL nl_opt expr
     { range $1 $5.loc (VarDef(add_type $2.desc, $5)) }
-(*| VAR LPAREN RPAREN EQUAL nl_opt expr
-    { range $1 $4 (VarDef((Id.gentmp (Type.prefix (Type_t.App(Type_t.Unit, []))), (Type_t.App(Type_t.Unit, []))), $6)) }*)
 | TOPDEF fundef
     { create $1 (RecDef $2) }
 | TOPDEF REC fundef
@@ -285,8 +284,8 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1.loc $2.loc (add_type (Constr($1.desc, constr_args $2))) }
 | LBRACE fields RBRACE
     { range $1 $3 (add_type (Record($2))) }
-| VAR IDENT EQUAL nl_opt block IN nl_opt block
-    { range $1 $8.loc (add_type (LetVar(add_type $2.desc, $5, $8))) }
+| VAR IDENT EQUAL nl_opt expr term block
+    { range $1 $7.loc (add_type (LetVar(add_type $2.desc, $5, $7))) }
 | DEF fundef IN nl_opt block
     { range $1 $5.loc (add_type (LetRec($2, $5))) }
 | DEF REC fundef IN nl_opt block

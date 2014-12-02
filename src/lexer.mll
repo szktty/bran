@@ -157,15 +157,18 @@ rule token = parse
 | "rec"
     { REC (to_loc lexbuf) }
 | "def"
-    {
-      if lexbuf.lex_start_p.pos_bol = 0 then
+    { if lexbuf.lex_start_p.pos_bol = 0 then
         TOPDEF (to_loc lexbuf)
       else
         DEF (to_loc lexbuf)
     }
 | "external" { EXTERNAL (to_loc lexbuf) }
-| (space* as s) "var"
-    { next_line_in_spaces lexbuf s; VAR (to_loc lexbuf) }
+| "var"
+    { if lexbuf.lex_start_p.pos_bol = 0 then
+        TOPVAR (to_loc lexbuf)
+      else
+        VAR (to_loc lexbuf)
+    }
 | "of" { OF (to_loc lexbuf) }
 | (space* as s) "with"
     { next_line_in_spaces lexbuf s; WITH (to_loc lexbuf) }

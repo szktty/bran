@@ -1,0 +1,12 @@
+var x = 1
+
+def f x =
+  var y = x + 1
+  y
+
+def g x =
+  def h y =
+    var z = x + y
+    z
+  in
+  h x
