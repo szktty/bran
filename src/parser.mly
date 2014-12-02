@@ -64,6 +64,7 @@ let rev_combine_list = function
 %token <Location.t> ELSE
 %token <Id.t Locating.t> IDENT
 %token <Id.t Locating.t> UIDENT
+%token <Id.t Locating.t> QIDENT (* 'a *)
 %token <Location.t> DEF
 %token <Location.t> TOPDEF
 %token <Location.t> VAR
@@ -102,7 +103,6 @@ let rev_combine_list = function
 %token <Location.t> COMMA
 %token <Location.t> PIPE
 %token <Location.t> DOL (* $ *)
-%token <Location.t> QUATE
 %token <Location.t> NL (* newline *)
 %token <Location.t> EOF
 
@@ -113,7 +113,7 @@ let rev_combine_list = function
 %right SEMI NL
 %right DOL
 %right LARROW
-%nonassoc RARROW
+%left RARROW
 %nonassoc prec_tuple_pattern prec_pattern
 %left COMMA
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
@@ -125,8 +125,11 @@ let rev_combine_list = function
 %left AST SLASH MOD AST_DOT SLASH_DOT
 %right prec_unary_minus
 %left prec_app
-%nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO
-%left LBRACE
+%nonassoc UIDENT LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO
+%left LPAREN LBRACE
+
+%nonassoc prec_type_expr_tuple
+%nonassoc RPAREN
 
 /* 開始記号の定義 */
 %type <Ast_t.def list> prog
@@ -164,7 +167,13 @@ definition:
 | AND typedef
     (* TODO: mutual *)
     { create $1 $2 }
-| EXCEPTION variant_decl
+| EXCEPTION UIDENT
+    (* TODO *)
+    { create $1 Nop }
+| EXCEPTION UIDENT OF type_expr
+    (* TODO *)
+    { create $1 Nop }
+| EXCEPTION UIDENT EQUAL constr
     (* TODO *)
     { create $1 Nop }
 | TOPDEF sigdef
@@ -518,90 +527,111 @@ field_pattern:
     { ($1.desc, $3) }
 ;
 
+(* TODO: include type_params in TypeDef *)
 typedef:
-| type_params IDENT EQUAL nl_opt IDENT
-    { TypeDef($2.desc, Type_t.TyFun($1, (Type_t.App(Type_t.NameTycon($5.desc, ref None), [])))) }
-| type_params IDENT EQUAL nl_opt LBRACE nl_opt field_decls RBRACE
-    { TypeDef($2.desc, Type_t.TyFun($1, (Type_t.App(Type_t.Record($2.desc, List.map fst $7), List.map snd $7)))) }
-| type_params IDENT EQUAL nl_opt variant_decls
-    { TypeDef($2.desc, Type_t.TyFun($1, (Type_t.App(Type_t.Variant($2.desc, $5), [])))) }
-;
+    | type_params_opt IDENT EQUAL nl_opt type_expr
+      { TypeDef($2.desc, Type_t.TyFun($1, $5)) }
+    | type_params_opt IDENT EQUAL nl_opt constr_decls
+      (* TODO *)
+      { TypeDef($2.desc, Type_t.Variant ($2.desc, $5)) }
+    | type_params_opt IDENT EQUAL nl_opt PIPE constr_decls
+      (* TODO *)
+      { TypeDef($2.desc, Type_t.Variant ($2.desc, $6)) }
+
+
+type_params_opt:
+    | (* empty *)
+      { [] }
+    | type_params
+      { $1 }
+
 type_params:
-| /* empty */
-    { [] }
-| type_param type_params_tail
-    { $1 :: $2 }
-;
-type_param:
-| QUATE IDENT
-    { $2.desc }
-;
-type_params_tail:
-| /* empty */
-    { [] }
-| COMMA type_param type_params_tail
-    { $2 :: $3 }
-
-type_expr:
-    | rev_type_expr
-      { match $1 with
-        | [e] -> e
-        | es -> Type_t.App (Type_t.Arrow, List.rev es)
-      }
-
-rev_type_expr:
-    | type_expr_elt
+    | type_param
       { [$1] }
-    | rev_type_expr RARROW type_expr_elt
+    | LPAREN rev_type_params RPAREN
+      { List.rev $2 }
+
+rev_type_params:
+    | type_param
+      { [$1] }
+    | type_params COMMA type_param
       { $3 :: $1 }
 
-type_expr_elt:
-    | IDENT
-      { Type_t.App(Type_t.NameTycon($1.desc, ref None), []) }
-    | QUATE IDENT
-      { Type_t.Var($2.desc) }
-    | type_expr_elt IDENT
-      { Type_t.App(Type_t.NameTycon($2.desc, ref None), [$1]) }
+type_param:
+    | QIDENT
+      { $1.desc }
 
-field_decls:
-| field_decl field_decls_tail
-    { $1 :: $2 }
-;
-field_decls_tail:
-| /* empty */
-    { [] }
-| terms field_decl field_decls_tail
-    { $2 :: $3 }
-;
-field_decl:
-| IDENT COLON type_expr
-    { ($1.desc, $3) }
-;
-variant_decls:
-| variant_decl variant_decls_tail
-    { $1 :: $2 }
-;
-variant_decls_tail:
-| /* empty */
-    { [] }
-| PIPE variant_decl variant_decls_tail
-    { $2 :: $3 }
-;
-variant_decl:
-| UIDENT variant_var_decls
-    { ($1.desc, $2) }
-;
-variant_var_decls:
-| /* empty */
-    { [] }
-| OF type_expr variant_var_decls_tail
-    { $2::$3 }
-;
-variant_var_decls_tail:
-| /* empty */
-    { [] }
-| AST type_expr variant_var_decls_tail
-    { $2::$3 }
+type_expr:
+    | simple_type_expr
+      { $1 }
+    | type_expr_tuple
+      { Type_t.App (Type_t.Tuple, $1) }
+    | type_expr type_constr
+      (* TODO *)
+      { $1 }
+    | type_expr RARROW type_expr
+      (* TODO *)
+      { $1 }
+
+simple_type_expr:
+    | QIDENT
+      { Type_t.Var($1.desc) }
+    | LPAREN type_expr RPAREN
+      { $2 }
+    | type_constr
+      (* TODO *)
+      { Type_t.App(Type_t.Unit, []) }
+    | LPAREN type_exprs_comma RPAREN type_constr
+      (* TODO *)
+      { Type_t.App(Type_t.Unit, []) }
+
+type_expr_tuple:
+    | simple_type_expr rev_type_expr_tuple_tail
+      { List.rev ($1 :: $2) }
+
+rev_type_expr_tuple_tail:
+    | AST simple_type_expr
+      { [$2] }
+    | rev_type_expr_tuple_tail AST simple_type_expr
+      { $3 :: $1 }
+
+type_constr:
+    | constr { $1 }
+
+constr:
+    | IDENT {}
+    | UIDENT DOT IDENT {}
+
+type_exprs_comma:
+    | rev_type_exprs_comma { List.rev $1 }
+
+rev_type_exprs_comma:
+    | type_expr
+      %prec prec_type_expr_tuple
+      { [$1] }
+    | rev_type_exprs_comma COMMA type_expr
+      { $3 :: $1 }
+
+constr_decls:
+    | rev_constr_decls
+      { List.rev $1 }
+
+rev_constr_decls:
+    | constr_decl
+      { [$1] }
+    | rev_constr_decls PIPE constr_decl
+      { $3 :: $1 }
+
+constr_decl:
+    | UIDENT constr_decl_type
+      { ($1.desc, $2) }
+    (* | LPAREN RPAREN constr_decl_type *) (* TODO *)
+
+constr_decl_type:
+    | (* empty *)
+      { [] }
+    | OF type_expr_tuple
+      { $2 }
 
 list_: 
     | (* empty *)
