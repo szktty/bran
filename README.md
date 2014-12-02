@@ -251,12 +251,32 @@ var x = 1
 #### Definition
 
 ```
+# Top level
+def [rec] f x ... = [block] 
+
+# Local
+def [rec] f x ... = [block] in ...
+
+# Circular reference
+def [rec] f x ... = ...
+and f x ... = ...
+```
+
+Top level definition starts at start of line.
+
+```
 def f x y = x + y
+```
 
-def [rec] f x ... =
-  [exp]
-  ...
+In function definition, definition must be indented and end with `in`.
+Indent size must be spaces more than one.
 
+```
+def f x =
+  def f' x' =
+    ...
+  in
+  f' x
 ```
 
 signature (`.bri`):
@@ -326,6 +346,31 @@ if x then
   true
 else
   false
+```
+
+### Loop
+
+```
+for i = 1 to max do
+  ...
+end
+```
+
+### Exception handling
+
+```
+try [exp] with [pattern] end
+```
+
+Example:
+
+```
+try
+  ...
+with
+  | Not_found -> ...
+  | e -> raise e
+end
 ```
 
 ### Monad
