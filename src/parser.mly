@@ -403,10 +403,6 @@ rev_stmts:
 stmt:
     | expr %prec prec_stmt { $1 }
 
-terms:
-    | term {}
-    | terms term {}
-
 term:
     | SEMI {}
     | NL {}
