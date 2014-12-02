@@ -14,16 +14,14 @@ let next_line lexbuf =
     }
 
 let next_line_in_spaces lexbuf s =
-    let lines =  String.lines s in
-    match List.length lines with
-    | 0 | 1 -> ()
-    | n ->
-      let pos = lexbuf.lex_curr_p in
-      lexbuf.lex_curr_p <-
-        { pos with pos_bol = String.length & fst & List.last lines;
-                   pos_lnum = pos.pos_lnum + (n - 1)
-        }
-
+  let f pos (s, nl) =
+    let len = String.length s in
+    match nl with
+    | "" -> { pos with pos_bol = pos.pos_bol + len }
+    | _ -> { pos with pos_bol = 0;
+                      pos_lnum = pos.pos_lnum + 1 }
+  in
+  lexbuf.lex_curr_p <- List.fold_left f lexbuf.lex_curr_p & String.lines s
 
 let revise_pos pos lexbuf =
   Position.of_lexing_pos
@@ -79,8 +77,8 @@ let comment = [^ '\r' '\n']*
 
 
 rule token = parse
-| blank+
-    { token lexbuf }
+| blank+ as s
+    { next_line_in_spaces lexbuf s; token lexbuf }
 | nl+ as s
     { next_line_in_spaces lexbuf s; NL (to_loc lexbuf) }
 | "#" comment
@@ -158,12 +156,9 @@ rule token = parse
     { IN (to_loc lexbuf) }
 | "rec"
     { REC (to_loc lexbuf) }
-| blank* (nl+ as s) "def"
-    { next_line_in_spaces lexbuf s; TOPDEF (to_loc lexbuf) }
-| (space+ blank+ as s) "def"
-    { next_line_in_spaces lexbuf s; DEF (to_loc lexbuf) }
 | "def"
-    { if lexbuf.lex_start_p.pos_cnum = 0 then
+    {
+      if lexbuf.lex_start_p.pos_bol = 0 then
         TOPDEF (to_loc lexbuf)
       else
         DEF (to_loc lexbuf)
