@@ -107,6 +107,7 @@ let rev_combine_list = function
 
 /* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) */
 %right prec_stmt
+%nonassoc prec_simple_expr
 %right SEMI NL
 %right DOL
 %right LARROW
@@ -121,7 +122,6 @@ let rev_combine_list = function
 %left PLUS MINUS PLUS_DOT MINUS_DOT
 %left AST SLASH MOD AST_DOT SLASH_DOT
 %right prec_unary_minus
-%nonassoc prec_simple_if
 %left prec_app
 %nonassoc UIDENT LPAREN LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM BEGIN RPAREN END LESS_LESS DO VAR
 %left LBRACE
@@ -228,7 +228,7 @@ simple_constr:
       { create $1.loc (add_type (Constr($1.desc, []))) }
 
 expr: /* 一般の式 (caml2html: parser_expr) */
-| simple_expr
+| simple_expr %prec prec_simple_expr
     { $1 }
 | NOT expr %prec prec_app
     { range $1 $2.loc (add_type (Not($2))) }
@@ -339,9 +339,8 @@ if_exp:
         range $1 $6 (add_type (If($2, $5, other))) }
     | IF expr THEN nl_opt multi_exps_block ELSE nl_opt multi_exps_block END
       { range $1 $9 (add_type (If($2, $5, $8))) }
-    | IF expr THEN nl_opt expr ELSE nl_opt expr
-      %prec prec_simple_if 
-      { range $1 $8.loc (add_type (If($2, $5, $8))) }
+    | IF expr THEN nl_opt simple_expr nl_opt ELSE nl_opt simple_expr
+      { range $1 $9.loc (add_type (If($2, $5, $9))) }
 
 do_block:
     | DO nl_opt rev_formal_args RARROW nl_opt block END
@@ -351,11 +350,7 @@ do_block:
 
 nl_opt:
     | (* empty *) {}
-    | nl {}
-
-nl:
     | NL {}
-    | nl NL {}
 
 (* expand term (SEMI and NL) to solve reduce/reduce conflict *)
 multi_exps_block:

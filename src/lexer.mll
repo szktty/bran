@@ -150,8 +150,8 @@ rule token = parse
     { IF (to_loc lexbuf) }
 | "then"
     { THEN (to_loc lexbuf) }
-| (space* as s) "else"
-    { next_line_in_spaces lexbuf s; ELSE (to_loc lexbuf) }
+| "else"
+    { ELSE (to_loc lexbuf) }
 | "in"
     { IN (to_loc lexbuf) }
 | "rec"
