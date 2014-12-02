@@ -296,10 +296,10 @@ Conditional expression syntax is:
 ```
 if [bool-exp] then [block] end
 if [bool-exp] then [block] else [block] end
-if [bool-exp] then [expr] else [expr]
+if [bool-exp] then [simple-exp] else [simple-exp]
 ```
 
-"`end`" can be omitted when blocks have only an expression.
+"`end`" can be omitted when blocks have only an simple expression (literals, field access, array access, type constructor with no arguments and expression with parentheses).
 
 Examples:
 
