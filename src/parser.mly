@@ -59,6 +59,8 @@ let rev_combine_list = function
 %token <Location.t> GREATER
 %token <Location.t> LESS_LESS
 %token <Location.t> GREATER_GREATER
+%token <Location.t> ASSIGN (* := *)
+%token <Location.t> EXCL (* ! *)
 %token <Location.t> IF
 %token <Location.t> THEN
 %token <Location.t> ELSE
@@ -125,7 +127,7 @@ let rev_combine_list = function
 %left AST SLASH MOD AST_DOT SLASH_DOT
 %right prec_unary_minus
 %left prec_app
-%nonassoc UIDENT LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO
+%nonassoc UIDENT LBRACK INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO ASSIGN EXCL
 %left LPAREN LBRACE
 
 %nonassoc prec_type_expr_tuple
@@ -209,6 +211,7 @@ simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2
     | field_expr { $1 }
     | array_expr { $1 }
     | simple_constr { $1 }
+    | EXCL simple_expr { $2 } (* TODO *)
 
 primary:
     | LPAREN expr RPAREN
@@ -358,6 +361,9 @@ expr: /* 一般の式 (caml2html: parser_expr) */
 | ASSERT expr %prec prec_app
     (* TODO *)
     { range $1 $2.loc (add_type Unit) }
+| IDENT ASSIGN nl_opt expr
+    (* TODO *)
+    { range $1.loc $4.loc (add_type Unit) }
 
 if_exp:
     | IF expr THEN nl_opt multi_exps_block END

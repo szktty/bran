@@ -202,8 +202,12 @@ rule token = parse
     { LARROW (to_loc lexbuf) }
 | ':'
     { COLON (to_loc lexbuf) }
+| ":="
+    { ASSIGN (to_loc lexbuf) }
 | ';'
     { SEMI (to_loc lexbuf) }
+| '!'
+    { EXCL (to_loc lexbuf) }
 | '|'
     { PIPE (to_loc lexbuf) }
 | ''' sqchr '''
