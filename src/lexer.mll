@@ -175,6 +175,8 @@ rule token = parse
 | "match" { MATCH (to_loc lexbuf) }
 | "end"
     { END (to_loc lexbuf) }
+| "exception"
+    { EXCEPTION (to_loc lexbuf) }
 | "do"
     { DO (to_loc lexbuf) }
 | "for" { FOR (to_loc lexbuf) }

@@ -93,6 +93,7 @@ let rev_combine_list = function
 %token <Location.t> FUN
 %token <Location.t> RAISE
 %token <Location.t> TRY
+%token <Location.t> EXCEPTION
 %token <Location.t> LBRACE
 %token <Location.t> RBRACE
 %token <Location.t> LBRACK
@@ -163,6 +164,9 @@ definition:
 | AND typedef
     (* TODO: mutual *)
     { create $1 $2 }
+| EXCEPTION variant_decl
+    (* TODO *)
+    { create $1 Nop }
 | TOPDEF sigdef
     { create $1 (SigDef $2) }
 | EXTERNAL ext_sigdef

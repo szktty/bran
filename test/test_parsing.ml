@@ -59,7 +59,7 @@ let parsing_files = [
   ("fun", "fun.br");
   ("monad", "monad.br");
   ("assert", "assert.br");
-  (* ("exception", "exception.br"); *)
+  ("exception", "exception.br");
 
   (* type definitions *)
   (*("simple_typdef", "simple_typdef.br");*)
