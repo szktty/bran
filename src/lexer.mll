@@ -81,8 +81,8 @@ rule token = parse
     { next_line_in_spaces lexbuf s; token lexbuf }
 | nl+ as s
     { next_line_in_spaces lexbuf s; NL (to_loc lexbuf) }
-| "#" comment
-    { token lexbuf }
+| (nl* blank* '#' comment (nl blank* '#' comment)*) as s
+    { next_line_in_spaces lexbuf s; token lexbuf }
 | '('
     { LPAREN (to_loc lexbuf) }
 | ')'

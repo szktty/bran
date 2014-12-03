@@ -1,2 +1,14 @@
 # line comment
+#
+#
+
+#
+
+#
+
 def f x = x # inline comment
+  # comment
+  f x
+
+  # comment
+  f x
