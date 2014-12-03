@@ -1,0 +1,5 @@
+def f x =
+  f x.field
+  x.f ()
+  x.Modname.field
+  Modname.(x.field)

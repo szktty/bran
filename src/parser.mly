@@ -128,6 +128,7 @@ let rev_combine_list = function
 %left AST SLASH MOD AST_DOT SLASH_DOT
 %right prec_unary_minus
 %left prec_app
+%left DOT
 %right UIDENT
 %nonassoc INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO ASSIGN EXCL AS
 %left LPAREN LBRACE LBRACK
@@ -212,10 +213,11 @@ simple_expr: /* 括弧をつけなくても関数の引数になれる式 (caml2
     | primary { $1 }
     | field_expr { $1 }
     | array_expr { $1 }
-    | simple_constr { $1 }
     | EXCL simple_expr { $2 } (* TODO *)
 
 primary:
+    | binding
+      { $1 }
     | LPAREN expr RPAREN
       { $2 }
     | LPAREN RPAREN
@@ -232,8 +234,8 @@ primary:
       { create $1.loc (add_type (String $1.desc)) }
     | ATOM
       { create $1.loc (add_type (Atom $1.desc)) }
-    | IDENT
-      { create $1.loc (add_type (Var $1.desc)) }
+    | UIDENT
+      { create $1.loc (add_type (Constr($1.desc, []))) }
     | LBRACK list_ RBRACK
       { List.fold_right (fun x xs ->
             create x.loc (add_type (Constr("Cons", [x; xs]))))
@@ -242,21 +244,36 @@ primary:
       { range $1 $5 (add_type (Array $3)) }
     | LESS_LESS bitstring GREATER_GREATER
       { range $1 $3 & add_type (Bitstring $2) }
-    
+
+binding:
+    | value_name
+      { $1 }
+    | module_path value_name
+      (* TODO: Ast.Binding *)
+      { $2 }
+
+value_name:
+    | IDENT
+      { create $1.loc (add_type (Var $1.desc)) }
+
+module_path:
+    | rev_module_path
+      { List.rev $1 }
+
+rev_module_path:
+    | UIDENT DOT
+      { [$1] }
+    | rev_module_path UIDENT DOT
+      { $2 :: $1 }
+
 field_expr:
-    | primary DOT IDENT
-      { range $1.loc $3.loc (add_type (Field($1, $3.desc))) }
-    | UIDENT DOT IDENT
-      { let m = create $1.loc (add_type (Module $1.desc)) in
-        range $1.loc $3.loc (add_type (Field(m, $3.desc))) }
+    | primary DOT binding
+      (* TODO *)
+      { $1 }
 
 array_expr:
     | primary DOT LPAREN expr RPAREN
       { range $1.loc $5 (add_type (Get ($1, $4))) }
-
-simple_constr:
-    | UIDENT
-      { create $1.loc (add_type (Constr($1.desc, []))) }
 
 expr: /* 一般の式 (caml2html: parser_expr) */
 | simple_expr %prec prec_simple_expr
@@ -484,7 +501,7 @@ pattern_matching_elt:
       { ($1, $4) }
 
 pattern:
-    | value_name
+    | IDENT
       { create $1.loc (PtVar($1.desc, Type_t.Meta(Type.newmetavar ()))) }
     | LPAREN RPAREN
       { range $1 $2 PtUnit }
@@ -520,9 +537,6 @@ pattern:
     | LBRACK PIPE list_pattern PIPE RBRACK
       (* TODO *)
       { create $1 PtUnit }
-
-value_name:
-    | IDENT { $1 }
 
 tuple_pattern:
     | rev_tuple_pattern
