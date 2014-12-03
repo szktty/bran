@@ -2,3 +2,4 @@ var xref = ref 0
 
 def f x =
   xref := x + !xref
+  Modname.xref := 0

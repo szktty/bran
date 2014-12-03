@@ -350,6 +350,9 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     { range $1 $6.loc (add_type (LetRec($3, $6))) }
 | MATCH nl_opt expr WITH nl_opt pattern_matching END
     { create $1 (add_type (Match($3, $6))) }
+| field_expr LARROW expr
+    (* TODO *)
+    { $1 }
 | array_expr LARROW expr
     { match $1.desc with
       | Get (e1, e2), _ ->
@@ -381,6 +384,9 @@ expr: /* 一般の式 (caml2html: parser_expr) */
     (* TODO *)
     { range $1 $2.loc (add_type Unit) }
 | IDENT ASSIGN nl_opt expr
+    (* TODO *)
+    { range $1.loc $4.loc (add_type Unit) }
+| field_expr ASSIGN nl_opt expr
     (* TODO *)
     { range $1.loc $4.loc (add_type Unit) }
 | RECEIVE nl_opt pattern_matching END
