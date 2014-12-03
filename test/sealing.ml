@@ -178,8 +178,22 @@ module Env = struct
 
   (* initialize PRNG for parallel execution *)
   let () = Random.self_init ()
-  let gen_id () =
-    Printf.sprintf "%x" (Random.bits ())
+  let gen_id () = Random.bits ()
+
+  let init_basedir basedir =
+    let rec gendir () =
+      let dir = Printf.sprintf "%s-%d-%x" basedir (Unix.getpid ()) (gen_id ()) in
+      if Sys.file_exists dir then
+        gendir ()
+      else
+        match Spotlib.Xunix.mkdir dir ~perm:0o744 ~recursive:true with
+        | `Ok -> dir
+        | `Already_exists _ ->
+          dprintf "# %d: basedir exists %s\n" (Unix.getpid ()) dir;
+          gendir ()
+        | _ -> assert false
+    in
+    gendir ()
 
   let create
       ?env
@@ -194,14 +208,7 @@ module Env = struct
       () =
     let basedir' =
       if parallel then
-        let rec gendir () =
-          let dir = Printf.sprintf "%s-%s" basedir (gen_id ()) in
-          if Sys.file_exists dir then
-            gendir ()
-          else
-            dir
-        in
-        gendir ()
+        init_basedir basedir
       else
         basedir
     in
