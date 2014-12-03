@@ -1,0 +1,1 @@
+def main _ = @"123abc"

@@ -22,6 +22,8 @@ let test_files = [
   ("false", "false.br", "false");
   ("char", "test_char.br", "97"); (* 'a' *)
   ("string", "test_string.br", "\"test\"");
+  ("atom", "test_atom.br", "test");
+  ("atom_quote", "test_atom_quote.br", "'123abc'");
 ]
 
 let suite =
