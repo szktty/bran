@@ -10,6 +10,7 @@ FILES[] =
 	sealing
 	xounit
 	test_parsing
+	test_literals
 
 PROGRAM = run
 
