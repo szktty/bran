@@ -30,8 +30,8 @@ let parsing_files = [
   ("circular_ref", "circular_ref.br");
 
   (* signatures *)
-  (*("sig_def", "sig_def.bri");*)
-  (*("sig_var", "sig_var.bri");*)
+  ("sig_def", "sig_def.bri");
+  ("sig_var", "sig_var.bri");
   ("external", "external.bri");
 
   (* literals *)

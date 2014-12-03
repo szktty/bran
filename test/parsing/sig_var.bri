@@ -1,0 +1,3 @@
+var debug : bool ref
+
+var f : ('a -> 'b)

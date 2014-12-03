@@ -184,6 +184,9 @@ definition:
     { create $1 Nop }
 | TOPDEF sigdef
     { create $1 (SigDef $2) }
+| TOPVAR sigdef
+    (* TODO *)
+    { create $1 (SigDef $2) }
 | EXTERNAL ext_sigdef
     { create $1 (SigDef $2) }
 | NL

@@ -1,0 +1,2 @@
+def map : ('a -> 'b) -> 'a list -> 'b
+def send : pid -> 'a -> unit
