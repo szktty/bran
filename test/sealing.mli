@@ -1,5 +1,7 @@
 (* command-line application testing *)
 
+val debug : bool ref
+
 module FileChange : sig
 
   type change =

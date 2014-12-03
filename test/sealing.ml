@@ -1,6 +1,17 @@
 open Spotlib
 open Spotlib.Base
 
+let debug = ref false
+
+let printf = function
+  | false -> Spotlib.Xprintf.zprintf
+  | true ->
+    flush_all ();
+    Printf.printf "# Sealing: ";
+    Printf.printf
+
+let dprintf f = printf !debug f
+
 module FileChange = struct
 
   type change =
@@ -299,6 +310,7 @@ module Env = struct
     Xunix.with_chdir chdir
       (fun () ->
          let args = f env in
+         dprintf "$ %s\n" (String.concat " " args);
          let proc = Xunix.Command.execvp args in
          let outbuf = Buffer.create 256 in
          let errbuf = Buffer.create 256 in
@@ -319,6 +331,7 @@ module Env = struct
                        end else
                          errbuf
                    in
+                   dprintf "out: '%s'\n" s;
                    Buffer.add_string buf s)
          in
          if not expect_error && st <> (Unix.WEXITED 0) then
