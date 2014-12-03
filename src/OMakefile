@@ -171,6 +171,7 @@ FILES[] =
 	kNormal
 	kNormal_t
 	lexer
+	library
 	locating
 	location
 	log

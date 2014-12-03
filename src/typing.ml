@@ -390,13 +390,13 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
             assert false
         end
       | Field ({ desc = (Module mx, _) }, x) ->
-        begin match Module.find_opt mx with
+        begin match Library.find_opt mx with
         | Some _ -> ()
         | None ->
           if not & Sig.load_module mx then
             raise (Unbound_module_error (e.loc, mx))
         end;
-        let m = Module.find mx in
+        let m = Library.find mx in
         Log.debug "#   => module val %s.%s\n" mx x;
         begin match Module.find_val_opt m x with
         | None -> raise (Unbound_value_error (e.loc, Module.(m.name) ^ "." ^ x))
@@ -534,7 +534,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
             Constr(x, ets'), (List.last ys)
           | t -> Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t); assert false
         end
-      | Module x when Module.mem x ->
+      | Module x when Library.mem x ->
         expr, instantiate env (Type_t.App(Type_t.Module x, []))
       | Module x ->
         raise (Ast_t.Unbound_module_error (e.loc, x))

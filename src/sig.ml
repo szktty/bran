@@ -40,7 +40,7 @@ let parse defs =
 let load name defs =
   Log.verbose "# begin loading module %s\n" name;
   let (typs, vals, exts) = parse defs in
-  Module.register { Module.name; typs; vals; exts };
+  Library.register { Module.name; typs; vals; exts };
   Log.verbose "# end loading module %s\n" name
 
 let load_file fpath = 
@@ -66,6 +66,6 @@ let create_env () =
     let mx = "Pervasives" in
     if not & load_module mx then
       raise Pervasives_not_found;
-    let env' = Env.import env & Module.find mx in
+    let env' = Env.import env & Library.find mx in
     empty := Some env';
     env'

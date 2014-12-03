@@ -5,12 +5,6 @@ type t = {
   exts : (Id.t * string) list;
 }
 
-val modules : t list ref
-val register : t -> unit
-val mem : Id.t -> bool
-val find_opt : Id.t -> t option
-val find : Id.t -> t
-
 val find_typ_opt : t -> Id.t -> Type_t.tycon option
 val find_val_opt : t -> Id.t -> Type_t.t option
 val find_val : t -> Id.t -> Type_t.t

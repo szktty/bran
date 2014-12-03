@@ -177,7 +177,7 @@ let rec h env known (expr, ty) =
         AppDir(Id.L(x), List.map (h env known) ys)
     | KNormal_t.App((KNormal_t.Field ((Module mx, _), fx), ft), es) ->
       Log.debug "# directly applying %s.%s\n" mx fx;
-      let m = Module.find mx in
+      let m = Library.find mx in
       let fx' =
         match Module.find_ext_opt m fx with
         | Some x -> x
