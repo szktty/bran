@@ -62,7 +62,8 @@ module Env : sig
     -> ?ignore_files:string list
     -> ?ignore_hidden:bool
     -> ?parallel:bool
-    -> string
+    -> ?basedir:string
+    -> unit
     -> t
   (** Create an environment at the base path *)
 

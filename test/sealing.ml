@@ -132,7 +132,6 @@ module Env = struct
   module Vars = Map.Make(String)
 
   type t = {
-    mutable running : bool;
     origdir : string;
     basedir : string;
     mutable workdir : string;
@@ -142,14 +141,6 @@ module Env = struct
     mutable file_changes : FileChange.t list;
     mutable predictions : FileChange.t list;
   }
-
-  let run_check env =
-    if not env.running then
-      failwith "Sealing.Env: process is not running"
-
-  let not_run_check env =
-    if env.running then
-      failwith "Sealing.Env: process is running"
 
   let ignore env path =
     let (dir, base) =
@@ -190,7 +181,8 @@ module Env = struct
       ?(ignore_files=[])
       ?(ignore_hidden=true)
       ?(parallel=true)
-      basedir =
+      ?(basedir="test_output")
+      () =
     let basedir' =
       if parallel then
         Printf.sprintf "%s-%d" basedir (Unix.getpid ())
@@ -209,7 +201,7 @@ module Env = struct
       | Some s -> s
     in
     let ignore_files' = List.map Str.regexp ignore_files in
-    let e = { running = false; origdir = Unix.getcwd ();
+    let e = { origdir = Unix.getcwd ();
               basedir = basedir'; workdir; vars;
               ignore_files = ignore_files';
               ignore_hidden; file_changes = []; predictions = [] } in
@@ -299,8 +291,6 @@ module Env = struct
       ?(quiet=false)
       env
       ~f =
-    not_run_check env;
-    env.running <- true;
     let chdir =
       match chdir with
       | None -> env.basedir
@@ -339,7 +329,6 @@ module Env = struct
          if not quiet && st <> (Unix.WEXITED 0) then
            print_outerr outbuf errbuf;
          update_file_changes env;
-         env.running <- false;
          { Result.stdout = Buffer.contents outbuf;
            stderr = Buffer.contents errbuf;
            status = st;
@@ -348,7 +337,6 @@ module Env = struct
          })
 
   let install env src =
-    run_check env;
     let dest =
       match Filepath.dirbase & Filepath.of_string Filepath.os src with
       | _, None -> failwith "cannot copy root directory"
@@ -382,10 +370,10 @@ let run
     ?expect_stderr
     ?chdir
     ?quiet
-    ?(basedir="test_output")
+    ?basedir
     f =
   let env = Env.create ?env ?chdir ?start_clear ?ignore_files
-      ?ignore_hidden ~parallel basedir in
+      ?ignore_hidden ~parallel ?basedir () in
   Env.run ?expect_error ?expect_stderr ?chdir ?quiet env ~f
 
 let replace_extension path ext =
