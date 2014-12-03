@@ -4,7 +4,7 @@ open Xounit
 type beam = string
 
 let prog = "../../src/bran"
-let flags = ["-I"; "../../libsrc/stdlib"]
+let flags = ["-I"; "../../lib"]
 let command = List.concat [[prog]; flags]
 
 let erl_flags = ["-pa"; "../../liberl/ebin"]
