@@ -2,7 +2,7 @@
 
 USE_OCAMLFIND = true
 OCAMLFLAGS += -g -thread -w A-4-9-27-40-42-44-45-48 -warn-error A
-OUNITFLAGS =
+OUNITFLAGS = -runner sequential
 
 FILES[] =
 	program
