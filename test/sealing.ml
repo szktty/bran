@@ -7,7 +7,7 @@ let printf = function
   | false -> Spotlib.Xprintf.zprintf
   | true ->
     flush_all ();
-    Printf.printf "# Sealing: ";
+    Printf.printf "# Sealing: pid %d: "( Unix.getpid ());
     Printf.printf
 
 let dprintf f = printf !debug f
@@ -134,10 +134,12 @@ module Env = struct
   type t = {
     origdir : string;
     basedir : string;
-    mutable workdir : string;
     vars : string Vars.t;
     ignore_files : Str.regexp list;
     ignore_hidden : bool;
+    expect_error : bool;
+    expect_stderr : bool;
+    quiet : bool;
     mutable file_changes : FileChange.t list;
     mutable predictions : FileChange.t list;
   }
@@ -174,37 +176,49 @@ module Env = struct
          Xunix.with_chdir env.basedir
            (fun () -> List.iter (rm ~force env) & read_dir env "."))
 
+  (* initialize PRNG for parallel execution *)
+  let () = Random.self_init ()
+  let gen_id () =
+    Printf.sprintf "%x" (Random.bits ())
+
   let create
       ?env
-      ?chdir
       ?(start_clear=false)
       ?(ignore_files=[])
       ?(ignore_hidden=true)
       ?(parallel=true)
+      ?(expect_error=true)
+      ?(expect_stderr=false)
+      ?(quiet=false)
       ?(basedir="test_output")
       () =
     let basedir' =
       if parallel then
-        Printf.sprintf "%s-%d" basedir (Unix.getpid ())
+        let rec gendir () =
+          let dir = Printf.sprintf "%s-%s" basedir (gen_id ()) in
+          if Sys.file_exists dir then
+            gendir ()
+          else
+            dir
+        in
+        gendir ()
       else
         basedir
     in
+    dprintf "create: %s\n" basedir';
     let vars =
       match env with
       | None -> Vars.empty
       | Some kvs ->
         List.fold_left (fun vars (k, v) -> Vars.add k v vars) Vars.empty kvs
     in
-    let workdir =
-      match chdir with
-      | None -> basedir'
-      | Some s -> s
-    in
     let ignore_files' = List.map Str.regexp ignore_files in
     let e = { origdir = Unix.getcwd ();
-              basedir = basedir'; workdir; vars;
+              basedir = basedir'; vars;
               ignore_files = ignore_files';
-              ignore_hidden; file_changes = []; predictions = [] } in
+              ignore_hidden; expect_error; expect_stderr;
+              quiet; file_changes = []; predictions = [] }
+    in
     if start_clear && Sys.file_exists basedir' then
       clear e;
     if not & Sys.file_exists basedir' then
@@ -284,13 +298,7 @@ module Env = struct
                                        time = Unix.time () } :: env.file_changes)
       & read_all_files env env.basedir
 
-  let run
-      ?(expect_error=true)
-      ?(expect_stderr=false)
-      ?chdir
-      ?(quiet=false)
-      env
-      ~f =
+  let run ?chdir env f =
     let chdir =
       match chdir with
       | None -> env.basedir
@@ -299,42 +307,46 @@ module Env = struct
     init_file_changes env;
     Xunix.with_chdir chdir
       (fun () ->
-         let args = f env in
-         dprintf "$ %s\n" (String.concat " " args);
-         let proc = Xunix.Command.execvp args in
-         let outbuf = Buffer.create 256 in
-         let errbuf = Buffer.create 256 in
-         let (st, _) =
-           Xunix.Command.iter proc
-             ~f:(fun (ch, read) ->
-                 match read with
-                 | `EOF -> ()
-                 | `Read s ->
-                   let buf =
-                     match ch with
-                     | `Out -> outbuf
-                     | `Err ->
-                       if not expect_stderr then begin
-                         Buffer.add_string errbuf s;
-                         print_outerr outbuf errbuf;
-                         failwith "Sealing.Env.run: stderr is not expected"
-                       end else
-                         errbuf
-                   in
-                   dprintf "out: '%s'\n" s;
-                   Buffer.add_string buf s)
-         in
-         if not expect_error && st <> (Unix.WEXITED 0) then
-           failwith "Sealing.Env.run: error is not expected";
-         if not quiet && st <> (Unix.WEXITED 0) then
-           print_outerr outbuf errbuf;
+         let ret = f env in
          update_file_changes env;
-         { Result.stdout = Buffer.contents outbuf;
-           stderr = Buffer.contents errbuf;
-           status = st;
-           file_changes = env.file_changes;
-           predictions = env.predictions;
-         })
+         ret)
+
+  let shell env args =
+    dprintf "$ %s\n" (String.concat " " args);
+    let proc = Xunix.Command.execvp args in
+    let outbuf = Buffer.create 256 in
+    let errbuf = Buffer.create 256 in
+    let (st, _) =
+      Xunix.Command.iter proc
+        ~f:(fun (ch, read) ->
+            match read with
+            | `EOF -> ()
+            | `Read s ->
+              let buf =
+                match ch with
+                | `Out -> outbuf
+                | `Err ->
+                  if not env.expect_stderr then begin
+                    Buffer.add_string errbuf s;
+                    print_outerr outbuf errbuf;
+                    failwith "Sealing.Env.run: stderr is not expected"
+                  end else
+                    errbuf
+              in
+              dprintf "out: '%s'\n" s;
+              Buffer.add_string buf s)
+    in
+    if not env.expect_error && st <> (Unix.WEXITED 0) then
+      failwith "Sealing.Env.run: error is not expected";
+    if not env.quiet && st <> (Unix.WEXITED 0) then
+      print_outerr outbuf errbuf;
+    update_file_changes env;
+    { Result.stdout = Buffer.contents outbuf;
+      stderr = Buffer.contents errbuf;
+      status = st;
+      file_changes = env.file_changes;
+      predictions = env.predictions;
+    }
 
   let install env src =
     let dest =
@@ -342,6 +354,7 @@ module Env = struct
       | _, None -> failwith "cannot copy root directory"
       | _, Some base -> base
     in
+    dprintf "install: cp %s .\n" src;
     match Sys.command & Printf.sprintf "cp %s ." src with
     | 0 ->
       env.file_changes <- { FileChange.path = dest;
@@ -361,26 +374,26 @@ end
 
 let run 
     ?env
-    ?chdir
     ?start_clear
     ?ignore_files
     ?ignore_hidden
-    ?(parallel=true)
+    ?parallel
     ?expect_error
     ?expect_stderr
-    ?chdir
     ?quiet
     ?basedir
     f =
-  let env = Env.create ?env ?chdir ?start_clear ?ignore_files
-      ?ignore_hidden ~parallel ?basedir () in
-  Env.run ?expect_error ?expect_stderr ?chdir ?quiet env ~f
+  let env = Env.create ?env ?start_clear ?ignore_files
+      ?ignore_hidden ?parallel ?basedir
+      ?expect_error ?expect_stderr ?quiet ()
+  in
+  Env.run env f
 
 let replace_extension path ext =
     (fst & Xfilename.split_extension path) ^ ext
 
 let _test () =
-  let res = run (fun _env -> ["ls"]) in
+  let res = run (fun env -> Env.shell env ["ls"]) in
   print_endline res.stdout
 
 (* let _ = _test () *)

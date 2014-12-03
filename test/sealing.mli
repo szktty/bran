@@ -57,11 +57,13 @@ module Env : sig
 
   val create :
     ?env:((string * string) list)
-    -> ?chdir:string
     -> ?start_clear:bool
     -> ?ignore_files:string list
     -> ?ignore_hidden:bool
     -> ?parallel:bool
+    -> ?expect_error:bool
+    -> ?expect_stderr:bool
+    -> ?quiet:bool
     -> ?basedir:string
     -> unit
     -> t
@@ -70,14 +72,9 @@ module Env : sig
   val clear : ?force:bool -> t -> unit
   (** Delete all the files in the base directory *)
 
-  val run :
-    ?expect_error:bool
-    -> ?expect_stderr:bool
-    -> ?chdir:string
-    -> ?quiet:bool
-    -> t
-    -> f:(t -> string list)
-    -> Result.t
+  val run : ?chdir:string -> t -> (t -> 'a) -> 'a
+
+  val shell : t -> string list -> Result.t
 
   val install : t -> string -> string
   (** Copy the file to the base directory *)
@@ -92,18 +89,16 @@ end
 
 val run :
   ?env:((string * string) list)
-  -> ?chdir:string
   -> ?start_clear:bool
   -> ?ignore_files:string list
   -> ?ignore_hidden:bool
   -> ?parallel:bool
   -> ?expect_error:bool
   -> ?expect_stderr:bool
-  -> ?chdir:string
   -> ?quiet:bool
   -> ?basedir:string
-  -> (Env.t -> string list)
-  -> Result.t
+  -> (Env.t -> 'a)
+  -> 'a
 
 val replace_extension : string -> string -> string
 (** [replace_extension path extension]
