@@ -46,7 +46,7 @@ let parsing_files = [
   ("list", "list.br");
   ("tuple", "tuple.br");
   ("array", "array.br");
-  ("record", "record.br");
+  ("field", "field.br");
 
   (* operators *)
   ("intop", "intop.br");
