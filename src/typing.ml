@@ -10,9 +10,9 @@ exception Unify of Type_t.t * Type_t.t
 exception Error of expr Locating.t * Type_t.t * Type_t.t
     
 let rec subst ({ Env.tycons = tycons } as env) tyvars reached t =
-  Log.debug "# Typing.subst %s\n" (Type.string_of_t t);
+  Log.debug "# Typing.subst %s\n" (Type.to_string t);
   let rec subst' reached ty = 
-    Log.debug "#    Typing.subst' %s\n" (Type.string_of_t ty);
+    Log.debug "#    Typing.subst' %s\n" (Type.to_string ty);
     match ty with
     | Type_t.Var(x) when M.mem x tyvars -> M.find x tyvars
     | Type_t.Var(x) -> Type_t.Var(x)
@@ -48,10 +48,10 @@ let rec occur x = (* occur check (caml2html: typing_occur) *)
       
 let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、メタ型変数への代入をする. 成功したら () を返す. (caml2html: typing_unify) *)
   Log.debug "# Typing.unify %s %s\n"
-    (Type.string_of_t ty1) (Type.string_of_t ty2);
+    (Type.to_string ty1) (Type.to_string ty2);
   let rec unify' t1 t2 =  
     Log.debug "#     Typing.unify' %s %s\n"
-      (Type.string_of_t t1) (Type.string_of_t t2);
+      (Type.to_string t1) (Type.to_string t2);
     match t1, t2 with
     | Type_t.App(Type_t.Unit, xs), Type_t.App(Type_t.Unit, ys) 
     | Type_t.App(Type_t.Bool, xs), Type_t.App(Type_t.Bool, ys) 
@@ -88,7 +88,7 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
     | t1, Type_t.Meta(y) -> unify' t2 t1
     | _, _ -> 
       Log.debug "unify failed.\n  t1 = %s\n  t2 = %s\n"
-        (Type.string_of_t t1) (Type.string_of_t t2);
+        (Type.to_string t1) (Type.to_string t2);
       raise (Unify(t1, t2)) in
   unify' ty1 ty2
     
@@ -104,7 +104,7 @@ let rec expand tenv =
   | t -> t
 *)      
 let generalize { Env.venv = venv; tycons = tycons } ty = 
-  Log.debug "# Typing.generalize %s\n" (Type.string_of_t ty);
+  Log.debug "# Typing.generalize %s\n" (Type.to_string ty);
   let rec exists v = 
     function
     | Type_t.App(Type_t.NameTycon(_, { contents = Some(tycon) }), ts) -> exists v (Type_t.App(tycon, ts))
@@ -138,17 +138,17 @@ let generalize { Env.venv = venv; tycons = tycons } ty =
       | _ -> assert false) 
     ms in
   let t = Type_t.Poly(tyvars, ty) in
-  let _ = Log.debug "  => %s\n" (Type.string_of_t t) in
+  let _ = Log.debug "  => %s\n" (Type.to_string t) in
   t
     
 let instantiate env ty =
-  Log.debug "Typing.instantiate %s\n" (Type.string_of_t ty);
+  Log.debug "Typing.instantiate %s\n" (Type.to_string ty);
   let t = 
     match ty with
     | Type_t.Poly(xs, t) -> 
         subst env (M.add_list (List.map (fun x -> (x, Type_t.Meta(Type.newmetavar ()))) xs) M.empty) t
     | t -> t in
-  let _ = Log.debug "  => %s\n" (Type.string_of_t t) in
+  let _ = Log.debug "  => %s\n" (Type.to_string t) in
   t
       
 (* for pretty printing (and type normalization) *)
@@ -326,9 +326,9 @@ let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p =
               | Type_t.App(Type_t.Record(_), ts) ->
                   List.iter2 (unify env) ts ts';
                   env', t'
-              | t -> Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t); assert false
+              | t -> Printf.eprintf "invalid type : t = %s\n" (Type.to_string t); assert false
             end
-        | t -> Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t); assert false
+        | t -> Printf.eprintf "invalid type : t = %s\n" (Type.to_string t); assert false
       end
   | PtConstr(x, ps) -> 
       let env', pts' = List.fold_left (fun (env, pts) p -> let env', t' = pattern env p in env', (p, t') :: pts) (env, []) (List.rev ps) in
@@ -347,9 +347,9 @@ let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p =
                     | y, ts' when x = y -> List.iter2 (fun (_, t) t' -> unify env' t t') pts' ts'
                     | _  -> ()) constrs;
                   env', t
-              | t -> Printf.eprintf "invalid type : %s\n" (Type.string_of_t t); assert false
+              | t -> Printf.eprintf "invalid type : %s\n" (Type.to_string t); assert false
             end
-        | t -> Printf.eprintf "invalid type : %s\n" (Type.string_of_t t); assert false
+        | t -> Printf.eprintf "invalid type : %s\n" (Type.to_string t); assert false
       end
         
 let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン (caml2html: typing_g) *)
@@ -382,11 +382,11 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
                 List.iter2 (unify env) ts ts';
                 Record(xets'), t'
               | t ->
-                Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t);
+                Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
                 assert false
             end
           | t ->
-            Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t);
+            Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
             assert false
         end
       | Field ({ desc = (Module mx, _) }, x) ->
@@ -532,7 +532,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) e = (* 型推論ルーチン
           | Type_t.App(Type_t.Arrow, ys) -> 
             List.iter2 (unify env) ts' (List.init ys);
             Constr(x, ets'), (List.last ys)
-          | t -> Printf.eprintf "invalid type : t = %s\n" (Type.string_of_t t); assert false
+          | t -> Printf.eprintf "invalid type : t = %s\n" (Type.to_string t); assert false
         end
       | Module x when Library.mem x ->
         expr, instantiate env (Type_t.App(Type_t.Module x, []))
@@ -601,8 +601,8 @@ let f defs =
       let env', def' = 
         match def.desc with
         | TypeDef(x, t) -> 
-            { Env.venv = M.add_list (Type.vars t) venv;
-              Env.tenv = M.add_list (Type.types t) tenv;
+            { Env.venv = M.add_list (Type.Tycon.vars t) venv;
+              Env.tenv = M.add_list (Type.Tycon.types t) tenv;
               Env.tycons = M.add x t tycons;
               Env.mods = mods },
           TypeDef(x, t)

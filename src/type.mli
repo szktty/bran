@@ -1,19 +1,34 @@
-open Type_t
+type t = Type_t.t
 
 val newtyvar : unit -> Id.t
 val newmetavar : unit -> t option ref
 
-val string_of_t : t -> Id.t
-val string_of_tycon : tycon -> Id.t
-val string_of_constr : constr -> string
-val ocaml_of : t -> Id.t
-val ocaml_of_tycon : tycon -> Id.t
+val to_string : t -> Id.t
+val to_ocaml : t -> string
 
 val equal : t -> t -> bool
-val vars : tycon -> (Id.t * t) list
-val types : tycon -> (Id.t * t) list
 
 val prefix : t -> Id.t
 val name : t -> Id.t
 
 val app_unit : t (* App (Unit, []) *)
+
+module Tycon : sig
+
+  type t = Type_t.tycon
+
+  val to_string : t -> string
+  val to_ocaml : t -> string
+
+  val vars : t -> (Id.t * Type_t.t) list
+  val types : t -> (Id.t * Type_t.t) list
+
+end
+
+module Constr : sig
+
+  type t = Type_t.constr
+
+  val to_string : t -> string
+
+end

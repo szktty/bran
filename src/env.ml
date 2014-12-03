@@ -29,8 +29,8 @@ let empty = ref {
 let () =
   empty := List.fold_left 
     (fun { venv = venv; tenv = tenv; tycons = tycons; mods = mods } (x, t) ->
-      { venv = M.add_list (Type.vars t) venv;
-        tenv = M.add_list (Type.types t) tenv;
+      { venv = M.add_list (Type.Tycon.vars t) venv;
+        tenv = M.add_list (Type.Tycon.types t) tenv;
         tycons = M.add x t tycons;
         mods = mods }) !empty predeftypes
     

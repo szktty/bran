@@ -1,6 +1,8 @@
 open Type_t
 open X
 
+type t = Type_t.t
+
 let counter = ref 0
 let newtyvar () = 
   incr counter;
@@ -100,6 +102,9 @@ and ocaml_of_tycon = function
   | String -> "string"
   | t -> Printf.eprintf "%s : not implemented yet." (string_of_tycon t); assert false
 
+let to_string = string_of_t
+let to_ocaml = ocaml_of
+
 (* 等値判定。型推論後のみ使用可能。*)
 let rec equal t1 t2 = 
   match t1, t2 with
@@ -123,24 +128,6 @@ let rec equal t1 t2 =
   | t1, Meta(y) -> equal t2 t1
   | _, _ -> false
       
-(* 型環境 venv に追加する識別子と型のリスト *)
-let vars t =
-  Log.debug "# Types.vars %s\n" (string_of_tycon t);
-  match t with
-  | TyFun(xs, (App(Variant(x, constrs), _) as t)) -> 
-      List.map 
-        (function
-        | y, [] -> y, Poly(xs, t)
-        | y, ts -> y, Poly(xs, App(Arrow, ts @ [t]))) constrs
-  | _ -> []
-
-(* 型環境 tenv に追加する識別子と型のリスト *)
-let types t =
-  Log.debug "# Types.types %s\n" (string_of_tycon t);
-  match t with
-  | TyFun(xs, (App(Record(x, fs), ys) as t)) -> (List.combine fs (List.map (fun y -> (Poly(xs, Field(t, y))))  ys))
-  | _ -> []
-
 let rec name t =
   match t with
   | App(Unit, []) -> "unit"
@@ -166,3 +153,38 @@ let rec name t =
   | App(NameTycon(x, _), _) -> x
 
 let app_unit = App (Unit, [])
+
+module Tycon = struct
+
+  type t = Type_t.tycon
+
+  let to_string = string_of_tycon
+  let to_ocaml = ocaml_of_tycon
+
+  (* 型環境 venv に追加する識別子と型のリスト *)
+  let vars t =
+    Log.debug "# Types.vars %s\n" (string_of_tycon t);
+    match t with
+    | TyFun(xs, (App(Variant(x, constrs), _) as t)) -> 
+      List.map 
+        (function
+          | y, [] -> y, Poly(xs, t)
+          | y, ts -> y, Poly(xs, App(Arrow, ts @ [t]))) constrs
+    | _ -> []
+
+  (* 型環境 tenv に追加する識別子と型のリスト *)
+  let types t =
+    Log.debug "# Types.types %s\n" (string_of_tycon t);
+    match t with
+    | TyFun(xs, (App(Record(x, fs), ys) as t)) -> (List.combine fs (List.map (fun y -> (Poly(xs, Field(t, y))))  ys))
+    | _ -> []
+
+end
+
+module Constr = struct
+
+  type t = Type_t.constr
+
+  let to_string = string_of_constr
+
+end

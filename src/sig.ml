@@ -25,7 +25,7 @@ let parse defs =
   let parse' (typs, vals, exts) def =
     match def.desc with
     | SigDef { sig_name = (x, t); sig_ext = sig_ext } ->
-      Log.debug "# val %s : %s\n" x (Type.string_of_t t);
+      Log.debug "# val %s : %s\n" x (Type.to_string t);
       let exts' =
         match sig_ext with
         | None -> exts

@@ -15,7 +15,7 @@ let rec ocaml_of_pattern =
   | PtField(xps) -> String.concat ", " (List.map (fun (x, p) -> x ^ " = " ^ (ocaml_of_pattern p)) xps)
   | PtConstr(x, ps) -> x ^ ", " ^ String.concat ", " (List.map ocaml_of_pattern ps)
 
-let rec string_of_typed_expr (e, t) = (string_of_expr e) ^ " : " ^ (Type.string_of_t t)
+let rec string_of_typed_expr (e, t) = (string_of_expr e) ^ " : " ^ (Type.to_string t)
 
 and string_of_expr = 
   function
@@ -52,7 +52,7 @@ and string_of_expr =
     Printf.sprintf "Put(%s, %s, %s)"
       (string_of_typed_expr e1) (string_of_typed_expr e2) (string_of_typed_expr e3)
 
-let rec string_of_typed_term (e, t) = (string_of_term e) ^ " : " ^ (Type.string_of_t t)
+let rec string_of_typed_term (e, t) = (string_of_term e) ^ " : " ^ (Type.to_string t)
 
 and string_of_term = 
   function
@@ -60,9 +60,9 @@ and string_of_term =
   | Exp(e) -> "Exp(" ^ string_of_typed_expr e ^ ")"
   | If(e, e1, e2) -> "If(" ^ (string_of_typed_expr e) ^ "then " ^ (string_of_typed_term e1) ^ "else " ^ (string_of_typed_term e2) ^ ")"
   | Match(x, pes) -> "Match(" ^ x ^ ", [" ^ (String.concat "" (List.map (fun (p, e) -> " | " ^ (ocaml_of_pattern p) ^ " -> " ^ (string_of_typed_term e)) pes)) ^ "])"
-  | Let((s1, t), e1, e2) -> "Let(" ^ s1 ^ " : " ^ (Type.string_of_t  t) ^ " = " ^ (string_of_typed_term e1) ^ " in " ^ (string_of_typed_term e2) ^ ")"
+  | Let((s1, t), e1, e2) -> "Let(" ^ s1 ^ " : " ^ (Type.to_string  t) ^ " = " ^ (string_of_typed_term e1) ^ " in " ^ (string_of_typed_term e2) ^ ")"
   | LetRec({ name = (x, t); args = yts; body = e1 }, e2) -> 
-      "LetRec(" ^ x ^ ", [" ^ (String.concat ", " (List.map (fun (y, t) -> y) yts)) ^ " : " ^ (Type.string_of_t  t) ^ "] = "
+      "LetRec(" ^ x ^ ", [" ^ (String.concat ", " (List.map (fun (y, t) -> y) yts)) ^ " : " ^ (Type.to_string  t) ^ "] = "
       ^ (string_of_typed_term e1) ^ " in " ^ (string_of_typed_term e2) ^ ")"
 
 let rec insert_let (e, t) k = (* letを挿入する補助関数 (caml2html: knormal_insert) *)
@@ -218,8 +218,8 @@ let map f defs =
       match def with 
       | TypeDef(x, t) -> 
           let env' = { env with 
-            Env.venv = M.add_list (Type.vars t) venv;
-            Env.tenv = M.add_list (Type.types t) tenv } in
+            Env.venv = M.add_list (Type.Tycon.vars t) venv;
+            Env.tenv = M.add_list (Type.Tycon.types t) tenv } in
           env', f env' def
       | VarDef((x, t), e) ->  
           Env.add_var env x t, f env def
