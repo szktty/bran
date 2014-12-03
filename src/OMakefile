@@ -156,6 +156,7 @@ FILES[] =
 	ast
 	ast_t
 	#beta
+	binding
 	bitstring
 	closure
 	closure_t
