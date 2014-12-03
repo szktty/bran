@@ -70,6 +70,7 @@ let parsing_files = [
   (* type definitions *)
   ("simple_typdef", "simple_typdef.br");
   ("variant_typdef", "variant_typdef.br");
+  ("record_typdef", "record_typdef.br");
   
 ]
 
