@@ -45,6 +45,9 @@ let strlit_to_word lexbuf read =
     (Location.create (start_pos lexbuf) (end_pos lexbuf))
     (read (Buffer.create 17) lexbuf)
 
+let with_word lexbuf s =
+  Locating.create (to_loc lexbuf) s
+
 }
 
 let lower = ['a'-'z']
@@ -216,14 +219,14 @@ rule token = parse
     { EXCL (to_loc lexbuf) }
 | '|'
     { PIPE (to_loc lexbuf) }
-| ''' sqchr '''
-    { CHAR (to_word lexbuf) }
-| ''' '\\' octstr '''
-    { CHAR (to_word lexbuf) }
-| ''' '\\' 'x' hexstr '''
-    { CHAR (to_word lexbuf) }
-| ''' '\\' '^' ctrlchr '''
-    { CHAR (to_word lexbuf) }
+| ''' (sqchr as s) '''
+    { CHAR (with_word lexbuf s) }
+| ''' ('\\' octstr as s) '''
+    { CHAR (with_word lexbuf s) }
+| ''' ('\\' 'x' hexstr as s) '''
+    { CHAR (with_word lexbuf s) }
+| ''' ('\\' '^' ctrlchr as s) '''
+    { CHAR (with_word lexbuf s) }
 | '"'
     { STRING (strlit_to_word lexbuf string) }
 | '@' atom

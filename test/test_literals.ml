@@ -20,6 +20,7 @@ let test_compile file expect test_ctx =
 let test_files = [
   ("true", "true.br", "true");
   ("false", "false.br", "false");
+  ("char", "test_char.br", "97"); (* 'a' *)
   ("string", "test_string.br", "\"test\"");
 ]
 
