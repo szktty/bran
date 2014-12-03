@@ -14,7 +14,7 @@ let test_parsing file test_ctx =
       ~start_clear:true
       (fun env ->
          let dest = Env.install env file in
-         Program.command @ ["-s"; dest])
+         Env.shell env & Program.command @ ["-s"; dest])
   in
   assert_success res;
   assert_no_file_changes res
