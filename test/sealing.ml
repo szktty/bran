@@ -221,8 +221,10 @@ module Env = struct
     in
     if start_clear && Sys.file_exists basedir' then
       clear e;
-    if not & Sys.file_exists basedir' then
-      Unix.mkdir basedir' 0o744;
+    if not & Sys.file_exists basedir' then begin
+      match Spotlib.Xunix.mkdir basedir' ~perm:0o744 ~recursive:true with
+      | _ -> ()
+    end;
     e
 
   let read_all_files env path =
