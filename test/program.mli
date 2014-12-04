@@ -8,4 +8,5 @@ val beam_path : string -> beam
 val exec_path : string -> string
 
 val compile : Sealing.Env.t -> string -> beam
-val call_main : Sealing.Env.t -> beam -> Sealing.Result.t
+val eval : Sealing.Env.t -> beam -> string -> Sealing.Result.t
+val simple_test : Sealing.Env.t -> beam -> unit

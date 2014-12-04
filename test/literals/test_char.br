@@ -1,1 +1,3 @@
-def main _ = 'a'
+def test _ = 'a'
+def expected_type _ = @char
+def expected_value _ = "$a."

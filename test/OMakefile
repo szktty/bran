@@ -24,6 +24,7 @@ test: $(OCamlProgram $(PROGRAM), $(FILES))
 	if $(not $(test -e ../src/bran))
 		println("Error: Compiler is not found. Do `omake'.")
 	else
+		erlc testlib.erl
 		./$(PROGRAM) $(OUNITFLAGS)
 
 # omake xxx.auto.mli creates the mli file from xxx.ml automatically

@@ -1,1 +1,3 @@
-def main _ = @"123abc"
+def test _ = @"123abc"
+def expected_type _ = @atom
+def expected_value _ = "'123abc'."
