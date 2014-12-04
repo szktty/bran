@@ -21,6 +21,7 @@ let test_files = [
   ("atom", "test_atom.br");
   ("atom_quote", "test_atom_quote.br");
   ("int", "test_int.br");
+  ("float", "test_float.br");
 ]
 
 let suite =
