@@ -20,6 +20,7 @@ let test_files = [
   ("string", "test_string.br");
   ("atom", "test_atom.br");
   ("atom_quote", "test_atom_quote.br");
+  ("int", "test_int.br");
 ]
 
 let suite =
