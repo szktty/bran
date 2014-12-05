@@ -61,11 +61,13 @@ let rec occur x t =
   | Type_t.Meta(y) -> x == y
       
 let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、メタ型変数への代入をする. 成功したら () を返す. (caml2html: typing_unify) *)
-  Log.debug "# Typing.unify %s %s\n"
-    (Type.to_string ty1) (Type.to_string ty2);
+  Log.debug "# Typing.unify: %s (%s) with %s (%s)\n"
+    (Type.to_string ty1) (Location.to_string ty1.loc)
+    (Type.to_string ty2) (Location.to_string ty2.loc);
   let rec unify' t1 t2 =  
-    Log.debug "#     Typing.unify' %s %s\n"
-      (Type.to_string t1) (Type.to_string t2);
+    Log.debug "#     Typing.unify': %s (%s) with %s (%s)\n"
+      (Type.to_string ty1) (Location.to_string ty1.loc)
+      (Type.to_string ty2) (Location.to_string ty2.loc);
     match t1.desc, t2.desc with
     | Type_t.App(Type_t.Unit, xs), Type_t.App(Type_t.Unit, ys) 
     | Type_t.App(Type_t.Bool, xs), Type_t.App(Type_t.Bool, ys) 
@@ -112,8 +114,10 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
     | Type_t.Meta(x), _ ->
       if occur x t2 then
         raise (Unify(t1, t2))
-      else
-        x := Some t2
+      else begin
+        x := Some t2;
+        Log.debug "#         Unified! -> %s\n" (Type.to_string t1);
+      end
     | _, Type_t.Meta(y) -> unify' t2 t1
     | _, _ -> 
       Log.debug "unify failed.\n  t1 = %s\n  t2 = %s\n"
