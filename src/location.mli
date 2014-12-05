@@ -11,11 +11,18 @@ val zero : t
 val create : Position.t -> Position.t -> t
 
 val start_line : t -> int
+val start_line1 : t -> int
 val start_col : t -> int
+val start_col1 : t -> int
 val start_offset : t -> int
 val end_line : t -> int
+val end_line1 : t -> int
 val end_col : t -> int
+val end_col1 : t -> int
 val end_offset : t -> int
+
+val values : t -> int * int * int * int
+val values1 : t -> int * int * int * int
 
 val union : t -> t -> t
 

@@ -75,8 +75,21 @@ let () =
        | Ast_t.Unbound_module_error (loc, x) ->
          print_error fpath loc ("Unbound module `" ^ x ^ "'")
        | Typing.Error (e, t1, t2) ->
-         print_error fpath e.loc
-           (Printf.sprintf "Type mismatch: actual %s, expected %s"
-              (Type.name t2) (Type.name t1))
+         let print_type oc t =
+           let (sl1, sc1, el1, ec1) = Location.values1 t.Locating.loc in
+           let lc = sprintf "(%d:%d-%d:%d)" sl1 sc1 el1 ec1 in
+           let name = Type.name t in
+           bprintf oc "    %s    %s"
+             (lc ^ (String.make (String.length lc mod 4) ' '))
+             (name ^ (String.make (String.length name mod 4) ' '))
+         in
+         let buf = Buffer.create 16 in
+         bprintf buf "Type mismatch: This expression has type `%s', but the expression was expected of type `%s'\n"
+           (Type.name t2) (Type.name t1);
+         print_type buf t2;
+         bprintf buf "    <- actual type\n";
+         print_type buf t1;
+         bprintf buf "    <- expected type";
+         print_error fpath e.loc (Buffer.contents buf)
        | e -> raise e)
     !files
