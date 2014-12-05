@@ -5,18 +5,24 @@ let _bprint_text_of_loc oc fpath loc indent =
   let open Printf in
   let open Location in
   let rec back ic =
-    let orig = pos_in ic in
-    match input_char ic with
-    | '\r' | '\n' -> seek_in ic orig
-    | _ ->
-      seek_in ic (pos_in ic - 2);
-      back ic
+    match pos_in ic with
+    | 0 -> ()
+    | orig ->
+      match input_char ic with
+      | '\r' | '\n' -> seek_in ic orig
+      | _ ->
+        seek_in ic (orig - 1);
+        back ic
   in
   with_ic (open_in fpath)
     (fun ic ->
+       printf "1\n";
        seek_in ic (start_offset loc);
+       printf "2\n";
        back ic;
+       printf "3\n";
        let text = input_line ic in
+       printf "4\n";
        bprintf oc "%s%s\n" (String.make indent ' ') text;
        bprintf oc "%s%s\n" (String.make (indent + start_col loc) ' ')
          (String.make (end_offset loc - start_offset loc) '^');
@@ -109,12 +115,10 @@ let () =
            (Type.name t2) (Type.name t1);
          print_type buf t2;
          bprintf buf "    <- actual type\n";
+         (* bprint_text_of_loc buf fpath t2.loc 4; *)
          print_type buf t1;
-         bprintf buf "    <- expected type\n";
-         (*
-         bprint_text_of_loc buf fpath t2.loc 4;
-         bprint_text_of_loc buf fpath t1.loc 4;
-          *)
+         bprintf buf "    <- expected type\n\n";
+         (* bprint_text_of_loc buf fpath t1.loc 4; *)
          print_error fpath e.loc (Buffer.contents buf)
        | e -> raise e)
     !files
