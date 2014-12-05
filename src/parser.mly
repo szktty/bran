@@ -5,10 +5,10 @@ open Ast_t
 open Locating
 open X
 
-let meta_type = Type_t.Meta (Type.newmetavar ())
+let meta_type () = Type_t.Meta (Type.newmetavar ())
 
 let add_type loc x =
-  (x, create loc meta_type)
+  (x, create loc & meta_type ())
 
 let add_type_loc x =
   add_type x.loc x.desc
@@ -526,7 +526,7 @@ pattern_matching_elt:
 
 pattern:
     | IDENT
-      { create $1.loc (PtVar ($1.desc, create $1.loc meta_type)) }
+      { create $1.loc (PtVar ($1.desc, create $1.loc & meta_type ())) }
     | LPAREN RPAREN
       { range $1 $2 PtUnit }
     | BOOL
