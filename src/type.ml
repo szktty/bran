@@ -1,7 +1,12 @@
+open Spotlib.Base
 open Type_t
+open Locating
 open X
 
 type t = Type_t.t
+
+let cons_id = "Cons"
+let nil_id = "Nil"
 
 let counter = ref 0
 let newtyvar () = 
@@ -9,8 +14,8 @@ let newtyvar () =
   Printf.sprintf "tyvar_%d" !counter
 let newmetavar () = ref None
 
-let rec string_of_t reached = 
-  function
+let rec string_of_t reached t = 
+  match t.desc with
   | Var(v) -> "Var(" ^ v ^ ")"
   | Field(tid, t) -> "Field(" ^ (string_of_t reached tid) ^ ", " ^ (string_of_t reached t) ^ ")"
   | App(tycon, ts) -> "App(" ^ (string_of_tycon reached tycon) ^ ", [" ^ (String.concat ", " (List.map (string_of_t reached) ts)) ^ "])"
@@ -50,13 +55,13 @@ let string_of_t = string_of_t S.empty
 let string_of_tycon = string_of_tycon S.empty
 let string_of_constr = string_of_constr S.empty
       
-let rec prefix = 
-  function
+let rec prefix t =
+  match t.desc with
   | Var _ -> "p" 
   | Field(_, t) -> prefix t
   | App(tycon, _) -> prefix_of_tycon tycon
   | Poly(_, t) -> prefix t
-  | t -> Log.debug "t = %s\n" (string_of_t t); assert false
+  | _ -> Log.debug "t = %s\n" (string_of_t t); assert false
       
 and prefix_of_tycon = 
   function
@@ -77,7 +82,8 @@ and prefix_of_tycon =
   | TyFun(_, t) -> prefix t
   | NameTycon(x, _) -> x
       
-let rec ocaml_of = function
+let rec ocaml_of t =
+  match t.desc with
   | Var _ -> "'a"
   | Field(_, t) -> ocaml_of t
   | App(Unit, []) -> "unit"
@@ -94,7 +100,8 @@ let rec ocaml_of = function
   | Poly(xs, t) -> ocaml_of t      
   | App(TyFun([], t), []) -> ocaml_of t
   | App(NameTycon(x, _), ts) -> (String.concat " * " (List.map ocaml_of ts)) ^ " " ^ x
-  | t -> Printf.eprintf "%s : not implemented yet." (string_of_t t); assert false
+  | _ -> Printf.eprintf "%s : not implemented yet." (string_of_t t); assert false
+
 and ocaml_of_tycon = function
   | Unit -> "unit"
   | Bool -> "bool"
@@ -107,7 +114,7 @@ let to_ocaml = ocaml_of
 
 (* 等値判定。型推論後のみ使用可能。*)
 let rec equal t1 t2 = 
-  match t1, t2 with
+  match t1.desc, t2.desc with
   | App(Unit, xs), App(Unit, ys) 
   | App(Bool, xs), App(Bool, ys) 
   | App(Int, xs), App(Int, ys) 
@@ -116,20 +123,20 @@ let rec equal t1 t2 =
   | App(Record(x, _), xs), App(Record(y, _), ys) 
   | App(Variant(x, _), xs), App(Variant(y, _), ys) when List.length xs = List.length ys -> x = y && List.for_all2 equal xs ys
   | App(TyFun(xs, u), ys), t2 -> assert false (* inpossible after Typing.f *)
-  | Poly([], u1), t2 -> equal u1 t2
-  | t1, Poly([], u2) -> equal t1 u2
+  | Poly([], u1), _ -> equal u1 t2
+  | _, Poly([], u2) -> equal t1 u2
   | Poly(xs, u1), Poly(ys, u2) -> xs = ys && equal u1 u2
   | Var(x), Var(y) -> true
   | Field(_, x), Field(_, y) -> equal x y
-  | Meta{ contents = Some(t1') }, t2 -> equal t1' t2
+  | Meta{ contents = Some(t1') }, _ -> equal t1' t2
   | Meta(x), Meta{ contents = Some(t2') } -> equal t1 t2'
   | Meta(x), Meta(y) when x == y -> true
   | Meta(x), t2 -> assert false (* inpossible after Typing.f *)
-  | t1, Meta(y) -> equal t2 t1
+  | _, Meta(y) -> equal t2 t1
   | _, _ -> false
       
 let rec name t =
-  match t with
+  match t.desc with
   | App(Unit, []) -> "unit"
   | App(Bool, []) -> "bool"
   | App(Int, []) -> "int"
@@ -152,7 +159,9 @@ let rec name t =
     assert false (* impossible *)
   | App(NameTycon(x, _), _) -> x
 
-let app_unit = App (Unit, [])
+let app loc tycon args = create loc & App (tycon, args)
+let void_app loc tycon = app loc tycon []
+let app_unit loc = create loc (App (Unit, []))
 
 module Tycon = struct
 
@@ -165,18 +174,21 @@ module Tycon = struct
   let vars t =
     Log.debug "# Types.vars %s\n" (string_of_tycon t);
     match t with
-    | TyFun(xs, (App(Variant(x, constrs), _) as t)) -> 
+    | TyFun (xs, ({ desc = App(Variant(x, constrs), _) } as t)) -> 
       List.map 
         (function
-          | y, [] -> y, Poly(xs, t)
-          | y, ts -> y, Poly(xs, App(Arrow, ts @ [t]))) constrs
+          | y, [] -> y, create t.loc (Poly(xs, t))
+          | y, ts -> y, create t.loc (Poly(xs, create t.loc (App(Arrow, ts @ [t])))))
+        constrs
     | _ -> []
 
   (* 型環境 tenv に追加する識別子と型のリスト *)
   let types t =
     Log.debug "# Types.types %s\n" (string_of_tycon t);
     match t with
-    | TyFun(xs, (App(Record(x, fs), ys) as t)) -> (List.combine fs (List.map (fun y -> (Poly(xs, Field(t, y))))  ys))
+    | TyFun(xs, ({ desc = App(Record(x, fs), ys) } as t)) ->
+      (List.combine fs (List.map (fun y ->
+           create t.loc (Poly (xs, create t.loc (Field(t, y)))))  ys))
     | _ -> []
 
 end

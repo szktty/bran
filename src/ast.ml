@@ -94,3 +94,6 @@ let fold f defs env =
         | _ -> assert false)
       (env, []) defs in
   List.rev defs'
+
+let cons ts = Constr (Type.cons_id, ts)
+let nil = Constr (Type.nil_id, [])

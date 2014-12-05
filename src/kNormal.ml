@@ -93,7 +93,7 @@ let rec pattern env p =
       let env, ps' = List.fold_left (fun (env, ps) p -> let env', p' = pattern env p in env', p' :: ps) (env, []) (List.rev ps) in
       env, PtConstr(x, ps')
         
-let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* K正規化ルーチン本体 (caml2html: knormal_g) *)
+let rec g ({ Env.venv = venv; tenv = tenv } as env) { loc = loc; desc = (e, t) } = (* K正規化ルーチン本体 (caml2html: knormal_g) *)
   Log.debug "kNormal.g %s\n" (Ast.string_of_expr e);
   let insert_lets es k =
     let rec insert_lets' es k args =
@@ -192,15 +192,16 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { desc = (e, t) } = (* K正�
               | e2 :: e2s -> insert_let (g env e2) (fun x -> bind (xs @ [x]) e2s) in
             bind [] e2s) (* left-to-right evaluation *)
     | Ast_t.Get (e1, e2) ->
-      begin match g env e1 with
-        | _, Type_t.App(Type_t.Array, [t]) as g_e1 ->
+      let (_, t) as g_e1 = g env e1 in
+      begin match t.desc with
+        | Type_t.App(Type_t.Array, [t]) ->
           insert_let g_e1 (fun x -> insert_let (g env e2)
                               (fun y -> Exp (Get(x, y), t)))
         | _ -> assert false
       end
     | Ast_t.Put (e1, e2, e3) ->
       triple_of_insert_lets e1 e2 e3
-        (fun x y z -> Exp (Put (x, y, z), Type.app_unit))
+        (fun x y z -> Exp (Put (x, y, z), Type.app_unit loc))
     | Ast_t.Perform _ -> failwith "not implemented"
     | Ast_t.Bind _ -> failwith "not implemented"
     | Ast_t.Return _ -> failwith "not implemented"

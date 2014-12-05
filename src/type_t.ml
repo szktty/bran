@@ -1,4 +1,6 @@
-type t =
+type t = desc Locating.t
+
+and desc =
   | Var of tyvar
   | Field of t * t (* レコードの型 * フィールドの型 *)
   | App of tycon * t list
