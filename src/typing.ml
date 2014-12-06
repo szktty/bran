@@ -6,8 +6,17 @@ open Locating
 open Base
 
 exception Unify of Type_t.t * Type_t.t
+exception Topdef_error of (Id.t * Type_t.t) * Type_t.t * Type_t.t
 exception Error of expr Locating.t * Type_t.t * Type_t.t
     
+(* experimental: for type inference error message *)
+let topdefs = ref []
+
+let add_topdef x t = topdefs := (x, t) :: !topdefs
+
+let find_topdef_opt t =
+  List.find_opt (fun (_, t') -> t.loc = t'.loc) !topdefs
+
 let rec subst ({ Env.tycons = tycons } as env) tyvars reached t =
   Log.debug "# Typing.subst %s\n" (Type.to_string t);
   let rec subst' reached ty = 
@@ -73,7 +82,15 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
     | Type_t.App(Type_t.Int, xs), Type_t.App(Type_t.Int, ys) 
     | Type_t.App(Type_t.String, xs), Type_t.App(Type_t.String, ys) 
     | Type_t.App(Type_t.Tuple, xs), Type_t.App(Type_t.Tuple, ys) 
-    | Type_t.App(Type_t.Arrow, xs), Type_t.App(Type_t.Arrow, ys) -> List.iter2 unify' xs ys
+    | Type_t.App(Type_t.Arrow, xs), Type_t.App(Type_t.Arrow, ys) ->
+      List.iter2
+        (fun x y ->
+           try unify' x y with
+           | Unify (t1, t2) ->
+             match find_topdef_opt ty1 with
+             | None -> raise (Unify (t1, t2))
+             | Some (x, t) -> raise (Topdef_error ((x, t), t1, t2)))
+        xs ys
     | Type_t.App(Type_t.Record(x, fs), xs), Type_t.App(Type_t.Record(y, fs'), ys) when fs = fs' -> List.iter2 unify' xs ys
     | Type_t.App(Type_t.Variant(x, constrs), xs), Type_t.App(Type_t.Variant(y, constrs'), ys) when x = y -> 
       List.iter2 (fun (_, ts) (_, ts') ->
@@ -673,6 +690,7 @@ let f defs =
           let et' = f' { env with Env.venv = M.add_list yts (M.add x ty_f' env.Env.venv) } (et, ty_r) in
           unify env ty_f ty_f';
           let t'' = (generalize env ty_f') in
+          add_topdef x t'';
           { env with Env.venv = M.add x t'' venv }, 
           RecDef({ name = (x, t''); 
                    args = yts;

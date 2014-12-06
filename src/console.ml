@@ -42,6 +42,24 @@ let print_error fpath loc msg =
   Log.error "%s\n" msg;
   exit 1
 
+let bprint_type_error oc fpath t1 t2 =
+  let open Printf in
+  let print_type oc t =
+    let (sl1, sc1, el1, ec1) = Location.values1 t.Locating.loc in
+    let lc = sprintf "(%d:%d-%d:%d)" sl1 sc1 el1 ec1 in
+    let name = Type.name t in
+    bprintf oc "    %s    %s"
+      (lc ^ (String.make (String.length lc mod 4) ' '))
+      (name ^ (String.make (String.length name mod 4) ' '))
+  in
+  print_type oc t2;
+  bprintf oc "    <- actual type\n\n";
+  bprint_text_of_loc oc fpath t2.loc 4;
+  bprintf oc "\n";
+  print_type oc t1;
+  bprintf oc "    <- expected type\n\n";
+  bprint_text_of_loc oc fpath t1.loc 4
+
 let print_exc fpath e =
   let open Printf in
   match e with
@@ -56,23 +74,15 @@ let print_exc fpath e =
   | Ast_t.Unbound_module_error (loc, x) ->
     print_error fpath loc ("Unbound module `" ^ x ^ "'")
   | Typing.Error (e, t1, t2) ->
-    let print_type oc t =
-      let (sl1, sc1, el1, ec1) = Location.values1 t.Locating.loc in
-      let lc = sprintf "(%d:%d-%d:%d)" sl1 sc1 el1 ec1 in
-      let name = Type.name t in
-      bprintf oc "    %s    %s"
-        (lc ^ (String.make (String.length lc mod 4) ' '))
-        (name ^ (String.make (String.length name mod 4) ' '))
-    in
-    let buf = Buffer.create 16 in
-    bprintf buf "Type mismatch: This expression has type `%s', but the expression was expected of type `%s'\n"
-      (Type.name t2) (Type.name t1);
-    print_type buf t2;
-    bprintf buf "    <- actual type\n\n";
-    bprint_text_of_loc buf fpath t2.loc 4;
-    bprintf buf "\n";
-    print_type buf t1;
-    bprintf buf "    <- expected type\n\n";
-    bprint_text_of_loc buf fpath t1.loc 4;
-    print_error fpath e.loc (Buffer.contents buf)
+    let oc = Buffer.create 16 in
+    bprintf oc "Type mismatch: This expression has type `%s', but the expression was expected of type `%s'\n\n"
+    (Type.name t2) (Type.name t1);
+  bprint_type_error oc fpath t1 t2;
+    print_error fpath e.loc (Buffer.contents oc)
+  | Typing.Topdef_error ((x, t), t1, t2) ->
+    let oc = Buffer.create 16 in
+    bprintf oc "Type mismatch: The argument of function `%s':(%s) should be `%s' instead of `%s'\n\n"
+      x (Type.to_ocaml t) (Type.to_ocaml t1) (Type.to_ocaml t2);
+    bprint_type_error oc fpath t1 t2;
+    print_error fpath t2.loc (Buffer.contents oc)
   | e -> raise e
