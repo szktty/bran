@@ -162,6 +162,7 @@ FILES[] =
 	closure_t
 	compiler
 	config
+	console
 	emit
 	env
 	erlang
