@@ -5,3 +5,5 @@ val register : Module.t -> unit
 val mem : Id.t -> bool
 val find_opt : Id.t -> Module.t option
 val find : Id.t -> Module.t
+
+val find_type_opt : Binding.t -> Type_t.t option

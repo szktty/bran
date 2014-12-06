@@ -14,3 +14,13 @@ let find x =
   | Some m -> m
 
 let mem x = find_opt x <> None
+
+let find_type_opt (path, base) =
+  match begin
+    match path with
+    | [] -> find_opt "Pervasives"
+    | [x] -> find_opt x
+    | _ -> None (* not yet support *)
+  end with
+  | None -> None
+  | Some m -> Module.find_val_opt m base

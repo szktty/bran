@@ -21,6 +21,8 @@ let () =
      ("-v", Arg.Unit (fun () -> Config.verbose := true), "print verbose messages");
      ("-V", Arg.Unit (fun () -> printf "%s\n" Version.version),
       "print version and exit");
+     ("-print-type", Arg.String (fun v -> Config.print_type := Some v),
+      "(for debug)");
     ]
     (fun s -> files := !files @ [s])
     (sprintf "Usage: %s [options] file" Sys.argv.(0));

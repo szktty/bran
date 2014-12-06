@@ -148,7 +148,7 @@ let rec name t =
   | App(String, []) -> "string"
   | App(Atom, []) -> "atom"
   | App(Bitstring, []) -> "bitstring"
-  | App(Arrow, ts) -> "fun_of_" ^ (String.concat_map "_" name ts)
+  | App(Arrow, ts) -> "(" ^ (String.concat_map " -> " name ts) ^ ")"
   | App(Tuple, ts) -> "tuple_of_" ^ (String.concat_map "_" name ts)
   | App(Array, ts) -> "array_of_" ^ (String.concat_map "_" name ts)
   | App(Module x, []) -> x
