@@ -172,14 +172,14 @@ rule token = parse
 | "rec"
     { REC (to_loc lexbuf) }
 | "def"
-    { if lexbuf.lex_start_p.pos_bol = 0 then
+    { if (start_pos lexbuf).col = 0 then
         TOPDEF (to_loc lexbuf)
       else
         DEF (to_loc lexbuf)
     }
 | "external" { EXTERNAL (to_loc lexbuf) }
 | "var"
-    { if lexbuf.lex_start_p.pos_bol = 0 then
+    { if (start_pos lexbuf).col = 0 then
         TOPVAR (to_loc lexbuf)
       else
         VAR (to_loc lexbuf)
