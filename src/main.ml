@@ -41,10 +41,29 @@ let () =
   List.iter
     (fun fpath ->
        try
-         match Filename.split_extension fpath with
-         | (_, ".br") -> ignore & Compiler.compile_file fpath
-         | (_, ".bri") -> ignore & Sig.load_file fpath
-         | (_, ext) -> Log.error "Unknown file extension %s\n" ext
+         begin
+           begin match Filename.split_extension fpath with
+           | (_, ".br") -> ignore & Compiler.compile_file fpath
+           | (_, ".bri") -> ignore & Sig.load_file fpath
+           | (_, ext) -> Log.error "Unknown file extension %s\n" ext
+           end;
+
+           (* debug: -print-type *)
+           match !Config.print_type with
+           | None -> ()
+           | Some name ->
+             let name' =
+               match String.index_opt name '.' with
+               | None -> (String.capitalize & Utils.module_name fpath) ^ "." ^ name
+               | Some _ -> name
+             in
+             try begin
+               match Library.find_type_opt & Binding.of_string name' with
+               | None -> Spotlib.Exn.failwithf "Value `%s' is not found" name'
+               | Some t -> Printf.printf "%s" (Type.to_ocaml t)
+             end with
+             | Binding.Invalid_path -> failwith "Invalid binding path"
+         end
        with
        | e -> Console.print_exc fpath e)
     !files
