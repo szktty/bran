@@ -1,4 +1,5 @@
 include Spotlib.Base
+include Xbase
 
 module String = struct
   include String

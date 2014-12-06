@@ -57,7 +57,7 @@ let rec occur x t =
   | Type_t.App(_, ts) -> List.exists (occur x) ts
   | Type_t.Poly(_, t) -> occur x t
   | Type_t.Meta{ contents = Some(t) } -> occur x t
-  | Type_t.Meta(y) -> x == y
+  | Type_t.Meta(y) -> phys_equal x y
       
 let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、メタ型変数への代入をする. 成功したら () を返す. (caml2html: typing_unify) *)
   Log.debug "# Typing.unify: %s (%s) with %s (%s)\n"
@@ -109,7 +109,7 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
       unify' t1 t2
     | Type_t.Meta{ contents = Some(t1') }, _ -> unify' t1' t2
     | _, Type_t.Meta{ contents = Some(t2') } -> unify' t1 t2'
-    | Type_t.Meta(x), Type_t.Meta(y) when x == y -> ()
+    | Type_t.Meta(x), Type_t.Meta(y) when phys_equal x y -> ()
     | Type_t.Meta(x), _ ->
       if occur x t2 then
         raise (Unify(t1, t2))
@@ -150,7 +150,7 @@ let generalize { Env.venv = venv; tycons = tycons } ty =
     | Type_t.App(_, ts) -> List.exists (exists v) ts
     | Type_t.Poly(_, t) -> exists v t
     | Type_t.Meta{ contents = Some(t') } -> exists v t'
-    | Type_t.Meta(x) when v == x -> true
+    | Type_t.Meta(x) when phys_equal v x -> true
     | _ -> false
   in
   let rec metavars vs t = 

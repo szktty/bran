@@ -129,7 +129,7 @@ let rec equal t1 t2 =
   | Field(_, x), Field(_, y) -> equal x y
   | Meta{ contents = Some(t1') }, _ -> equal t1' t2
   | Meta(x), Meta{ contents = Some(t2') } -> equal t1 t2'
-  | Meta(x), Meta(y) when x == y -> true
+  | Meta(x), Meta(y) when phys_equal x y -> true
   | Meta(x), t2 -> assert false (* inpossible after Typing.f *)
   | _, Meta(y) -> equal t2 t1
   | _, _ -> false
