@@ -6,36 +6,46 @@ open X
 
 exception Error of Location.t * string
 
+let curr = ref { pos_fname = ""; pos_lnum = 0; pos_bol = 0; pos_cnum = 0 }
+
 let next_line lexbuf =
   let pos = lexbuf.lex_curr_p in
-  lexbuf.lex_curr_p <-
-    { pos with pos_bol = 0;
-               pos_lnum = pos.pos_lnum + 1
-    }
+  curr := { pos with pos_bol = lexbuf.lex_curr_pos;
+                     pos_lnum = pos.pos_lnum + 1 }
 
 let next_line_in_spaces lexbuf s =
-  let f pos (s, nl) =
-    let len = String.length s in
-    match nl with
-    | "" -> { pos with pos_bol = pos.pos_bol + len }
-    | _ -> { pos with pos_bol = 0;
-                      pos_lnum = pos.pos_lnum + 1 }
+  let (_, pos) =
+    List.fold_left
+      (fun (cnum, pos) (s, nl) ->
+         let cnum' = cnum + String.length s + String.length nl in
+         (cnum',
+          begin match nl with
+            | "" -> pos
+            | _ -> { pos with pos_bol = cnum';
+                              pos_lnum = pos.pos_lnum + 1 }
+          end))
+      (lexbuf.lex_curr_pos - String.length s, !curr) & String.lines s
   in
-  lexbuf.lex_curr_p <- List.fold_left f lexbuf.lex_curr_p & String.lines s
-
-let revise_pos pos lexbuf =
-  Position.of_lexing_pos
-    { pos with pos_lnum = pos.pos_lnum - 1;
-               pos_bol = pos.pos_cnum - lexbuf.lex_curr_p.pos_bol }
+  curr := pos
 
 let start_pos lexbuf =
-  revise_pos (lexeme_start_p lexbuf) lexbuf
+  let pos = lexeme_start_p lexbuf in
+  Position.of_lexing_pos
+    { pos with pos_lnum = !curr.pos_lnum;
+               pos_bol = pos.pos_cnum - !curr.pos_bol;
+               pos_cnum = pos.pos_cnum }
 
 let end_pos lexbuf =
-  revise_pos (lexeme_end_p lexbuf) lexbuf
+  let pos = lexeme_end_p lexbuf in
+  Position.of_lexing_pos
+    { pos with pos_lnum = !curr.pos_lnum;
+               pos_bol = pos.pos_cnum - !curr.pos_bol - 1;
+               pos_cnum = pos.pos_cnum }
 
 let to_loc lexbuf =
-  Location.create (start_pos lexbuf) (end_pos lexbuf)
+    let l = Location.create (start_pos lexbuf) (end_pos lexbuf) in
+    (* Printf.printf "# Lexer: %s: \"%s\"\n" (Location.to_string l) (lexeme lexbuf); *)
+    l
 
 let to_word lexbuf =
   Locating.create (to_loc lexbuf) (lexeme lexbuf)
@@ -80,8 +90,8 @@ let comment = [^ '\r' '\n']*
 
 
 rule token = parse
-| blank+ as s
-    { next_line_in_spaces lexbuf s; token lexbuf }
+| blank+
+    { token lexbuf }
 | nl+ as s
     { next_line_in_spaces lexbuf s; NL (to_loc lexbuf) }
 | (nl* blank* '#' comment (nl blank* '#' comment)*) as s
