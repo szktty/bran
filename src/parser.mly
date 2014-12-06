@@ -5,7 +5,19 @@ open Ast_t
 open Locating
 open X
 
-let add_type x = (x, Type_t.Meta(Type.newmetavar ()))
+let meta_type () = Type_t.Meta (Type.newmetavar ())
+
+let add_type loc x =
+  (x, create loc & meta_type ())
+
+let add_type_loc x =
+  add_type x.loc x.desc
+
+let ast loc x =
+  create loc & add_type loc x
+
+let ast_on start end_ x =
+  ast (Location.union start end_) x
 
 let constr_args = function
   | { Locating.desc = (Tuple(xs), _) } -> xs
@@ -15,19 +27,18 @@ let constr_pattern_args = function
   | { Locating.desc = PtTuple(xs) } -> xs
   | x -> [x]
 
-let range_from_list es desc =
-  range (List.hd es).loc (List.last es).loc desc
+let loc_of_list es =
+  Location.union (List.hd es).loc (List.last es).loc
 
 let combine e1 e2 =
-  (add_type
-     (LetVar((Id.gentmp (Type.prefix Type.app_unit),
-              Type.app_unit), e1, e2)))
+  let typ = Type.app_unit e1.loc in
+  ast_on e1.loc e2.loc
+    (LetVar ((Id.gentmp (Type.prefix typ), typ), e1, e2))
 
 let rev_combine_list = function
-  | [] -> create Location.zero (Unit, Type.app_unit)
+  | [] -> create Location.zero (Unit, Type.app_unit Location.zero)
   | init :: stmts ->
-    List.fold_left (fun s1 s2 -> range s2.loc s1.loc & combine s2 s1)
-      init stmts
+    List.fold_left (fun s1 s2 -> combine s2 s1) init stmts
 
 %}
 
@@ -160,39 +171,39 @@ rev_definitions:
       { $2 :: $1 }
 
 definition:
-| TOPVAR IDENT EQUAL nl_opt expr
-    { range $1 $5.loc (VarDef(add_type $2.desc, $5)) }
-| TOPDEF fundef mutual_fundefs_opt
+    | TOPVAR IDENT EQUAL nl_opt expr
+      { range $1 $5.loc (VarDef (add_type_loc $2, $5)) }
+    | TOPDEF fundef mutual_fundefs_opt
     (* TODO: mutual *)
-    { create $1 (RecDef $2) }
-| TOPDEF REC fundef mutual_fundefs_opt
+      { create $1 (RecDef $2) }
+    | TOPDEF REC fundef mutual_fundefs_opt
     (* TODO: mutual *)
-    { create $1 (RecDef $3) }
-| TYPE typedef 
-    { create $1 $2 }
-| AND typedef
+      { create $1 (RecDef $3) }
+    | TYPE typedef 
+      { create $1 $2 }
+    | AND typedef
     (* TODO: mutual *)
-    { create $1 $2 }
-| EXCEPTION UIDENT
+      { create $1 $2 }
+    | EXCEPTION UIDENT
     (* TODO *)
-    { create $1 Nop }
-| EXCEPTION UIDENT OF type_expr
+      { create $1 Nop }
+    | EXCEPTION UIDENT OF type_expr
     (* TODO *)
-    { create $1 Nop }
-| EXCEPTION UIDENT EQUAL constr
+      { create $1 Nop }
+    | EXCEPTION UIDENT EQUAL constr
     (* TODO *)
-    { create $1 Nop }
-| TOPDEF sigdef
-    { create $1 (SigDef $2) }
-| TOPVAR sigdef
+      { create $1 Nop }
+    | TOPDEF sigdef
+      { create $1 (SigDef $2) }
+    | TOPVAR sigdef
     (* TODO *)
-    { create $1 (SigDef $2) }
-| EXTERNAL ext_sigdef
-    { create $1 (SigDef $2) }
-| NL
-    { create $1 Nop }
-| error
-    { raise (Syntax_error (Location.create
+      { create $1 (SigDef $2) }
+    | EXTERNAL ext_sigdef
+      { create $1 (SigDef $2) }
+    | NL
+      { create $1 Nop }
+    | error
+      { raise (Syntax_error (Location.create
                              (Position.of_lexing_pos $startpos)
                              (Position.of_lexing_pos $endpos), None)) }
 
@@ -225,29 +236,29 @@ primary:
     | LPAREN expr RPAREN
       { $2 }
     | LPAREN RPAREN
-      { range $1 $2 (add_type Unit) }
+      { ast_on $1 $2 Unit }
     | BOOL
-      { create $1.loc (add_type (Bool $1.desc)) }
+      { ast $1.loc (Bool $1.desc) }
     | INT
-      { create $1.loc (add_type (Int $1.desc)) }
+      { ast $1.loc (Int $1.desc) }
     | FLOAT
-      { create $1.loc (add_type (Float $1.desc)) }
+      { ast $1.loc (Float $1.desc) }
     | CHAR
-      { create $1.loc (add_type (Char $1.desc)) }
+      { ast $1.loc (Char $1.desc) }
     | STRING
-      { create $1.loc (add_type (String $1.desc)) }
+      { ast $1.loc (String $1.desc) }
     | ATOM
-      { create $1.loc (add_type (Atom $1.desc)) }
+      { ast $1.loc (Atom $1.desc) }
     | UIDENT
-      { create $1.loc (add_type (Constr($1.desc, []))) }
+      { ast $1.loc (Constr($1.desc, [])) }
     | LBRACK list_ RBRACK
       { List.fold_right (fun x xs ->
-            create x.loc (add_type (Constr("Cons", [x; xs]))))
-            $2 (create $3 (add_type (Constr("Nil", [])))) }
+            ast x.loc (Constr("Cons", [x; xs])))
+            $2 (ast $3 (Constr("Nil", []))) }
     | LBRACK PIPE list_ PIPE RBRACK
-      { range $1 $5 (add_type (Array $3)) }
+      { ast_on $1 $5 (Array $3) }
     | LESS_LESS bitstring GREATER_GREATER
-      { range $1 $3 & add_type (Bitstring $2) }
+      { ast_on $1 $3 (Bitstring $2) }
 
 binding:
     | value_name
@@ -258,7 +269,7 @@ binding:
 
 value_name:
     | IDENT
-      { create $1.loc (add_type (Var $1.desc)) }
+      { ast $1.loc (Var $1.desc) }
 
 module_path:
     | rev_module_path
@@ -277,134 +288,136 @@ field_expr:
 
 array_expr:
     | primary DOT LPAREN expr RPAREN
-      { range $1.loc $5 (add_type (Get ($1, $4))) }
+      { ast_on $1.loc $5 (Get ($1, $4)) }
 
-expr: /* 一般の式 (caml2html: parser_expr) */
-| simple_expr %prec prec_simple_expr
-    { $1 }
-| NOT expr %prec prec_app
-    { range $1 $2.loc (add_type (Not($2))) }
-| MINUS expr %prec prec_unary_minus
-    { range $1 $2.loc (add_type (Neg($2))) }
-| expr PLUS expr
-    { range $1.loc $3.loc (add_type (Add($1, $3))) }
-| expr MINUS expr
-    { range $1.loc $3.loc (add_type (Sub($1, $3))) }
-| expr AST expr
-    { range $1.loc $3.loc (add_type (Mul($1, $3))) }
-| expr SLASH expr
-    { range $1.loc $3.loc (add_type (Div($1, $3))) }
-| expr MOD expr
+expr:
+    | simple_expr
+      %prec prec_simple_expr
+      { $1 }
+    | NOT expr
+      %prec prec_app
+      { ast_on $1 $2.loc (Not $2) }
+    | MINUS expr
+      %prec prec_unary_minus
+      { ast_on $1 $2.loc (Neg $2) }
+    | expr PLUS expr
+      { ast_on $1.loc $3.loc (Add ($1, $3)) }
+    | expr MINUS expr
+      { ast_on $1.loc $3.loc (Sub($1, $3)) }
+    | expr AST expr
+      { ast_on $1.loc $3.loc (Mul($1, $3)) }
+    | expr SLASH expr
+      { ast_on $1.loc $3.loc (Div($1, $3)) }
+    | expr MOD expr
     (* TODO *)
-    { range $1.loc $3.loc (add_type (Div($1, $3))) }
-| expr PLUS_DOT expr
+      { ast_on $1.loc $3.loc (Div($1, $3)) }
+    | expr PLUS_DOT expr
     (* TODO: FAdd *)
-    { range $1.loc $3.loc (add_type (Add($1, $3))) }
-| expr MINUS_DOT expr
+      { ast_on $1.loc $3.loc (Add($1, $3)) }
+    | expr MINUS_DOT expr
     (* TODO: FSub *)
-    { range $1.loc $3.loc (add_type (Sub($1, $3))) }
-| expr AST_DOT expr
+      { ast_on $1.loc $3.loc (Sub($1, $3)) }
+    | expr AST_DOT expr
     (* TODO: FMul *)
-    { range $1.loc $3.loc (add_type (Mul($1, $3))) }
-| expr SLASH_DOT expr
+      { ast_on $1.loc $3.loc (Mul($1, $3)) }
+    | expr SLASH_DOT expr
     (* TODO: FDiv *)
-    { range $1.loc $3.loc (add_type (Div($1, $3))) }
-| expr UARROW expr
-    { range $1.loc $3.loc (add_type (Concat($1, $3))) }
-| expr CONS expr
-    { range $1.loc $3.loc (add_type (Constr("Cons", [$1; $3]))) }
-| expr LAND expr
-    { range $1.loc $3.loc (add_type (And($1, $3))) }
-| expr LOR expr
-    { range $1.loc $3.loc (add_type (Or($1, $3))) }
-| expr EQUAL expr
-    { range $1.loc $3.loc (add_type (Eq($1, $3))) }
-| expr LESS_GREATER expr
-    { let body = range $1.loc $3.loc (add_type (Eq ($1, $3))) in
-      range $1.loc $3.loc (add_type (Not body)) }
-| expr LESS expr
-    { let body = range $1.loc $3.loc (add_type (LE ($3, $1))) in
-      range $1.loc $3.loc (add_type (Not body)) }
-| expr GREATER expr
-    { let body = range $1.loc $3.loc (add_type (LE ($1, $3))) in
-      range $1.loc $3.loc (add_type (Not body)) }
-| expr LESS_EQUAL expr
-    { range $1.loc $3.loc (add_type (LE($1, $3))) }
-| expr GREATER_EQUAL expr
-    { range $1.loc $3.loc (add_type (LE($3, $1))) }
-| expr DOL expr
-    { range $1.loc $3.loc (add_type (App($1, [$3]))) }
-| tuple
-    { range_from_list $1 (add_type (Tuple $1)) }
-| if_exp { $1 }
-| expr actual_args
-    %prec prec_app
-    { range $1.loc (List.last $2).loc (add_type (App($1, $2))) }
-| expr actual_args do_block
-    { range $1.loc (List.last $2).loc (add_type (App($1, $2))) }
-| UIDENT simple_expr
-    { range $1.loc $2.loc (add_type (Constr($1.desc, constr_args $2))) }
-| LBRACE fields RBRACE
-    { range $1 $3 (add_type (Record($2))) }
-| VAR IDENT EQUAL nl_opt expr term block
-    { range $1 $7.loc (add_type (LetVar(add_type $2.desc, $5, $7))) }
-| DEF fundef IN nl_opt block
-    { range $1 $5.loc (add_type (LetRec($2, $5))) }
-| DEF REC fundef IN nl_opt block
-    { range $1 $6.loc (add_type (LetRec($3, $6))) }
-| MATCH nl_opt expr WITH nl_opt pattern_matching END
-    { create $1 (add_type (Match($3, $6))) }
-| field_expr LARROW expr
+      { ast_on $1.loc $3.loc (Div($1, $3)) }
+    | expr UARROW expr
+      { ast_on $1.loc $3.loc (Concat($1, $3)) }
+    | expr CONS expr
+      { ast_on $1.loc $3.loc (Constr("Cons", [$1; $3])) }
+    | expr LAND expr
+      { ast_on $1.loc $3.loc (And($1, $3)) }
+    | expr LOR expr
+      { ast_on $1.loc $3.loc (Or($1, $3)) }
+    | expr EQUAL expr
+      { ast_on $1.loc $3.loc (Eq($1, $3)) }
+    | expr LESS_GREATER expr
+      { let body = ast_on $1.loc $3.loc (Eq ($1, $3)) in
+        ast_on $1.loc $3.loc (Not body) }
+    | expr LESS expr
+      { let body = ast_on $1.loc $3.loc (LE ($3, $1)) in
+        ast_on $1.loc $3.loc (Not body) }
+    | expr GREATER expr
+      { let body = ast_on $1.loc $3.loc (LE ($1, $3)) in
+        ast_on $1.loc $3.loc (Not body) }
+    | expr LESS_EQUAL expr
+      { ast_on $1.loc $3.loc (LE($1, $3)) }
+    | expr GREATER_EQUAL expr
+      { ast_on $1.loc $3.loc (LE($3, $1)) }
+    | expr DOL expr
+      { ast_on $1.loc $3.loc (App($1, [$3])) }
+    | tuple   { $1 }
+    | if_exp   { $1 }
+    | expr actual_args
+      %prec prec_app
+      { ast_on $1.loc (List.last $2).loc (App($1, $2)) }
+    | expr actual_args do_block
+      { ast_on $1.loc $3.loc (App($1, $2)) }
+    | UIDENT simple_expr
+      { ast_on $1.loc $2.loc (Constr($1.desc, constr_args $2)) }
+    | LBRACE fields RBRACE
+      { ast_on $1 $3 (Record($2)) }
+    | VAR IDENT EQUAL nl_opt expr term block
+      { ast_on $1 $7.loc (LetVar(add_type_loc $2, $5, $7)) }
+    | DEF fundef IN nl_opt block
+      { ast_on $1 $5.loc (LetRec($2, $5)) }
+    | DEF REC fundef IN nl_opt block
+      { ast_on $1 $6.loc (LetRec($3, $6)) }
+    | MATCH nl_opt expr WITH nl_opt pattern_matching END
+      { ast_on $1 $7 (Match ($3, $6)) }
+    | field_expr LARROW expr
     (* TODO *)
-    { $1 }
-| array_expr LARROW expr
-    { match $1.desc with
-      | Get (e1, e2), _ ->
-        range $1.loc $3.loc (add_type (Put (e1, e2, $3)))
-      | _ -> assert false
+      { $1 }
+    | array_expr LARROW expr
+      { match $1.desc with
+          | Get (e1, e2), _ ->
+        ast_on $1.loc $3.loc (Put (e1, e2, $3))
+          | _ -> assert false
     }
-| PERFORM nl_opt block END
-    { range $1 $4 (add_type (Perform $3))  }
-| IDENT LARROW expr
-    { range $1.loc $3.loc (add_type (Bind (add_type $1.desc, $3))) }
-| RETURN expr %prec prec_app
-    { range $1 $2.loc (add_type (Return $2)) }
-| FOR IDENT EQUAL expr TO nl_opt expr nl_opt DO nl_opt block END
+    | PERFORM nl_opt block END
+      { ast_on $1 $4 (Perform $3)  }
+    | IDENT LARROW expr
+      { ast_on $1.loc $3.loc (Bind (add_type_loc $1, $3)) }
+    | RETURN expr %prec prec_app
+      { ast_on $1 $2.loc (Return $2) }
+    | FOR IDENT EQUAL expr TO nl_opt expr nl_opt DO nl_opt block END
     (* TODO *)
-    { range $1 $12 (add_type Unit) }
-| TRY nl_opt expr nl_opt WITH nl_opt pattern_matching END
+      { ast_on $1 $12 Unit }
+    | TRY nl_opt expr nl_opt WITH nl_opt pattern_matching END
     (* TODO *)
-    { range $1 $8 (add_type Unit) }
-| RAISE expr %prec prec_app
+      { ast_on $1 $8 Unit }
+    | RAISE expr %prec prec_app
     (* TODO *)
-    { range $1 $2.loc (add_type Unit) }
-| FUN nl_opt rev_formal_args RARROW nl_opt block END
+      { ast_on $1 $2.loc Unit }
+    | FUN nl_opt rev_formal_args RARROW nl_opt block END
     (* TODO *)
-    { range $1 $7 (add_type Unit) }
-| FUN nl_opt pattern_matching END
+      { ast_on $1 $7 Unit }
+    | FUN nl_opt pattern_matching END
     (* TODO *)
-    { range $1 $1 (add_type Unit) }
-| ASSERT expr %prec prec_app
+      { ast_on $1 $1 Unit }
+    | ASSERT expr %prec prec_app
     (* TODO *)
-    { range $1 $2.loc (add_type Unit) }
-| IDENT ASSIGN nl_opt expr
+      { ast_on $1 $2.loc Unit }
+    | IDENT ASSIGN nl_opt expr
     (* TODO *)
-    { range $1.loc $4.loc (add_type Unit) }
-| field_expr ASSIGN nl_opt expr
+      { ast_on $1.loc $4.loc Unit }
+    | field_expr ASSIGN nl_opt expr
     (* TODO *)
-    { range $1.loc $4.loc (add_type Unit) }
-| RECEIVE nl_opt pattern_matching END
+      { ast_on $1.loc $4.loc Unit }
+    | RECEIVE nl_opt pattern_matching END
     (* TODO *)
-    { range $1 $4 (add_type Unit) }
+      { ast_on $1 $4 Unit }
 
 if_exp:
     | IF expr THEN nl_opt multi_exps_block END
-      { let other = create $1 (Unit, Type.app_unit) in
-        range $1 $6 (add_type (If($2, $5, other))) }
+      { let other = create $1 (Unit, Type.app_unit $1) in
+        ast_on $1 $6 (If ($2, $5, other)) }
     | IF expr THEN nl_opt multi_exps_block ELSE nl_opt multi_exps_block END
-      { range $1 $9 (add_type (If($2, $5, $8))) }
+      { ast_on $1 $9 (If ($2, $5, $8)) }
     | IF expr THEN nl_opt simple_expr nl_opt ELSE nl_opt simple_expr
-      { range $1 $9.loc (add_type (If($2, $5, $9))) }
+      { ast_on $1 $9.loc (If ($2, $5, $9)) }
 
 do_block:
     | DO nl_opt rev_formal_args RARROW nl_opt block END
@@ -441,7 +454,7 @@ term:
 
 tuple:
     | LPAREN rev_tuple RPAREN
-      { List.rev $2 }
+      { ast_on $1 $3 (Tuple (List.rev $2)) }
 
 rev_tuple:
     | rev_tuple COMMA expr
@@ -454,22 +467,23 @@ fundef:
       (* convert argument patterns to pattern matching *)
       { let (_, args, body) = List.fold_left
           (fun (i, args, e1) (ptn, t) ->
-             let x = ("_t" ^ string_of_int i) in
-             let e2 = add_type & Match ((create ptn.loc (Var x, t)), [(ptn, e1)]) in
-             (i + 1, (x, t) :: args, range ptn.loc e1.loc e2)
-          ) (0, [], $5) $2
+             let x = "_t" ^ string_of_int i in
+             let e2 = Match (create ptn.loc (Var x, t), [(ptn, e1)]) in
+             (i + 1, (x, t) :: args, ast_on ptn.loc e1.loc e2))
+          (0, [], $5) $2
         in
-        { name = add_type $1.desc; args = args; body = body } }
-;
+        { name = add_type_loc $1; args = args; body = body } }
 
 rev_formal_args:
     | formal_arg
-      { [add_type $1.desc] }
+      { [add_type_loc $1] }
     | rev_formal_args formal_arg
-      { add_type $2.desc :: $1 }
+      { add_type_loc $2 :: $1 }
 
 formal_arg:
-    | pattern %prec prec_pattern { create Location.zero $1 (* TODO: location *) }
+    | pattern
+      %prec prec_pattern
+      { create Location.zero $1 (* TODO: location *) }
 
 actual_args:
 | actual_args simple_expr
@@ -512,7 +526,7 @@ pattern_matching_elt:
 
 pattern:
     | IDENT
-      { create $1.loc (PtVar($1.desc, Type_t.Meta(Type.newmetavar ()))) }
+      { create $1.loc (PtVar ($1.desc, create $1.loc & meta_type ())) }
     | LPAREN RPAREN
       { range $1 $2 PtUnit }
     | BOOL
@@ -614,7 +628,7 @@ type_expr:
     | simple_type_expr
       { $1 }
     | type_expr_tuple
-      { Type_t.App (Type_t.Tuple, $1) }
+      { create (loc_of_list $1) (Type_t.App (Type_t.Tuple, $1)) }
     | type_expr type_constr
       (* TODO *)
       { $1 }
@@ -624,15 +638,15 @@ type_expr:
 
 simple_type_expr:
     | QIDENT
-      { Type_t.Var($1.desc) }
+      { create $1.loc (Type_t.Var $1.desc) }
     | LPAREN type_expr RPAREN
       { $2 }
     | type_constr
       (* TODO *)
-      { Type_t.App(Type_t.Unit, []) }
+      { Type.app_unit Location.zero }
     | LPAREN type_exprs_comma RPAREN type_constr
       (* TODO *)
-      { Type_t.App(Type_t.Unit, []) }
+      { Type.app_unit Location.zero }
 
 type_expr_tuple:
     | simple_type_expr rev_type_expr_tuple_tail
