@@ -88,6 +88,8 @@ let rec ocaml_of t =
   | App(Unit, []) -> "unit"
   | App(Bool, []) -> "bool"
   | App(Int, []) -> "int"
+  | App(Float, []) -> "float"
+  | App(Atom, []) -> "atom"
   | App(String, []) -> "string"
   | App(Arrow, xs) -> String.concat " -> " (List.map ocaml_of xs)
   | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map ocaml_of xs)) ^ ")"
@@ -99,6 +101,8 @@ let rec ocaml_of t =
   | Poly(xs, t) -> ocaml_of t      
   | App(TyFun([], t), []) -> ocaml_of t
   | App(NameTycon(x, _), ts) -> (String.concat " * " (List.map ocaml_of ts)) ^ " " ^ x
+  | Meta { contents = None } -> "[?]"
+  | Meta { contents = Some t } -> ocaml_of t
   | _ -> Printf.eprintf "%s : not implemented yet." (string_of_t t); assert false
 
 and ocaml_of_tycon = function
