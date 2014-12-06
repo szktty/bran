@@ -1,5 +1,4 @@
-open Spotlib.Base
-open X
+open Base
 
 (* entry point *)
 let () =

@@ -3,8 +3,7 @@
 open Ast_t
 open Ast
 open Locating
-open Spotlib.Base
-open X
+open Base
 
 exception Unify of Type_t.t * Type_t.t
 exception Error of expr Locating.t * Type_t.t * Type_t.t

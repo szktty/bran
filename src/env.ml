@@ -1,5 +1,4 @@
-open Spotlib.Base
-open X
+open Base
 
 type t = {
   venv   : Type_t.t M.t;

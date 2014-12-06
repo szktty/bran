@@ -1,8 +1,7 @@
 {
 open Lexing
 open Parser
-open Spotlib.Base
-open X
+open Base
 
 exception Error of Location.t * string
 

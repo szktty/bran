@@ -1,7 +1,6 @@
-open Spotlib.Base
+open Base
 open Printf
 open Erlang_t
-open X
 
 let gen_var s = "_" ^ s
 

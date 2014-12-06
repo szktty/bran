@@ -1,9 +1,8 @@
 %{
 (* parserが利用する変数、関数、型などの定義 *)
-open Spotlib.Base
+open Base
 open Ast_t
 open Locating
-open X
 
 let meta_type () = Type_t.Meta (Type.newmetavar ())
 

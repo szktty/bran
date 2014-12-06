@@ -155,6 +155,7 @@ FILES[] =
 	alpha
 	ast
 	ast_t
+	base
 	#beta
 	binding
 	bitstring
@@ -188,7 +189,6 @@ FILES[] =
 	typing
 	utils
 	version
-	x
 	xlist
 	xstring
 

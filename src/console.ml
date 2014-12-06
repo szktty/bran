@@ -1,5 +1,4 @@
-open Spotlib.Base
-open X
+open Base
 
 let bprint_text_of_loc oc fpath loc indent =
   let open Printf in

@@ -1,5 +1,4 @@
-open Spotlib.Base
-open X
+open Base
 
 let filepath_of_string path = 
   let open Spotlib.Filepath in

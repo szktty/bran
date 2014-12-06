@@ -3,7 +3,7 @@
 
 open KNormal_t
 open Locating
-open X
+open Base
 
 let rec ocaml_of_pattern =
   function

@@ -1,3 +1,5 @@
+include Spotlib.Base
+
 module String = struct
   include String
   include Spotlib.Xstring

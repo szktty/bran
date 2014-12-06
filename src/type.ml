@@ -1,7 +1,6 @@
-open Spotlib.Base
+open Base
 open Type_t
 open Locating
-open X
 
 type t = Type_t.t
 

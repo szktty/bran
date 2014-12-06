@@ -1,6 +1,5 @@
-open Spotlib.Base
+open Base
 open Closure_t
-open X
 
 let rec string_of_pattern =
   function

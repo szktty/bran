@@ -1,5 +1,5 @@
 open Ast_t
-open X
+open Base
 
 let rec string_of_pattern { Locating.desc = p } =
   match p with
