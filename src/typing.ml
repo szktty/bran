@@ -218,7 +218,7 @@ let instantiate env ty =
 let rec deref_tycon ({ Env.tycons = tycons } as env) reached tycon =
   match tycon with
   | Type_t.Int | Type_t.Bool | Type_t.Char | Type_t.String | Type_t.Atom
-  | Type_t.Bitstring | Type_t.Unit | Type_t.Float
+  | Type_t.Bitstring | Type_t.Binary | Type_t.Unit | Type_t.Float
   | Type_t.Arrow | Type_t.Tuple | Type_t.Array | Type_t.Module _ as tycon ->
     tycon, reached
   | Type_t.Record(x, _) as tycon -> tycon, M.add x tycon reached

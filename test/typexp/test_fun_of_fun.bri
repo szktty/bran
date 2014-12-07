@@ -1,0 +1,2 @@
+var dummy : (char -> bool) -> string -> string list
+

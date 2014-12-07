@@ -255,8 +255,8 @@ rule token = parse
     { IDENT (to_word lexbuf) }
 | uident
     { UIDENT (to_word lexbuf) }
-| ''' ident
-    { QIDENT (to_word lexbuf) }
+| ''' (ident as s)
+    { QIDENT (Locating.create (to_loc lexbuf) s) }
 | _
     { raise (Error (to_loc lexbuf,
         Printf.sprintf "unknown token '%s'" (lexeme lexbuf))) }

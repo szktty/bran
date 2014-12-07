@@ -16,6 +16,7 @@ and tycon =
   | String
   | Atom
   | Bitstring
+  | Binary
   | Arrow
   | Tuple
   | Array

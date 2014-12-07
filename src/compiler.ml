@@ -84,18 +84,7 @@ let compile_file' fpath defs =
     else
       compile_erl_file outfpath;
     Unix.unlink outfpath
-  end;
-
-  match !Config.print_type with
-  | None -> ()
-  | Some name ->
-    try begin
-      match Library.find_type_opt & Binding.of_string name with
-      | None -> raise (Error (Printf.sprintf "Value `%s' is not found" name))
-      | Some t -> Printf.printf "%s" (Type.to_ocaml t)
-    end with
-    | Binding.Invalid_path ->
-      raise (Error "Invalid binding path")
+  end
 
 let compile_file fpath =
   let defs = Utils.parse_file fpath in

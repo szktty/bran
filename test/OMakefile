@@ -11,6 +11,7 @@ FILES[] =
 	sealing
 	xounit
 	test_parsing
+	test_typexp
 	test_literals
 
 PROGRAM = run

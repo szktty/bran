@@ -3,6 +3,7 @@ open OUnit2
 
 let suites = [
   Test_parsing.suite;
+  Test_typexp.suite;
   Test_literals.suite;
 ]
 

@@ -7,3 +7,5 @@ val find_opt : Id.t -> Module.t option
 val find : Id.t -> Module.t
 
 val find_type_opt : Binding.t -> Type_t.t option
+
+val builtin_tycons : (Id.t * Type_t.tycon) list

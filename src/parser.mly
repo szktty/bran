@@ -627,29 +627,26 @@ type_expr:
     | simple_type_expr
       { $1 }
     | type_expr_tuple
-      { create (loc_of_list $1) (Type_t.App (Type_t.Tuple, $1)) }
+      { $1 }
     | type_expr type_constr
-      (* TODO *)
-      { $1 }
+      { range $1.loc $2.loc & Type_t.App ($2.desc, [$1]) }
     | type_expr RARROW type_expr
-      (* TODO *)
-      { $1 }
+      { range $1.loc $3.loc & Type_t.App (Type_t.Arrow, [$1; $3]) }
 
 simple_type_expr:
     | QIDENT
       { create $1.loc (Type_t.Var $1.desc) }
     | LPAREN type_expr RPAREN
-      { $2 }
+      { range $1 $3 & Type_t.App (Type_t.Tuple, [$2]) }
     | type_constr
-      (* TODO *)
-      { Type.app_unit Location.zero }
-    | LPAREN type_exprs_comma RPAREN type_constr
-      (* TODO *)
-      { Type.app_unit Location.zero }
+      { Type.void_app $1.loc $1.desc }
+    | LPAREN type_constr_params RPAREN type_constr
+      { range $1 $4.loc & Type_t.App ($4.desc, $2) }
 
 type_expr_tuple:
     | simple_type_expr rev_type_expr_tuple_tail
-      { List.rev ($1 :: $2) }
+      { let es = $1 :: List.rev $2 in
+        create (loc_of_list es) (Type_t.App (Type_t.Tuple, es)) }
 
 rev_type_expr_tuple_tail:
     | AST simple_type_expr
@@ -658,20 +655,30 @@ rev_type_expr_tuple_tail:
       { $3 :: $1 }
 
 type_constr:
-    | constr { $1 }
+    | constr
+      { create $1.loc & Type_t.NameTycon (Binding.to_string $1.desc, ref None) }
 
 constr:
-    | IDENT {}
-    | UIDENT DOT IDENT {}
+    | IDENT
+      { create $1.loc & Binding.of_list [$1.desc] }
+    | rev_constr_path IDENT
+      { let es = concat & List.rev ($2 :: $1) in
+        create es.loc & Binding.of_list es.desc }
 
-type_exprs_comma:
-    | rev_type_exprs_comma { List.rev $1 }
+rev_constr_path:
+    | UIDENT
+      { [$1] }
+    | rev_constr_path DOT UIDENT
+      { $3 :: $1 }
 
-rev_type_exprs_comma:
+type_constr_params:
+    | rev_type_constr_params { List.rev $1 }
+
+rev_type_constr_params:
     | type_expr
       %prec prec_type_expr_tuple
       { [$1] }
-    | rev_type_exprs_comma COMMA type_expr
+    | rev_type_constr_params COMMA type_expr
       { $3 :: $1 }
 
 constr_decls:
