@@ -85,7 +85,7 @@ and prefix_of_tycon =
       
 let rec ocaml_of t =
   match t.desc with
-  | Var _ -> "'a"
+  | Var x -> "'" ^ x
   | Field(_, t) -> ocaml_of t
   | App(Unit, []) -> "unit"
   | App(Bool, []) -> "bool"
