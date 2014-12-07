@@ -23,6 +23,7 @@ let test_files = [
   ("int", "test_int.br");
   ("float", "test_float.br");
   ("bitstring", "test_bitstring.br");
+  ("binary", "test_binary.br");
 ]
 
 let suite =
