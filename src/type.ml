@@ -90,6 +90,7 @@ let rec ocaml_of t =
   | App(Int, []) -> "int"
   | App(Float, []) -> "float"
   | App(Atom, []) -> "atom"
+  | App(Char, []) -> "char"
   | App(String, []) -> "string"
   | App(Arrow, xs) -> String.concat " -> " (List.map ocaml_of xs)
   | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map ocaml_of xs)) ^ ")"

@@ -30,6 +30,7 @@ let parsing_files = [
   ("string", "string.bri", "string");
   ("bitstring", "bitstring.bri", "bitstring");
   ("binary", "binary.bri", "binary");
+  ("tuple", "tuple.bri", "int * int");
 
   (* type functions *)
   ("list", "list.bri", "string list");
