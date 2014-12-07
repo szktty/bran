@@ -106,7 +106,10 @@ let rec ocaml_of t =
   | Poly(xs, t) -> ocaml_of t      
   | App(TyFun([], t), []) -> ocaml_of t
   | App(NameTycon(x, _), []) -> x
-  | App(NameTycon(x, _), ts) -> (String.concat " * " (List.map ocaml_of ts)) ^ " " ^ x
+  | App(NameTycon(x, _), [t]) ->
+    Printf.sprintf "%s %s" (ocaml_of t) x
+  | App(NameTycon(x, _), ts) ->
+    Printf.sprintf "(%s) %s" (String.concat ", " (List.map ocaml_of ts)) x
   | Meta { contents = None } -> "[?]"
   | Meta { contents = Some t } -> ocaml_of t
   | _ -> Printf.eprintf "%s : not implemented yet." (string_of_t t); assert false

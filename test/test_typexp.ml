@@ -32,8 +32,9 @@ let parsing_files = [
   ("binary", "test_binary.bri", "binary");
   ("tuple", "test_tuple.bri", "(int * int)");
 
-  (* type functions *)
+  (* compound types *)
   ("list", "test_list.bri", "string list");
+  ("constr_params", "test_constr_params.bri", "(int, float) t");
 
   (* functions *)
   ("fun_of_unit_unit", "test_fun_of_unit_unit.bri", "unit -> unit");

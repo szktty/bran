@@ -640,9 +640,8 @@ simple_type_expr:
       { range $1 $3 & Type_t.App (Type_t.Tuple, [$2]) }
     | type_constr
       { Type.void_app $1.loc $1.desc }
-    | LPAREN type_exprs_comma RPAREN type_constr
-      (* TODO *)
-      { Type.app_unit Location.zero }
+    | LPAREN type_constr_params RPAREN type_constr
+      { range $1 $4.loc & Type_t.App ($4.desc, $2) }
 
 type_expr_tuple:
     | simple_type_expr rev_type_expr_tuple_tail
@@ -672,14 +671,14 @@ rev_constr_path:
     | rev_constr_path DOT UIDENT
       { $3 :: $1 }
 
-type_exprs_comma:
-    | rev_type_exprs_comma { List.rev $1 }
+type_constr_params:
+    | rev_type_constr_params { List.rev $1 }
 
-rev_type_exprs_comma:
+rev_type_constr_params:
     | type_expr
       %prec prec_type_expr_tuple
       { [$1] }
-    | rev_type_exprs_comma COMMA type_expr
+    | rev_type_constr_params COMMA type_expr
       { $3 :: $1 }
 
 constr_decls:
