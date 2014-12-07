@@ -25,11 +25,7 @@ type(T) when is_map(T) -> map;
 type(T) when is_pid(T) -> pid;
 type(T) when is_port(T) -> port;
 type(T) when is_tuple(T) -> tuple;
-type(T) when is_list(T) ->
-    case lists:all(fun is_char/1, T) of
-      true -> string;
-      false -> list
-    end;
+type(T) when is_list(T) -> list;
 type(_) -> error.
 
 simple_test(Mod) ->

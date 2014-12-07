@@ -81,6 +81,20 @@ let rec gen_exp oc = function
   | Concat (e1, e2) -> gen_bin_exp oc e1 "++" e2
   | Eq (e1, e2) -> gen_bin_exp oc e1 "=:=" e2
   | LE (e1, e2) -> gen_bin_exp oc e1 "=<" e2
+  | Constr (x, _) when x = Type.nil_id ->
+    (* list *)
+    bprintf oc "[]"
+  | Constr (x, es) when x = Type.cons_id ->
+    (* list *)
+    begin match es with
+    | [e; next] ->
+        bprintf oc "[";
+        gen_exp oc e;
+        bprintf oc "|";
+        gen_exp oc next;
+        bprintf oc "]"
+    | _ -> assert false
+    end
   | AppDir (Id.L x, es) ->
     bprintf oc "%s(" x;
     iter_with_sep oc ", " (gen_exp oc) es;

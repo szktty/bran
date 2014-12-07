@@ -39,6 +39,7 @@ let rec gen_exp (e, t) =
   | Closure_t.LE (e1, e2) -> LE (gen_exp e1, gen_exp e2)
   | Closure_t.Var x -> Var x
   | Closure_t.AppDir (x, ets) -> AppDir (x, List.map gen_exp ets)
+  | Closure_t.Constr (x, ets) -> Constr (x, List.map gen_exp ets)
   | _ -> failwith & "not implemented: " ^ (Closure.string_of_expr e)
 
 let rec gen_ptn = function

@@ -27,6 +27,7 @@ type t =
   | Eq of t * t
   | LE of t * t
   | Var of Id.t
+  | Constr of Id.t * t list
   | AppCls of t * t list
   | AppDir of Id.l * t list
   | If of (t * t) list
