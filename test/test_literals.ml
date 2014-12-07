@@ -24,6 +24,7 @@ let test_files = [
   ("float", "test_float.br");
   ("bitstring", "test_bitstring.br");
   ("binary", "test_binary.br");
+  ("tuple", "test_tuple.br");
 ]
 
 let suite =
