@@ -629,8 +629,7 @@ type_expr:
     | type_expr_tuple
       { $1 }
     | type_expr type_constr
-      (* TODO *)
-      { $1 }
+      { range $1.loc $2.loc & Type_t.App ($2.desc, [$1]) }
     | type_expr RARROW type_expr
       { range $1.loc $3.loc & Type_t.App (Type_t.Arrow, [$1; $3]) }
 
