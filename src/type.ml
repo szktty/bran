@@ -92,6 +92,7 @@ let rec ocaml_of t =
   | App(Atom, []) -> "atom"
   | App(Char, []) -> "char"
   | App(String, []) -> "string"
+  | App(Bitstring, []) -> "bitstring"
   | App(Arrow, xs) -> String.concat " -> " (List.map ocaml_of xs)
   | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map ocaml_of xs)) ^ ")"
   | App(Module x, []) -> "module type " ^ x

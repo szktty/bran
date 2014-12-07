@@ -627,7 +627,7 @@ type_expr:
     | simple_type_expr
       { $1 }
     | type_expr_tuple
-      { create (loc_of_list $1) (Type_t.App (Type_t.Tuple, $1)) }
+      { $1 }
     | type_expr type_constr
       (* TODO *)
       { $1 }
@@ -648,7 +648,8 @@ simple_type_expr:
 
 type_expr_tuple:
     | simple_type_expr rev_type_expr_tuple_tail
-      { List.rev ($1 :: $2) }
+      { let es = $1 :: List.rev $2 in
+        create (loc_of_list es) (Type_t.App (Type_t.Tuple, es)) }
 
 rev_type_expr_tuple_tail:
     | AST simple_type_expr
