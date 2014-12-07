@@ -671,6 +671,7 @@ constr:
         | "atom" -> Type.void_app $1.loc Type_t.Atom
         | "string" -> Type.void_app $1.loc Type_t.String
         | "bitstring" -> Type.void_app $1.loc Type_t.Bitstring
+        | "binary" -> Type.void_app $1.loc Type_t.Binary
         | _ -> (* TODO *) Type.app_unit Location.zero
       }
     | UIDENT DOT IDENT

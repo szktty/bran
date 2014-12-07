@@ -52,4 +52,4 @@ let suite =
         name >:: (test_parsing ("../typexp/" ^ file) expect))
       parsing_files
   in
-  "parsing" >: (test_list auto)
+  "typexp" >: (test_list auto)

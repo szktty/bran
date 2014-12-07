@@ -33,6 +33,7 @@ let predeftypes = [
     ("string", tyfun_app Type_t.String);
     ("atom", tyfun_app Type_t.Atom);
     ("bitstring", tyfun_app Type_t.Bitstring);
+    ("binary", tyfun_app Type_t.Binary);
     ("list", tyfun ["a"]
        (void_app
           (Type_t.Variant ("list", [(Type.nil_id, []);

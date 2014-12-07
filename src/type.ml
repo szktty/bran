@@ -33,6 +33,7 @@ and string_of_tycon reached =
   | String -> "String"
   | Atom -> "Atom"
   | Bitstring -> "Bitstring"
+  | Binary -> "Binary"
   | Arrow -> "Arrow"
   | Tuple -> "Tuple"
   | Array -> "Array"
@@ -72,6 +73,7 @@ and prefix_of_tycon =
   | String -> "s"
   | Atom -> "a"
   | Bitstring -> "bit"
+  | Binary-> "bin"
   | Arrow -> "pfn"
   | Tuple -> "t"
   | Array -> "y"
@@ -93,6 +95,7 @@ let rec ocaml_of t =
   | App(Char, []) -> "char"
   | App(String, []) -> "string"
   | App(Bitstring, []) -> "bitstring"
+  | App(Binary, []) -> "binary"
   | App(Arrow, xs) -> String.concat " -> " (List.map ocaml_of xs)
   | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map ocaml_of xs)) ^ ")"
   | App(Module x, []) -> "module type " ^ x
@@ -150,6 +153,7 @@ let rec name t =
   | App(String, []) -> "string"
   | App(Atom, []) -> "atom"
   | App(Bitstring, []) -> "bitstring"
+  | App(Binary, []) -> "binary"
   | App(Arrow, ts) -> "(" ^ (String.concat_map " -> " name ts) ^ ")"
   | App(Tuple, ts) -> "tuple_of_" ^ (String.concat_map "_" name ts)
   | App(Array, ts) -> "array_of_" ^ (String.concat_map "_" name ts)
@@ -159,8 +163,8 @@ let rec name t =
   | Field(_, t) -> name t
   | App(TyFun([], t), []) -> name t
   | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _) | App(Float, _)
-  | App(Char, _) | App(String, _) | App(Atom, _) | App(Bitstring, _) | App(TyFun _, _)
-  | App(Module _, _) ->
+  | App(Char, _) | App(String, _) | App(Atom, _) | App(Bitstring, _)
+  | App(Binary, _) | App(TyFun _, _) | App(Module _, _) ->
     assert false (* impossible *)
   | App(NameTycon(x, _), _) -> x
 
