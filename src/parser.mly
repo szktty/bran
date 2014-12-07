@@ -637,7 +637,7 @@ simple_type_expr:
     | QIDENT
       { create $1.loc (Type_t.Var $1.desc) }
     | LPAREN type_expr RPAREN
-      { $2 }
+      { range $1 $3 & Type_t.App (Type_t.Tuple, [$2]) }
     | type_constr
       { Type.void_app $1.loc $1.desc }
     | LPAREN type_exprs_comma RPAREN type_constr
