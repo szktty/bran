@@ -641,7 +641,7 @@ simple_type_expr:
     | LPAREN type_expr RPAREN
       { $2 }
     | type_constr
-      { $1 }
+      { Type.void_app $1.loc $1.desc }
     | LPAREN type_exprs_comma RPAREN type_constr
       (* TODO *)
       { Type.app_unit Location.zero }
@@ -658,25 +658,21 @@ rev_type_expr_tuple_tail:
       { $3 :: $1 }
 
 type_constr:
-    | constr { $1 }
+    | constr
+      { create $1.loc & Type_t.NameTycon (Binding.to_string $1.desc, ref None) }
 
 constr:
     | IDENT
-      { match $1.desc with
-        | "unit" -> Type.app_unit $1.loc
-        | "bool" -> Type.void_app $1.loc Type_t.Bool
-        | "int" -> Type.void_app $1.loc Type_t.Int
-        | "float" -> Type.void_app $1.loc Type_t.Float
-        | "char" -> Type.void_app $1.loc Type_t.Char
-        | "atom" -> Type.void_app $1.loc Type_t.Atom
-        | "string" -> Type.void_app $1.loc Type_t.String
-        | "bitstring" -> Type.void_app $1.loc Type_t.Bitstring
-        | "binary" -> Type.void_app $1.loc Type_t.Binary
-        | _ -> (* TODO *) Type.app_unit Location.zero
-      }
-    | UIDENT DOT IDENT
-      (* TODO *)
-      { Type.app_unit Location.zero }
+      { create $1.loc & Binding.of_list [$1.desc] }
+    | rev_constr_path IDENT
+      { let es = concat & List.rev ($2 :: $1) in
+        create es.loc & Binding.of_list es.desc }
+
+rev_constr_path:
+    | UIDENT
+      { [$1] }
+    | rev_constr_path DOT UIDENT
+      { $3 :: $1 }
 
 type_exprs_comma:
     | rev_type_exprs_comma { List.rev $1 }

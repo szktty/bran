@@ -17,3 +17,10 @@ let of_string s =
   | es ->
     let es' = List.rev es in
     List.rev & List.tl es', List.hd es'
+
+let to_string = function
+  | [], x -> x
+  | xs, x -> (String.concat "." xs) ^ "." ^ x
+
+let to_list (xs, x) =
+  List.rev & x :: List.rev xs

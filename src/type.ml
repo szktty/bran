@@ -105,6 +105,7 @@ let rec ocaml_of t =
   | App(Variant(x, _), ys) -> x
   | Poly(xs, t) -> ocaml_of t      
   | App(TyFun([], t), []) -> ocaml_of t
+  | App(NameTycon(x, _), []) -> x
   | App(NameTycon(x, _), ts) -> (String.concat " * " (List.map ocaml_of ts)) ^ " " ^ x
   | Meta { contents = None } -> "[?]"
   | Meta { contents = Some t } -> ocaml_of t

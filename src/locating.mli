@@ -10,3 +10,5 @@ val loc : 'a t -> Location.t
 val desc : 'a t -> 'a
 
 val set : 'a t -> 'b -> 'b t
+
+val concat : 'a t list -> 'a list t
