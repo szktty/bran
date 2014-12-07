@@ -14,6 +14,7 @@ let test_compile file test_ctx =
        Program.simple_test env beam)
 
 let test_files = [
+  ("unit", "test_unit.br");
   ("true", "test_true.br");
   ("false", "test_false.br");
   ("char", "test_char.br");

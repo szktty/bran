@@ -11,7 +11,7 @@ let literal_of_float f =
 
 let true_atom = Atom "true"
 let false_atom = Atom "false"
-let ok_atom = Atom "ok"
+(* let ok_atom = Atom "ok" *)
 
 let rec gen_exp (e, t) =
   Log.debug "# Erlang.gen_exp %s\n" (Closure.string_of_expr e);
@@ -54,7 +54,7 @@ let rec gen_ptn = function
 and gen_term (term, t) =
   Log.debug "# Erlang.gen_term %s\n" (Closure.string_of_term term);
   match term with
-  | Closure_t.Unit -> ok_atom
+  | Closure_t.Unit -> Tuple []
   | Closure_t.Exp e -> gen_exp e
   | Closure_t.If (e, tr1, tr2) ->
     If [(gen_exp e, gen_term tr1); (true_atom, gen_term tr2)]
