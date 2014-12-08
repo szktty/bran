@@ -13,6 +13,7 @@ FILES[] =
 	test_parsing
 	test_typexp
 	test_literals
+	test_typdef
 
 PROGRAM = run
 

@@ -47,7 +47,7 @@ let load_file fpath =
   let fpath' = find_lib_file fpath in
   Log.verbose "#    load %s\n" fpath';
   if Sys.file_exists fpath' then begin
-    load (String.capitalize & Utils.module_name fpath) & Utils.parse_file fpath';
+    load (Utils.module_name fpath) & Utils.parse_file fpath';
     true
   end else
     false

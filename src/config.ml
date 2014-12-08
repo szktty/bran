@@ -14,4 +14,5 @@ let get_env_libs () =
   try Some (Sys.getenv "BRAN_LIBS")
   with Not_found -> None
 
+let print_tycon = ref None
 let print_type = ref None

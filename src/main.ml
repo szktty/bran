@@ -21,8 +21,10 @@ let () =
      ("-v", Arg.Unit (fun () -> Config.verbose := true), "print verbose messages");
      ("-V", Arg.Unit (fun () -> printf "%s\n" Version.version),
       "print version and exit");
+     ("-print-tycon", Arg.String (fun v -> Config.print_tycon := Some v),
+      "print type constructor of type (for debug)");
      ("-print-type", Arg.String (fun v -> Config.print_type := Some v),
-      "(for debug)");
+      "print type of value (for debug)");
     ]
     (fun s -> files := !files @ [s])
     (sprintf "Usage: %s [options] file" Sys.argv.(0));
@@ -48,21 +50,29 @@ let () =
            | (_, ext) -> Log.error "Unknown file extension %s\n" ext
            end;
 
-           (* debug: -print-type *)
-           match !Config.print_type with
-           | None -> ()
-           | Some name ->
-             let name' =
+           let print_type f p name =
+             let binding name =
+               Binding.of_string &
                match String.index_opt name '.' with
-               | None -> (String.capitalize & Utils.module_name fpath) ^ "." ^ name
+               | None -> (Utils.module_name fpath) ^ "." ^ name
                | Some _ -> name
              in
-             try begin
-               match Library.find_type_opt & Binding.of_string name' with
-               | None -> Spotlib.Exn.failwithf "Value `%s' is not found" name'
-               | Some t -> Printf.printf "%s" (Type.to_ocaml t)
-             end with
-             | Binding.Invalid_path -> failwith "Invalid binding path"
+             match name with
+             | None -> ()
+             | Some name ->
+               try begin
+                 match f & binding name with
+                 | None -> Spotlib.Exn.failwithf "Value `%s' is not found" name
+                 | Some t -> Printf.printf "%s" (p t)
+               end with
+               | Binding.Invalid_path -> failwith "Invalid binding path"
+           in
+
+           (* debug: -print-tycon *)
+           print_type Library.find_tycon_opt Type.Tycon.to_ocaml !Config.print_tycon;
+
+           (* debug: -print-type *)
+           print_type Library.find_type_opt Type.to_ocaml !Config.print_type
          end
        with
        | e -> Console.print_exc fpath e)

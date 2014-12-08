@@ -10,10 +10,13 @@ let dirbase path =
 let replace_ext path ext =
     (fst & Filename.split_extension path) ^ ext
 
-let module_name path =
+let base path =
   match dirbase path with
-  | _, None -> failwith "mod_name"
+  | _, None -> failwith "base"
   | _, Some base -> fst & Filename.split_extension base
+
+let module_name path =
+  String.capitalize & base path
 
 let erl_path path =
   match dirbase path with

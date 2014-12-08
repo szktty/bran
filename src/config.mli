@@ -13,4 +13,5 @@ val gen_sig_file : bool ref
 val get_env_libs : unit -> string option
 
 (* debug *)
+val print_tycon : string option ref
 val print_type : string option ref

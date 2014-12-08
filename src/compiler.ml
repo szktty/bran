@@ -64,16 +64,42 @@ let gen_sig_file fpath defs =
   Log.verbose "%s\n" s;
   Printf.fprintf oc "%s\n" s
 
+let parse defs =
+  let open Ast_t in
+  let open Locating in
+  let parse' (tycons, vals, exts) def =
+    match def.desc with
+    | TypeDef (x, tycon) ->
+      Log.debug "# type %s : %s\n" x (Type.Tycon.to_string tycon);
+      ((x, tycon) :: tycons, vals, exts)
+    | VarDef ((x, t), _) ->
+      Log.debug "# var %s : %s\n" x (Type.to_string t);
+      (tycons, (x, t) :: vals, exts)
+        (*
+    | RecDef { name = (x, t); args = xts; body = body; }
+         *)
+    | SigDef _ ->
+      raise (Sig.Error (def.loc, "Signature definition only at .bri file"))
+    | _ -> (tycons, vals, exts)
+  in
+  List.fold_left parse' ([], [], []) defs
+
+let register name defs =
+  Log.verbose "# register module %s\n" name;
+  let (tycons, vals, exts) = parse defs in
+  Library.register { Module.name; typs = tycons; vals; exts }
+
 let compile_file' fpath defs =
   let typed = Typing.f defs in
   let prog = Erlang.f & Closure.f & Alpha.f & KNormal.f typed in
-  let mname = Utils.module_name fpath in
+  let mname = Utils.base fpath in
   let outbuf = Buffer.create 128 in
   Emit.f mname outbuf prog;
   let outfpath = Utils.erl_path fpath in
   let outchan = open_out outfpath in
   Buffer.output_buffer outchan outbuf;
   close_out outchan;
+  register (Utils.module_name fpath) typed;
 
   if !Config.gen_sig_file then
     gen_sig_file fpath typed;

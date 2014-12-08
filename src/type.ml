@@ -118,8 +118,10 @@ and ocaml_of_tycon = function
   | Unit -> "unit"
   | Bool -> "bool"
   | Int -> "int"
+  | Float -> "float"
   | String -> "string"
-  | t -> Printf.eprintf "%s : not implemented yet." (string_of_tycon t); assert false
+  | TyFun([], t) -> ocaml_of t
+  | t -> Printf.eprintf "%s : not implemented yet\n" (string_of_tycon t); assert false
 
 let to_string = string_of_t
 let to_ocaml = ocaml_of
