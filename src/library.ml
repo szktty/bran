@@ -60,6 +60,7 @@ let builtin_tycons = [
     ("bool", tyfun_app Type_t.Bool);
     ("int", tyfun_app Type_t.Int);
     ("float", tyfun_app Type_t.Float);
+    ("char", tyfun_app Type_t.Char);
     ("string", tyfun_app Type_t.String);
     ("atom", tyfun_app Type_t.Atom);
     ("bitstring", tyfun_app Type_t.Bitstring);

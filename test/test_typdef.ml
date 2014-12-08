@@ -21,7 +21,15 @@ let test_file file expect test_ctx =
 
 let test_files = [
   (* monomorphic types *)
+  ("unit", "test_unit.br", "unit");
+  ("bool", "test_bool.br", "bool");
   ("int", "test_int.br", "int");
+  ("float", "test_float.br", "float");
+  ("atom", "test_atom.br", "atom");
+  ("char", "test_char.br", "char");
+  ("string", "test_string.br", "string");
+  ("bitstring", "test_bitstring.br", "bitstring");
+  ("binary", "test_binary.br", "binary");
 
   (* polymorphic types *)
 ]

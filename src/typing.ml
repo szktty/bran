@@ -239,10 +239,20 @@ let rec deref_tycon ({ Env.tycons = tycons } as env) reached tycon =
       tycon, M.add x tycon reached
   | Type_t.NameTycon("int", { contents = None }) ->
     M.find "int" tycons, reached
+  | Type_t.NameTycon("float", { contents = None }) ->
+    M.find "float" tycons, reached
   | Type_t.NameTycon("bool", { contents = None }) ->
     M.find "bool" tycons, reached
+  | Type_t.NameTycon("char", { contents = None }) ->
+    M.find "char" tycons, reached
   | Type_t.NameTycon("string", { contents = None }) ->
     M.find "string" tycons, reached
+  | Type_t.NameTycon("bitstring", { contents = None }) ->
+    M.find "bitstring" tycons, reached
+  | Type_t.NameTycon("binary", { contents = None }) ->
+    M.find "binary" tycons, reached
+  | Type_t.NameTycon("atom", { contents = None }) ->
+    M.find "atom" tycons, reached
   | Type_t.NameTycon("unit", { contents = None }) ->
     M.find "unit" tycons, reached
   | Type_t.NameTycon(x, r) when M.mem x reached -> 
