@@ -21,7 +21,7 @@ let test_file file expect test_ctx =
 
 let test_files = [
   (* monomorphic types *)
-  ("simple", "test_simple.br", "int");
+  ("int", "test_int.br", "int");
 
   (* polymorphic types *)
 ]
