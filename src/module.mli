@@ -1,11 +1,11 @@
 type t = {
   name : Id.t;
-  typs : (Id.t * Type_t.tycon) list;
+  tycons : (Id.t * Type_t.tycon) list;
   vals : (Id.t * Type_t.t) list;
   exts : (Id.t * string) list;
 }
 
-val find_typ_opt : t -> Id.t -> Type_t.tycon option
+val find_tycon_opt : t -> Id.t -> Type_t.tycon option
 val find_val_opt : t -> Id.t -> Type_t.t option
 val find_val : t -> Id.t -> Type_t.t
 val find_ext_opt : t -> Id.t -> string option

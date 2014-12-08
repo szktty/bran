@@ -87,7 +87,7 @@ let parse defs =
 let register name defs =
   Log.verbose "# register module %s\n" name;
   let (tycons, vals, exts) = parse defs in
-  Library.register { Module.name; typs = tycons; vals; exts }
+  Library.register { Module.name; tycons; vals; exts }
 
 let compile_file' fpath defs =
   let typed = Typing.f defs in

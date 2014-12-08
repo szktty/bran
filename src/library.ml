@@ -23,7 +23,7 @@ let find_tycon_opt (path, base) =
     | _ -> assert false (* not yet support *)
   end with
   | None -> None
-  | Some m -> Module.find_typ_opt m base
+  | Some m -> Module.find_tycon_opt m base
 
 let find_type_opt (path, base) =
   match begin

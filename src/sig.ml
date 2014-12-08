@@ -38,8 +38,8 @@ let parse defs =
 
 let load name defs =
   Log.verbose "# begin loading module %s\n" name;
-  let (typs, vals, exts) = parse defs in
-  Library.register { Module.name; typs; vals; exts };
+  let (tycons, vals, exts) = parse defs in
+  Library.register { Module.name; tycons; vals; exts };
   Log.verbose "# end loading module %s\n" name
 
 let load_file fpath = 

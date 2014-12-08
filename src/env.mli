@@ -6,7 +6,7 @@ type t = {
 }
 
 val empty : t ref
-val add_typ : t -> M.key -> Type_t.tycon -> t
+val add_tycon : t -> M.key -> Type_t.tycon -> t
 val add_var : t -> M.key -> Type_t.t -> t
 val add_vars : t -> (M.key * Type_t.t) list -> t
 val find_var_opt : t -> M.key -> Type_t.t option

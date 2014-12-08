@@ -23,7 +23,7 @@ let () =
         tycons = M.add x t tycons;
         mods = mods }) !empty Library.builtin_tycons
     
-let add_typ env x t = { env with tycons = M.add x t env.tycons }
+let add_tycon env x t = { env with tycons = M.add x t env.tycons }
 let add_var env x t = { env with venv = M.add x t env.venv }
 let add_vars env xys = List.fold_left (fun env (x, y) -> add_var env x y) env xys
 let find_var { venv = venv } x = M.find x venv
@@ -38,7 +38,7 @@ let find_var_opt { venv = venv } x =
 
 let import env m =
   let fold f = List.fold_left (fun env (x, t) -> f env x t) in
-  let env' = fold add_typ env m.Module.typs in
+  let env' = fold add_tycon env m.Module.tycons in
   let env'' = fold add_var env' m.Module.vals in
   { env'' with mods = m :: env''.mods }
 

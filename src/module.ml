@@ -2,14 +2,14 @@ open Base
 
 type t = {
   name : Id.t;
-  typs : (Id.t * Type_t.tycon) list;
+  tycons : (Id.t * Type_t.tycon) list;
   vals : (Id.t * Type_t.t) list;
   exts : (Id.t * string) list;
 }
 
-let find_typ_opt m x =
+let find_tycon_opt m x =
   List.find_map_opt
-    (fun (ex, et) -> if x = ex then Some et else None) m.typs
+    (fun (ex, et) -> if x = ex then Some et else None) m.tycons
 
 let find_val_opt m x =
   List.find_map_opt
