@@ -75,9 +75,9 @@ let parse defs =
     | VarDef ((x, t), _) ->
       Log.debug "# var %s : %s\n" x (Type.to_string t);
       (tycons, (x, t) :: vals, exts)
-        (*
-    | RecDef { name = (x, t); args = xts; body = body; }
-         *)
+    | RecDef { name = (x, t) } ->
+      Log.debug "# def %s : %s\n" x (Type.to_string t);
+      (tycons, (x, t) :: vals, exts)
     | SigDef _ ->
       raise (Sig.Error (def.loc, "Signature definition only at .bri file"))
     | _ -> (tycons, vals, exts)
