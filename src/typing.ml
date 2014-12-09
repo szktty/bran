@@ -19,39 +19,43 @@ let find_topdef_opt t =
 
 let rec subst ({ Env.tycons = tycons } as env) tyvars reached t =
   Log.debug "# Typing.subst %s\n" (Type.to_string t);
-  let rec subst' reached ty = 
+  let rec subst' reached ty : Type_t.t M.t * Type_t.t =
     Log.debug "#    Typing.subst' %s\n" (Type.to_string ty);
+    let subst'_add x t = snd & subst' (S.add x reached) t in
     let with_loc = create ty.loc in
-    match ty.desc with
+    tyvars, (match ty.desc with
     | Type_t.Var(x) when M.mem x tyvars -> M.find x tyvars
     | Type_t.Var(x) -> with_loc (Type_t.Var x)
     | Type_t.Field(tr, t) ->
-      with_loc & Type_t.Field (subst' reached tr, subst' reached t)
+      with_loc & Type_t.Field (snd & subst' reached tr, snd & subst' reached t)
     | Type_t.App(Type_t.Record(x, fs), ys) ->
-      with_loc & Type_t.App(Type_t.Record(x, fs),
-                            List.map (subst' (S.add x reached)) ys)
+      with_loc & Type_t.App(Type_t.Record(x, fs), List.map (subst'_add x) ys)
     | Type_t.App(Type_t.Variant(x, constrs), ys) -> 
       let constrs' =
-        List.map (fun (c, ts) ->
-                    c, List.map (fun t -> subst' (S.add x reached) t) ts)
-          constrs
+        List.map (fun (c, ts) -> c, List.map (subst'_add x) ts) constrs
       in
       with_loc & Type_t.App(Type_t.Variant(x, constrs'),
-                            List.map (subst' (S.add x reached)) ys)
+                            List.map (subst'_add x ) ys)
+    | Type_t.App(Type_t.TyFun([], t), _) ->
+      snd & subst' reached t
     | Type_t.App(Type_t.TyFun(xs, t), ys) ->
-      subst' reached (subst env (M.add_list2 xs ys M.empty) reached t)
+      let tyvars', t' = (subst env (M.add_list2 xs ys M.empty) reached t) in
+      let _, t'' = subst' reached t' in
+      Log.debug "#        Instantiate: %s -> %s\n" (Type.to_string ty) (Type.to_string t'');
+      let xts = List.map (fun x -> x, M.find x tyvars') xs in
+      with_loc & Type_t.App (Type_t.Instance (xts, t'), ys)
     | Type_t.App(Type_t.NameTycon(x, _) as t, ys) when S.mem x reached ->
-      with_loc & Type_t.App(t, List.map (subst' reached) ys)
+      with_loc & Type_t.App(t, List.map (snd ** subst' reached) ys)
     | Type_t.App(Type_t.NameTycon(x, { contents = Some(tycon) }), ys) ->
-      subst' reached (with_loc & Type_t.App(tycon, ys))
+      snd & subst' reached (with_loc & Type_t.App(tycon, ys))
     | Type_t.App(Type_t.NameTycon(x, _), ys) ->
-      subst' reached (with_loc & Type_t.App(M.find x tycons, ys))
+      snd & subst' reached (with_loc & Type_t.App(M.find x tycons, ys))
     | Type_t.App(x, ys) ->
-      with_loc & Type_t.App(x, (List.map (subst' reached) ys))
-    | Type_t.Poly([], t) -> subst' reached t
+      with_loc & Type_t.App(x, (List.map (snd ** subst' reached) ys))
+    | Type_t.Poly([], t) -> snd & subst' reached t
     | Type_t.Poly(xs, t) -> assert false; (* impossible *)
-    | Type_t.Meta{ contents = Some(t) } -> subst' reached t
-    | Type_t.Meta{ contents = None } -> ty
+    | Type_t.Meta{ contents = Some(t) } -> snd & subst' reached t
+    | Type_t.Meta{ contents = None } -> ty)
   in
   subst' reached t
 
@@ -97,9 +101,9 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
           List.iter2 unify' ts ts') constrs constrs';
       List.iter2 unify' xs ys;
     | Type_t.App(Type_t.TyFun(xs, u), ys), _ ->
-      unify' (subst env (M.add_list2 xs ys M.empty) u) t2
+      unify' (snd & subst env (M.add_list2 xs ys M.empty) u) t2
     | _, Type_t.App(Type_t.TyFun(xs, u), ys) ->
-      unify' t1 (subst env (M.add_list2 xs ys M.empty) u)
+      unify' t1 (snd & subst env (M.add_list2 xs ys M.empty) u)
     | Type_t.App(Type_t.NameTycon(x, _), xs),
       Type_t.App(Type_t.NameTycon(y, _), ys) when x = y ->
       List.iter2 unify' xs ys
@@ -119,7 +123,7 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
                          (fun x -> create t1.loc & Type_t.Var(x)) xs)
                       M.empty
       in
-      unify' u1 (subst env reached u2)
+      unify' u1 (snd & subst env reached u2)
     | Type_t.Var(x), Type_t.Var(y) when x = y -> ()
     | Type_t.Field(rt1, t1), Type_t.Field(rt2, t2) ->
       unify' rt1 rt2;
@@ -136,7 +140,7 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
       end
     | _, Type_t.Meta(y) -> unify' t2 t1
     | _, _ -> 
-      Log.debug "unify failed.\n  t1 = %s\n  t2 = %s\n"
+      Log.debug "# Error: Unify failed:\n#    t1 = %s\n#    t2 = %s\n"
         (Type.to_string t1) (Type.to_string t2);
       raise (Unify(t1, t2)) in
   unify' ty1 ty2
@@ -203,7 +207,7 @@ let instantiate env ty =
   let t = 
     match ty.desc with
     | Type_t.Poly (xs, t) -> 
-      subst env (M.add_list
+      snd & subst env (M.add_list
                    (List.map
                       (fun x ->
                          (x, create t.loc & Type_t.Meta(Type.newmetavar ())))
@@ -219,7 +223,8 @@ let rec deref_tycon ({ Env.tycons = tycons } as env) reached tycon =
   match tycon with
   | Type_t.Int | Type_t.Bool | Type_t.Char | Type_t.String | Type_t.Atom
   | Type_t.Bitstring | Type_t.Binary | Type_t.Unit | Type_t.Float
-  | Type_t.Arrow | Type_t.Tuple | Type_t.Array | Type_t.Module _ as tycon ->
+  | Type_t.Arrow | Type_t.Tuple | Type_t.List | Type_t.Array
+  | Type_t.Module _ as tycon ->
     tycon, reached
   | Type_t.Record(x, _) as tycon -> tycon, M.add x tycon reached
   | Type_t.Variant(x, _) when M.mem x reached -> 
@@ -272,7 +277,10 @@ let rec deref_tycon ({ Env.tycons = tycons } as env) reached tycon =
   | Type_t.TyFun(xs, t) -> 
       let t', reached' = deref_type env reached t in
         Type_t.TyFun(xs, t'), reached'
-  
+  | Type_t.Instance (xts, t) ->
+    let t', reached' = deref_type env reached t in
+    Type_t.Instance (xts, t'), reached'
+
 and deref_type env reached t = (* 型変数を中身でおきかえる関数 (caml2html: typing_deref) *)
   let with_loc = create t.loc in
   match t.desc with
@@ -288,7 +296,7 @@ and deref_type env reached t = (* 型変数を中身でおきかえる関数 (ca
                         y' :: ys', reached)
         ([], reached) (List.rev ys)
     in
-    subst env M.empty (with_loc & Type_t.App(x', ys')), reached
+    snd & subst env M.empty (with_loc & Type_t.App(x', ys')), reached
   | Type_t.Poly(xs, t) -> 
     let t', reached' = deref_type env reached t in
     with_loc & Type_t.Poly(xs, t'), reached'
@@ -338,6 +346,7 @@ and deref_expr ({ Env.venv = venv } as env) = function
   | Record(xes) -> Record(List.map (fun (x, e) -> x, deref_typed_expr env e) xes)
   | Field(e, x) -> Field(deref_typed_expr env e, x)
   | Tuple(es) -> Tuple(List.map (deref_typed_expr env) es)
+  | List(es) -> List(List.map (deref_typed_expr env) es)
   | Array(es) -> Array(List.map (deref_typed_expr env) es)
   | Not(e) -> Not(deref_typed_expr env e)
   | And(e1, e2) -> And(deref_typed_expr env e1, deref_typed_expr env e2)
@@ -505,6 +514,15 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
             ([], []) (List.rev ets)
         in
         Tuple(ets'), with_loc & Type_t.App(Type_t.Tuple, ts')
+      | List(ets) ->
+        let ets', ts' =
+          List.fold_left
+            (fun (ets, ts) e ->
+               let e', t' = g env e in
+               (set e (e', t')) :: ets, t' :: ts)
+            ([], []) (List.rev ets)
+        in
+        List(ets'), with_loc & Type_t.App(Type_t.List, ts')
       | Array(ets) ->
         let ets', ts' =
           List.fold_left

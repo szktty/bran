@@ -251,9 +251,7 @@ primary:
     | UIDENT
       { ast $1.loc (Constr($1.desc, [])) }
     | LBRACK list_ RBRACK
-      { List.fold_right (fun x xs ->
-            ast x.loc (Constr("Cons", [x; xs])))
-            $2 (ast $3 (Constr("Nil", []))) }
+      { ast_on $1 $3 (List $2) }
     | LBRACK PIPE list_ PIPE RBRACK
       { ast_on $1 $5 (Array $3) }
     | LESS_LESS bitstring GREATER_GREATER

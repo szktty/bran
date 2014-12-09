@@ -25,6 +25,7 @@ let rec gen_exp (e, t) =
   | Closure_t.Atom s -> Atom s
   | Closure_t.Bitstring s -> Bitstring s
   | Closure_t.Tuple ets -> Tuple (List.map gen_exp ets)
+  | Closure_t.List ets -> List (List.map gen_exp ets)
   | Closure_t.Array ets -> Array (List.map gen_exp ets)
   | Closure_t.Not et -> Not (gen_exp et)
   | Closure_t.And (e1, e2) -> And (gen_exp e1, gen_exp e2)

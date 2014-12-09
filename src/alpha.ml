@@ -21,6 +21,7 @@ let rec h ids (e, t) =
     | Field(e, x) -> Field(h ids e, find x ids)
     | Module x -> Module x
     | Tuple(es) -> Tuple(List.map (h ids) es)
+    | List(es) -> List(List.map (h ids) es)
     | Array(es) -> Array(List.map (h ids) es)
     | Var(x) -> Var(find x ids)
     | Concat(e1, e2) -> Concat(h ids e1, h ids e2)

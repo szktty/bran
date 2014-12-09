@@ -9,7 +9,6 @@ val to_ocaml : t -> string
 val equal : t -> t -> bool
 
 val prefix : t -> Id.t
-val name : t -> Id.t
 
 val app : Location.t -> Type_t.tycon -> t list -> t (* App *)
 val void_app : Location.t -> Type_t.tycon -> t (* App (tycon, []) *)

@@ -14,6 +14,7 @@ and expr =
   | Bitstring of Bitstring.t
   | Record of (Id.t * t) list
   | Field of t * Id.t
+  | List of t list
   | Tuple of t list
   | Array of t list
   | Not of t

@@ -56,20 +56,14 @@ let tyfun_app t =
   void_tyfun & void_app t
 
 let builtin_tycons = [
-    ("unit", tyfun_app Type_t.Unit);
-    ("bool", tyfun_app Type_t.Bool);
-    ("int", tyfun_app Type_t.Int);
-    ("float", tyfun_app Type_t.Float);
-    ("char", tyfun_app Type_t.Char);
-    ("string", tyfun_app Type_t.String);
-    ("atom", tyfun_app Type_t.Atom);
-    ("bitstring", tyfun_app Type_t.Bitstring);
-    ("binary", tyfun_app Type_t.Binary);
-    ("list", tyfun ["a"]
-       (void_app
-          (Type_t.Variant ("list", [(Type.nil_id, []);
-                                    (Type.cons_id,
-                                     [predefloc (Type_t.Var "a");
-                                      app (Type_t.NameTycon("list", ref None))
-                                        [predefloc (Type_t.Var "a")]])]))));
+  ("unit", tyfun_app Type_t.Unit);
+  ("bool", tyfun_app Type_t.Bool);
+  ("int", tyfun_app Type_t.Int);
+  ("float", tyfun_app Type_t.Float);
+  ("char", tyfun_app Type_t.Char);
+  ("string", tyfun_app Type_t.String);
+  ("atom", tyfun_app Type_t.Atom);
+  ("bitstring", tyfun_app Type_t.Bitstring);
+  ("binary", tyfun_app Type_t.Binary);
+  ("list", tyfun ["a"] & app Type_t.List []);
 ]

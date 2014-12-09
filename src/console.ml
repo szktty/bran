@@ -47,7 +47,7 @@ let bprint_type_error oc fpath t1 t2 =
   let print_type oc t =
     let (sl1, sc1, el1, ec1) = Location.values1 t.Locating.loc in
     let lc = sprintf "(%d:%d-%d:%d)" sl1 sc1 el1 ec1 in
-    let name = Type.name t in
+    let name = Type.to_ocaml t in
     bprintf oc "    %s    %s"
       (lc ^ (String.make (String.length lc mod 4) ' '))
       (name ^ (String.make (String.length name mod 4) ' '))
@@ -76,7 +76,7 @@ let print_exc fpath e =
   | Typing.Error (e, t1, t2) ->
     let oc = Buffer.create 16 in
     bprintf oc "Type mismatch: This expression has type `%s', but the expression was expected of type `%s'\n\n"
-    (Type.name t2) (Type.name t1);
+      (Type.to_ocaml t2) (Type.to_ocaml t1);
   bprint_type_error oc fpath t1 t2;
     print_error fpath e.loc (Buffer.contents oc)
   | Typing.Topdef_error ((x, t), t1, t2) ->

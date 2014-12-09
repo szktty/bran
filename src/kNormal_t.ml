@@ -21,6 +21,7 @@ and expr =
   | Record of (Id.t * et) list
   | Field of et * Id.t
   | Module of Id.t
+  | List of et list
   | Tuple of et list
   | Array of et list
   | Not of et

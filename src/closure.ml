@@ -26,6 +26,7 @@ and string_of_expr =
   | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
   | Module x -> "module type " ^ x
   | Tuple(es) -> "(" ^ (String.concat_map ", " string_of_typed_expr es) ^ ")"
+  | List(es) -> "[" ^ (String.concat_map ", " string_of_typed_expr es) ^ "]"
   | Array(es) -> "[|" ^ (String.concat_map "; " string_of_typed_expr es) ^ "|]"
   | Not(e) -> "not " ^ (string_of_typed_expr e)
   | And(e1, e2) -> (string_of_typed_expr e1) ^ " && " ^ (string_of_typed_expr e2)
@@ -79,8 +80,8 @@ let rec fv_of_expr (e, _) =
   | Bool(_) | Int(_) | Float _ | Char _ | String _ | Atom _ | Bitstring _ | Module _ -> S.empty
   | Record(xes) -> List.fold_left (fun s (_, e) -> S.union s (fv_of_expr e)) S.empty xes
   | Field(e, _) -> fv_of_expr e
-  | Tuple(es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
-  | Array(es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
+  | Tuple(es) | List(es) | Array(es) ->
+    List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
   | Not(e) | Neg(e) -> fv_of_expr e
   | And(e1, e2) | Or(e1, e2) 
   | Add(e1, e2) | Sub(e1, e2) | Mul(e1, e2) | Div(e1, e2) | Concat(e1, e2)
@@ -157,6 +158,7 @@ let rec h env known (expr, ty) =
     | KNormal_t.Field(e, x) -> Field(h env known e, x)
     | KNormal_t.Module x -> Module x
     | KNormal_t.Tuple(es) -> Tuple(List.map (h env known) es)
+    | KNormal_t.List(es) -> List(List.map (h env known) es)
     | KNormal_t.Array(es) -> Array(List.map (h env known) es)
     | KNormal_t.Not(e) -> Not(h env known e)
     | KNormal_t.Neg(e) -> Neg(h env known e)

@@ -35,13 +35,21 @@ and string_of_tycon reached =
   | Bitstring -> "Bitstring"
   | Binary -> "Binary"
   | Arrow -> "Arrow"
+  | List -> "List"
   | Tuple -> "Tuple"
   | Array -> "Array"
   | Module x -> "Module(" ^ x ^ ")"
   | Record(x, fs) -> "Record(" ^ x ^ ", {" ^ (String.concat ", " fs) ^ "})"
   | Variant(x, constrs) when S.mem x reached -> "Variant(" ^ x ^ ")"
   | Variant(x, constrs) -> "Variant(" ^ x ^ ", " ^ (String.concat " | " (List.map (string_of_constr (S.add x reached)) constrs)) ^ ")"
-  | TyFun(xs, t) -> "TyFun(" ^ (String.concat ", " xs) ^ ", " ^ (string_of_t reached t) ^ ")"
+  | TyFun(xs, t) ->
+    Printf.sprintf "TyFun([%s], %s)" (String.concat ", " xs) (string_of_t reached t)
+  | Instance (xts, t) ->
+    Printf.sprintf "Instance([%s], %s)"
+      (String.concat ", "
+         (List.map (fun (x, t) ->
+                      Printf.sprintf "('%s, %s)" x (string_of_t reached t)) xts))
+      (string_of_t reached t)
   | NameTycon(x, { contents = None }) when S.mem x reached -> "NameTycon(" ^ x ^ ", None)"
   | NameTycon(x, { contents = None }) -> "NameTycon(" ^ x ^ ", None)"
   | NameTycon(x, { contents = Some(t) }) -> "NameTycon(" ^ x ^ ", Some(" ^ (string_of_tycon reached t) ^ "))"
@@ -75,12 +83,14 @@ and prefix_of_tycon =
   | Bitstring -> "bit"
   | Binary-> "bin"
   | Arrow -> "pfn"
+  | List -> "l"
   | Tuple -> "t"
   | Array -> "y"
   | Module _ -> "m"
   | Record _ -> "st"
   | Variant _ -> "v"
   | TyFun(_, t) -> prefix t
+  | Instance(_, t) -> prefix t
   | NameTycon(x, _) -> x
       
 let rec ocaml_of t =
@@ -97,14 +107,21 @@ let rec ocaml_of t =
   | App(Bitstring, []) -> "bitstring"
   | App(Binary, []) -> "binary"
   | App(Arrow, xs) -> String.concat " -> " (List.map ocaml_of xs)
+  | App(List, _) -> "list"
   | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map ocaml_of xs)) ^ ")"
   | App(Module x, []) -> "module type " ^ x
   | App(Record(_, xs), ys) -> 
       "{" ^ (String.concat ";" 
                (List.map (fun (x, y) -> x ^ " = " ^ (ocaml_of y)) (List.combine xs ys))) ^ "}"
-  | App(Variant(x, _), ys) -> x
+  | App(Variant(x, _), []) -> x
   | Poly(xs, t) -> ocaml_of t      
   | App(TyFun([], t), []) -> ocaml_of t
+  | App (Instance ([(_, t1)], t2), _) ->
+    Printf.sprintf "%s %s" (ocaml_of t1) (ocaml_of t2)
+  | App (Instance (xts, t), _) ->
+    Printf.sprintf "(%s) %s"
+      (String.concat_map ", " (fun (_, t) -> ocaml_of t) xts)
+      (ocaml_of t)
   | App(NameTycon(x, _), []) -> x
   | App(NameTycon(x, _), [t]) ->
     Printf.sprintf "%s %s" (ocaml_of t) x
@@ -149,31 +166,6 @@ let rec equal t1 t2 =
   | _, Meta(y) -> equal t2 t1
   | _, _ -> false
       
-let rec name t =
-  match t.desc with
-  | App(Unit, []) -> "unit"
-  | App(Bool, []) -> "bool"
-  | App(Int, []) -> "int"
-  | App(Float, []) -> "float"
-  | App(Char, []) -> "char"
-  | App(String, []) -> "string"
-  | App(Atom, []) -> "atom"
-  | App(Bitstring, []) -> "bitstring"
-  | App(Binary, []) -> "binary"
-  | App(Arrow, ts) -> "(" ^ (String.concat_map " -> " name ts) ^ ")"
-  | App(Tuple, ts) -> "tuple_of_" ^ (String.concat_map "_" name ts)
-  | App(Array, ts) -> "array_of_" ^ (String.concat_map "_" name ts)
-  | App(Module x, []) -> x
-  | App(Record(x, _), _) -> x
-  | App(Variant(x, _), _) -> x
-  | Field(_, t) -> name t
-  | App(TyFun([], t), []) -> name t
-  | Var _ | Poly _ | Meta _ | App(Unit, _) | App(Bool, _) | App(Int, _) | App(Float, _)
-  | App(Char, _) | App(String, _) | App(Atom, _) | App(Bitstring, _)
-  | App(Binary, _) | App(TyFun _, _) | App(Module _, _) ->
-    assert false (* impossible *)
-  | App(NameTycon(x, _), _) -> x
-
 let app loc tycon args = create loc & App (tycon, args)
 let void_app loc tycon = app loc tycon []
 let app_unit loc = create loc (App (Unit, []))

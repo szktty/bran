@@ -30,8 +30,11 @@ let test_files = [
   ("string", "test_string.br", "string");
   ("bitstring", "test_bitstring.br", "bitstring");
   ("binary", "test_binary.br", "binary");
+  ("tuple", "test_tuple.br", "(int * float)");
 
   (* polymorphic types *)
+  ("poly_list", "test_poly_list.br", "'a list");
+  ("int_list", "test_int_list.br", "int list");
 ]
 
 let suite =
