@@ -89,7 +89,6 @@ let rev_combine_list = function
 %token <Location.t> OF
 %token <Location.t> TO
 %token <Location.t> MATCH
-%token <Location.t> MUTABLE
 %token <Location.t> WITH
 %token <Location.t> PERFORM
 %token <Location.t> RETURN
@@ -596,8 +595,7 @@ typedef:
       (* TODO *)
       { TypeDef($2.desc, Type_t.Variant ($2.desc, $6)) }
     | type_params_opt IDENT EQUAL nl_opt LBRACE field_decls RBRACE
-      (* TODO *)
-      { TypeDef($2.desc, Type_t.Unit) }
+      { TypeDef($2.desc, Type_t.TyFun($1, create $5 (Type_t.App(Type_t.Record($2.desc, List.map fst $6), List.map snd $6)))) }
 
 type_params_opt:
     | (* empty *)
@@ -718,11 +716,7 @@ rev_field_decls:
 
 field_decl:
     | IDENT COLON type_expr
-      (* TODO *)
-      { None }
-    | MUTABLE IDENT COLON type_expr
-      (* TODO *)
-      { None }
+      { $1.desc, $3 }
 
 list_: 
     | (* empty *)

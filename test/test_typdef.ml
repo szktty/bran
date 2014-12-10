@@ -39,8 +39,11 @@ let test_files = [
   (* type constructor *)
   ("simple_tycon", "test_simple_tycon.br", "A | B | C");
   ("tycon_args", "test_tycon_args.br", "A of int | B of bool * unit | C of string list");
+  ("poly_tycon", "test_poly_tycon.br", "A of 'a");
 
   (* record *)
+  ("record", "test_record.br", "{ a : string, b : int }");
+  ("poly_record", "test_poly_record.br", "{ a : 'a, b : 'b }");
 ]
 
 let suite =

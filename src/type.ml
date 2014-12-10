@@ -111,8 +111,9 @@ let rec repr_of t =
   | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map repr_of xs)) ^ ")"
   | App(Module x, []) -> "module type " ^ x
   | App(Record(_, xs), ys) -> 
-      "{" ^ (String.concat ";" 
-               (List.map (fun (x, y) -> x ^ " = " ^ (repr_of y)) (List.combine xs ys))) ^ "}"
+    Printf.sprintf "{ %s }"
+      (String.concat_map ", " 
+         (fun (x, y) -> x ^ " : " ^ (repr_of y)) (List.combine xs ys))
   | App(Variant(x, _), []) -> x
   | Poly(xs, t) -> repr_of t      
   | App(TyFun([], t), []) -> repr_of t
@@ -137,7 +138,7 @@ and repr_of_tycon = function
   | Int -> "int"
   | Float -> "float"
   | String -> "string"
-  | TyFun([], t) -> repr_of t
+  | TyFun(_, t) -> repr_of t
   | Variant (_, xts) ->
     String.concat_map " | "
       (fun (x, ts) ->
