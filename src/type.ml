@@ -114,7 +114,7 @@ let rec repr_of t =
     Printf.sprintf "{ %s }"
       (String.concat_map ", " 
          (fun (x, y) -> x ^ " : " ^ (repr_of y)) (List.combine xs ys))
-  | App(Variant(x, _), []) -> x
+  | App(Variant _ as tycon, _) -> repr_of_tycon tycon
   | Poly(xs, t) -> repr_of t      
   | App(TyFun([], t), []) -> repr_of t
   | App (Instance ([(_, t1)], t2), _) ->

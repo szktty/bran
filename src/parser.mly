@@ -584,18 +584,15 @@ field_pattern:
     | IDENT EQUAL pattern
       { ($1.desc, $3) }
 
-(* TODO: include type_params in TypeDef *)
 typedef:
     | type_params_opt IDENT EQUAL nl_opt type_expr
       { TypeDef($2.desc, Type_t.TyFun($1, $5)) }
     | type_params_opt IDENT EQUAL nl_opt constr_decls
-      (* TODO *)
-      { TypeDef($2.desc, Type_t.Variant ($2.desc, $5)) }
+      { TypeDef($2.desc, Type_t.TyFun($1, create $2.loc (Type_t.App (Type_t.Variant ($2.desc, $5), [])))) }
     | type_params_opt IDENT EQUAL nl_opt PIPE constr_decls
-      (* TODO *)
-      { TypeDef($2.desc, Type_t.Variant ($2.desc, $6)) }
+      { TypeDef($2.desc, Type_t.TyFun($1, create $2.loc (Type_t.App (Type_t.Variant ($2.desc, $6), [])))) }
     | type_params_opt IDENT EQUAL nl_opt LBRACE field_decls RBRACE
-      { TypeDef($2.desc, Type_t.TyFun($1, create $5 (Type_t.App(Type_t.Record($2.desc, List.map fst $6), List.map snd $6)))) }
+      { TypeDef($2.desc, Type_t.TyFun($1, create $2.loc (Type_t.App(Type_t.Record($2.desc, List.map fst $6), List.map snd $6)))) }
 
 type_params_opt:
     | (* empty *)
