@@ -51,11 +51,11 @@ let gen_sig_file fpath defs =
       match def.desc with
       | TypeDef (x, t) ->
         (* FIXME *)
-        Printf.sprintf "type %s = %s" x (Type.Tycon.to_ocaml t) :: accu
+        Printf.sprintf "type %s = %s" x (Type.Tycon.to_repr t) :: accu
       | VarDef ((x, t), _) ->
-        Printf.sprintf "var %s : %s" x (Type.to_ocaml t) :: accu
+        Printf.sprintf "var %s : %s" x (Type.to_repr t) :: accu
       | RecDef { name = (x, t) } ->
-        Printf.sprintf "def %s : %s" x (Type.to_ocaml t) :: accu
+        Printf.sprintf "def %s : %s" x (Type.to_repr t) :: accu
       | _ -> accu)
       defs (Sig.create_env ())
   in

@@ -4,7 +4,7 @@ val newtyvar : unit -> Id.t
 val newmetavar : unit -> t option ref
 
 val to_string : t -> Id.t
-val to_ocaml : t -> string
+val to_repr : t -> string
 
 val equal : t -> t -> bool
 
@@ -22,7 +22,7 @@ module Tycon : sig
   type t = Type_t.tycon
 
   val to_string : t -> string
-  val to_ocaml : t -> string
+  val to_repr : t -> string
 
   val vars : t -> (Id.t * Type_t.t) list
   val types : t -> (Id.t * Type_t.t) list

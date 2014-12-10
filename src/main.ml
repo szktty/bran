@@ -69,10 +69,10 @@ let () =
            in
 
            (* debug: -print-tycon *)
-           print_type Library.find_tycon_opt Type.Tycon.to_ocaml !Config.print_tycon;
+           print_type Library.find_tycon_opt Type.Tycon.to_repr !Config.print_tycon;
 
            (* debug: -print-type *)
-           print_type Library.find_type_opt Type.to_ocaml !Config.print_type
+           print_type Library.find_type_opt Type.to_repr !Config.print_type
          end
        with
        | e -> Console.print_exc fpath e)

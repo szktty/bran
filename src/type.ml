@@ -93,10 +93,10 @@ and prefix_of_tycon =
   | Instance(_, t) -> prefix t
   | NameTycon(x, _) -> x
       
-let rec ocaml_of t =
+let rec repr_of t =
   match t.desc with
   | Var x -> "'" ^ x
-  | Field(_, t) -> ocaml_of t
+  | Field(_, t) -> repr_of t
   | App(Unit, []) -> "unit"
   | App(Bool, []) -> "bool"
   | App(Int, []) -> "int"
@@ -106,42 +106,42 @@ let rec ocaml_of t =
   | App(String, []) -> "string"
   | App(Bitstring, []) -> "bitstring"
   | App(Binary, []) -> "binary"
-  | App(Arrow, xs) -> String.concat " -> " (List.map ocaml_of xs)
+  | App(Arrow, xs) -> String.concat " -> " (List.map repr_of xs)
   | App(List, _) -> "list"
-  | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map ocaml_of xs)) ^ ")"
+  | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map repr_of xs)) ^ ")"
   | App(Module x, []) -> "module type " ^ x
   | App(Record(_, xs), ys) -> 
       "{" ^ (String.concat ";" 
-               (List.map (fun (x, y) -> x ^ " = " ^ (ocaml_of y)) (List.combine xs ys))) ^ "}"
+               (List.map (fun (x, y) -> x ^ " = " ^ (repr_of y)) (List.combine xs ys))) ^ "}"
   | App(Variant(x, _), []) -> x
-  | Poly(xs, t) -> ocaml_of t      
-  | App(TyFun([], t), []) -> ocaml_of t
+  | Poly(xs, t) -> repr_of t      
+  | App(TyFun([], t), []) -> repr_of t
   | App (Instance ([(_, t1)], t2), _) ->
-    Printf.sprintf "%s %s" (ocaml_of t1) (ocaml_of t2)
+    Printf.sprintf "%s %s" (repr_of t1) (repr_of t2)
   | App (Instance (xts, t), _) ->
     Printf.sprintf "(%s) %s"
-      (String.concat_map ", " (fun (_, t) -> ocaml_of t) xts)
-      (ocaml_of t)
+      (String.concat_map ", " (fun (_, t) -> repr_of t) xts)
+      (repr_of t)
   | App(NameTycon(x, _), []) -> x
   | App(NameTycon(x, _), [t]) ->
-    Printf.sprintf "%s %s" (ocaml_of t) x
+    Printf.sprintf "%s %s" (repr_of t) x
   | App(NameTycon(x, _), ts) ->
-    Printf.sprintf "(%s) %s" (String.concat ", " (List.map ocaml_of ts)) x
+    Printf.sprintf "(%s) %s" (String.concat ", " (List.map repr_of ts)) x
   | Meta { contents = None } -> "[?]"
-  | Meta { contents = Some t } -> ocaml_of t
+  | Meta { contents = Some t } -> repr_of t
   | _ -> Printf.eprintf "%s : not implemented yet." (string_of_t t); assert false
 
-and ocaml_of_tycon = function
+and repr_of_tycon = function
   | Unit -> "unit"
   | Bool -> "bool"
   | Int -> "int"
   | Float -> "float"
   | String -> "string"
-  | TyFun([], t) -> ocaml_of t
+  | TyFun([], t) -> repr_of t
   | t -> Printf.eprintf "%s : not implemented yet\n" (string_of_tycon t); assert false
 
 let to_string = string_of_t
-let to_ocaml = ocaml_of
+let to_repr = repr_of
 
 (* 等値判定。型推論後のみ使用可能。*)
 let rec equal t1 t2 = 
@@ -175,7 +175,7 @@ module Tycon = struct
   type t = Type_t.tycon
 
   let to_string = string_of_tycon
-  let to_ocaml = ocaml_of_tycon
+  let to_repr = repr_of_tycon
 
   (* 型環境 venv に追加する識別子と型のリスト *)
   let vars t =
