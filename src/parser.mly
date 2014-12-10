@@ -692,13 +692,15 @@ rev_constr_decls:
 constr_decl:
     | UIDENT constr_decl_type nl_opt
       { ($1.desc, $2) }
-    (* | LPAREN RPAREN constr_decl_type *) (* TODO *)
 
 constr_decl_type:
     | (* empty *)
       { [] }
     | OF type_expr
-      { [$2] }
+      { match $2.desc with
+        | Type_t.App (Type_t.Tuple, es) -> es
+        | _ -> [$2]
+      }
 
 field_decls:
     | rev_field_decls nl_opt { List.rev $1 }

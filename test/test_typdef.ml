@@ -35,6 +35,12 @@ let test_files = [
   (* polymorphic types *)
   ("poly_list", "test_poly_list.br", "'a list");
   ("int_list", "test_int_list.br", "int list");
+
+  (* type constructor *)
+  ("simple_tycon", "test_simple_tycon.br", "A | B | C");
+  ("tycon_args", "test_tycon_args.br", "A of int | B of bool * unit | C of string list");
+
+  (* record *)
 ]
 
 let suite =

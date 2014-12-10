@@ -138,6 +138,12 @@ and repr_of_tycon = function
   | Float -> "float"
   | String -> "string"
   | TyFun([], t) -> repr_of t
+  | Variant (_, xts) ->
+    String.concat_map " | "
+      (fun (x, ts) ->
+         match ts with
+         | [] -> x
+         | _ -> x ^ " of " ^ String.concat_map " * " repr_of ts) xts
   | t -> Printf.eprintf "%s : not implemented yet\n" (string_of_tycon t); assert false
 
 let to_string = string_of_t

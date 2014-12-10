@@ -1,0 +1,1 @@
+type t = A of int | B of bool * unit | C of string list
