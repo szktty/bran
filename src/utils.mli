@@ -5,4 +5,3 @@ val base : string -> string
 val module_name : string -> string
 val erl_path : string -> string
 val escript_path : string -> string
-val parse_file : string -> Ast_t.def list

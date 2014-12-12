@@ -89,30 +89,29 @@ let register name defs =
   let (tycons, vals, exts) = parse defs in
   Library.register { Module.name; tycons; vals; exts }
 
-let compile_file' fpath defs =
-  let typed = Typing.f defs in
+let compile_file' src =
+  let open Source in
+  let typed = Typing.f src.defs in
   let prog = Erlang.f & Closure.f & Alpha.f & KNormal.f typed in
-  let mname = Utils.base fpath in
   let outbuf = Buffer.create 128 in
-  Emit.f mname outbuf prog;
-  let outfpath = Utils.erl_path fpath in
-  let outchan = open_out outfpath in
+  Emit.f src.erl_name outbuf prog;
+  let outchan = open_out src.erl_path in
   Buffer.output_buffer outchan outbuf;
   close_out outchan;
-  register (Utils.module_name fpath) typed;
+  register src.mod_name typed;
 
   if !Config.gen_sig_file then
-    gen_sig_file fpath typed;
+    gen_sig_file src.path typed;
 
   if not !Config.compile_only then begin
     if !Config.escript then
-      create_exec_file outfpath
+      create_exec_file src.erl_path
     else
-      compile_erl_file outfpath;
-    Unix.unlink outfpath
+      compile_erl_file src.erl_path;
+    Unix.unlink src.erl_path
   end
 
 let compile_file fpath =
-  let defs = Utils.parse_file fpath in
+  let src = Source.parse fpath in
   if not !Config.syntax_only then
-    compile_file' fpath defs
+    compile_file' src

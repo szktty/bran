@@ -31,10 +31,3 @@ let escript_path path =
   | _, None -> failwith "modpath"
   | dir, Some base ->
     to_string & dir ^/ (fst & Filename.split_extension base)
-
-let parse_file fpath =
-  Log.verbose "# Parsing\n";
-  let inchan = open_in fpath in
-  let prog = Parser.prog Lexer.token (Lexing.from_channel inchan) in
-  Log.debug "# %s\n" (String.concat ";\n " (List.map Ast.string_of_def prog));
-  prog

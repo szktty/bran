@@ -184,6 +184,7 @@ FILES[] =
 	position
 	s
 	sig
+	source
 	type
 	type_t
 	typing

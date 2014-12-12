@@ -5,7 +5,7 @@ exception Pervasives_not_found
 
 val find_lib_file : string -> string
 
-val load : Id.t -> Ast_t.def list -> unit
+val load : Source.t -> unit
 val load_module : Id.t -> bool
 val load_file : string -> bool
 

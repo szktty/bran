@@ -18,7 +18,7 @@ let find_lib_file path =
   | None -> path
   | Some p -> p
 
-let parse defs =
+let parse src =
   let open Ast_t in
   let open Locating in
   let parse' (typs, vals, exts) def =
@@ -34,11 +34,12 @@ let parse defs =
     | _ ->
       raise (Error (def.loc, "Signature definition only at .bri file"))
   in
-  List.fold_left parse' ([], [], []) defs
+  List.fold_left parse' ([], [], []) src.Source.defs
 
-let load name defs =
+let load src =
+  let name = src.Source.mod_name in
   Log.verbose "# begin loading module %s\n" name;
-  let (tycons, vals, exts) = parse defs in
+  let (tycons, vals, exts) = parse src in
   Library.register { Module.name; tycons; vals; exts };
   Log.verbose "# end loading module %s\n" name
 
@@ -47,7 +48,7 @@ let load_file fpath =
   let fpath' = find_lib_file fpath in
   Log.verbose "#    load %s\n" fpath';
   if Sys.file_exists fpath' then begin
-    load (Utils.module_name fpath) & Utils.parse_file fpath';
+    load & Source.parse fpath';
     true
   end else
     false
