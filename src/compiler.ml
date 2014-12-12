@@ -6,7 +6,7 @@ let compile_erl_file fpath =
   let open Unix.Command in
   let (dir, _) = Utils.dirbase fpath in
   let dir' = Spotlib.Filepath.to_string dir in
-  let cmd_s = Printf.sprintf "erlc -o %s %s" dir' fpath in
+  let cmd_s = Printf.sprintf "erlc -W0 -o %s %s" dir' fpath in
   Log.verbose "# $ %s\n" cmd_s;
   let cmd = shell cmd_s in
   match print ~prefix:"# erlc" cmd with
