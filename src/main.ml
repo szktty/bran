@@ -18,6 +18,8 @@ let () =
       "generate inferred interface to signature file (*.auto.bri)");
      ("-I", Arg.String Config.add_load_path, "add the path to load path list");
      ("-s", Arg.Unit (fun () -> Config.syntax_only := true), "check syntax only");
+     ("-spec", Arg.Unit (fun () -> Config.gen_spec := true),
+      "generate -spec for functions");
      ("-v", Arg.Unit (fun () -> Config.verbose := true), "print verbose messages");
      ("-V", Arg.Unit (fun () -> printf "%s\n" Version.version),
       "print version and exit");
