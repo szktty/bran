@@ -6,12 +6,8 @@ let gen_var s = "_" ^ s
 
 let gen_arg (x, _) = gen_var x
 
-let iter_with_sep oc sep f es =
-  let len = List.length es in
-  List.iteri (fun i e ->
-      f e;
-      if i + 1 < len then
-        bprintf oc sep) es
+let inject_sep oc sep f es =
+  List.inject (fun () -> bprintf oc sep) f es
 
 let rec gen_exp oc = function
   | Atom s -> bprintf oc "'%s'" s
@@ -64,15 +60,15 @@ let rec gen_exp oc = function
   | Var x -> bprintf oc "%s" (gen_var x)
   | Tuple es ->
     bprintf oc "{";
-    iter_with_sep oc ", " (gen_exp oc) es;
+    inject_sep oc ", " (gen_exp oc) es;
     bprintf oc "}"
   | List es ->
     bprintf oc "[";
-    iter_with_sep oc ", " (gen_exp oc) es;
+    inject_sep oc ", " (gen_exp oc) es;
     bprintf oc "]"
   | Array es ->
     bprintf oc "array:from_list([";
-    iter_with_sep oc ", " (gen_exp oc) es;
+    inject_sep oc ", " (gen_exp oc) es;
     bprintf oc "])"
   | Not e -> gen_prefix_exp oc "not" e
   | And (e1, e2) -> gen_bin_exp oc e1 "and" e2
@@ -87,18 +83,18 @@ let rec gen_exp oc = function
   | LE (e1, e2) -> gen_bin_exp oc e1 "=<" e2
   | AppDir (Id.L x, es) ->
     bprintf oc "%s(" x;
-    iter_with_sep oc ", " (gen_exp oc) es;
+    inject_sep oc ", " (gen_exp oc) es;
     bprintf oc ")"
   | If ptns ->
     bprintf oc "if ";
-    iter_with_sep oc "; " (fun (e1, e2) ->
+    inject_sep oc "; " (fun (e1, e2) ->
         gen_exp oc e1;
         bprintf oc " -> ";
         gen_exp oc e2) ptns;
     bprintf oc " end"
   | Match (x, pts) ->
     bprintf oc "case %s of " (gen_var x);
-    iter_with_sep oc "; " (fun (p, t) ->
+    inject_sep oc "; " (fun (p, t) ->
         gen_ptn oc p;
         bprintf oc " -> ";
         gen_exp oc t) pts;
@@ -108,6 +104,12 @@ let rec gen_exp oc = function
     gen_exp oc e1;
     bprintf oc ", ";
     gen_exp oc e2
+  | Constr (x, []) ->
+    bprintf oc "'%s'" x
+  | Constr (x, es) ->
+    bprintf oc "{'%s', " x;
+    inject_sep oc ", " (gen_exp oc) es;
+    bprintf oc "}"
   | _ -> assert false
 
 and gen_prefix_exp oc op e =
@@ -130,12 +132,96 @@ and gen_ptn oc = function
   | PtVar x -> bprintf oc "%s" (gen_var x)
   | PtTuple ps ->
     bprintf oc "{";
-    iter_with_sep oc ", " (fun p -> gen_ptn oc p) ps;
+    inject_sep oc ", " (fun p -> gen_ptn oc p) ps;
     bprintf oc "}"
   | _ -> assert false (* TODO *)
 
+let rec gen_type_tycon ~format oc t =
+  let open Type_t in
+  match t with
+  | Unit -> bprintf oc "{}"
+  | Bool -> bprintf oc "bool()"
+  | Int -> bprintf oc "integer()"
+  | Float -> bprintf oc "float()"
+  | Char -> bprintf oc "char()"
+  | String -> bprintf oc "string()"
+  | Atom -> bprintf oc "atom()"
+  | Bitstring -> bprintf oc "bitstring()"
+  | Binary -> bprintf oc "binary()"
+  | Variant (tx, xts) ->
+    begin match format with
+    | `Spec -> bprintf oc "%s()" tx
+    | `Type ->
+      inject_sep oc " | "
+        (fun (x, ts) ->
+           match ts with
+           | [] -> bprintf oc "'%s.%s'" tx x
+           | _ ->
+             bprintf oc "{'%s.%s', " tx x;
+             inject_sep oc ", " (gen_type ~format oc) ts;
+             bprintf oc "}") xts
+    end
+  | TyFun (_, t) -> gen_type ~format oc t
+  | _ -> assert false
+
+and gen_type ~format oc t =
+  let open Type_t in
+  match t.desc with
+  | Var _ -> bprintf oc "any()"
+  | App (Tuple, ts) ->
+    bprintf oc "{";
+    inject_sep oc ", " (gen_type ~format oc) ts;
+    bprintf oc "}"
+  | App (List, t :: _) ->
+    bprintf oc "[";
+    gen_type ~format oc t;
+    bprintf oc "]"
+  | App (Record (rx, xs), ts) ->
+    bprintf oc "{";
+    List.inject2
+      (fun () -> bprintf oc ", ")
+      (fun x t ->
+         bprintf oc "%s::" x;
+         gen_type ~format oc t) xs ts;
+    bprintf oc "}"
+  | App (Arrow, ts) ->
+    let (ts', t') = match List.rev ts with
+      | t' :: ts' -> List.rev ts', t'
+      | _ -> assert false
+    in
+    bprintf oc "(";
+    inject_sep oc ", " (gen_type ~format oc) ts';
+    bprintf oc ") -> ";
+    gen_type ~format oc t'
+  | App (Instance ([(_, t)], { desc = App (List, []) }), _) ->
+    bprintf oc "[";
+    gen_type ~format oc t;
+    bprintf oc "]"
+  | App (Instance (_, t), _) -> gen_type ~format oc t
+  | App (tycon, []) -> gen_type_tycon ~format oc tycon
+  | Poly (_, t) -> gen_type ~format oc t
+  | _ ->
+    Printf.printf "Error: not implemented: %s\n" (Type.to_string t);
+    assert false
+
 let gen_def oc = function
-  | FunDef { name = (Id.L x, _); args = args; body = body } ->
+  | TypeDef (x, tycon) ->
+    begin match tycon with
+    | Type_t.TyFun (_, { desc = Type_t.App (Type_t.Record _, _) }) ->
+      bprintf oc "-record(%s, " x;
+      gen_type_tycon oc tycon ~format:`Type;
+      bprintf oc ").\n"
+    | _ ->
+      bprintf oc "-type %s() :: " x;
+      gen_type_tycon oc tycon ~format:`Type;
+      bprintf oc ".\n"
+    end
+  | FunDef { name = (Id.L x, t); args = args; body = body } ->
+    if !Config.gen_spec then begin
+      bprintf oc "-spec %s" x;
+      gen_type oc t ~format:`Spec;
+      bprintf oc ".\n"
+    end;
     bprintf oc "%s(%s) -> " x
       (String.concat_map ", " gen_arg args);
     gen_exp oc body;

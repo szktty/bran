@@ -67,7 +67,7 @@ and gen_term (term, t) =
   | _ -> assert false
 
 let gen_def = function
-  | Closure_t.TypeDef _ -> []
+  | Closure_t.TypeDef (x, tycon) -> [TypeDef (x, tycon)]
   | Closure_t.VarDef _ -> []
   | Closure_t.FunDef def ->
     [FunDef { name = def.name; args = def.args; formal_fv = def.formal_fv;
