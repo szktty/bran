@@ -45,7 +45,6 @@ and string_of_expr =
   | Var(x) -> "Var(" ^ x ^ ")"
   | Concat (e1, e2) -> "Concat(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2) ^ ")"
   | Constr(x, es) -> "Constr(" ^ x ^ ", " ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
-  | Module x -> "Module(" ^ x ^ ")"
   | LetRec({ name = (x, t); args = yts; body = e1 }, e2) -> "LetRec(" ^ x ^ "(" ^ (String.concat ", " (List.map (fun (y, t) -> y ^ " : " ^ (Type.to_string t)) yts)) ^ ") : " ^ (Type.to_string t) ^ " = " ^ (string_of_typed_expr e1) ^ " in " ^ (string_of_typed_expr e2) ^ ")"
   | App(e, es) -> "App(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ "])"
   | Get (e1, e2) ->

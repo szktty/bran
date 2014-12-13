@@ -342,7 +342,7 @@ let rec deref_typed_expr ({ Env.venv = venv } as env) le =
   set le (deref_expr env e, deref_type env t)
 
 and deref_expr ({ Env.venv = venv } as env) = function
-  | Int _ | Float _ | Bool _ | Char _ | String _ | Atom _ | Bitstring _ | Unit | Var _ | Module _ as e -> e
+  | Int _ | Float _ | Bool _ | Char _ | String _ | Atom _ | Bitstring _ | Unit | Var _ as e -> e
   | Record(xes) -> Record(List.map (fun (x, e) -> x, deref_typed_expr env e) xes)
   | Field(e, x) -> Field(deref_typed_expr env e, x)
   | Tuple(es) -> Tuple(List.map (deref_typed_expr env) es)
@@ -486,19 +486,6 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
             Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
             assert false
         end
-      | Field ({ desc = (Module mx, _) }, x) ->
-        begin match Library.find_opt mx with
-        | Some _ -> ()
-        | None ->
-          if not & Sig.load_module mx then
-            raise (Unbound_module_error (e.loc, mx))
-        end;
-        let m = Library.find mx in
-        Log.debug "#   => module val %s.%s\n" mx x;
-        begin match Module.find_val_opt m x with
-        | None -> raise (Unbound_value_error (e.loc, Module.(m.name) ^ "." ^ x))
-        | Some t -> expr, t
-        end
       | Field(et, x) ->
         let _, ty_rec' as et' = g env et in
         let ty_f = instantiate env (M.find x tenv) in
@@ -610,10 +597,6 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
             Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
             assert false
         end
-      | Module x when Library.mem x ->
-        expr, instantiate env (Type.void_app e.loc & Type_t.Module x)
-      | Module x ->
-        raise (Ast_t.Unbound_module_error (e.loc, x))
       | LetRec({ name = (x, ty_f); args = yts; body = et1 }, et2) -> (* let recの型推論 (caml2html: typing_letrec) *)
         let t2 = create et2.loc & Type_t.Meta(Type.newmetavar()) in
         let ty_f' = create et2.loc & Type_t.App (Type_t.Arrow, ((List.map snd yts) @ [t2])) in

@@ -28,7 +28,6 @@ and string_of_expr =
   | Bitstring x -> Bitstring.to_string x
   | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
   | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
-  | Module x -> "module type " ^ x
   | List(es) -> "[" ^ (String.concat_map ", " string_of_typed_expr es) ^ "]"
   | Tuple(es) -> "(" ^ (String.concat_map ", " string_of_typed_expr es) ^ ")"
   | Array(es) -> "[|" ^ (String.concat_map "; " string_of_typed_expr es) ^ "|]"
@@ -127,7 +126,6 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { loc = loc; desc = (e, t) }
       insert_lets (List.map snd xes)
         (fun ets' -> Exp(Record(List.combine (List.map fst xes) ets'), t))
     | Ast_t.Field(e, x) -> insert_let (g env e) (fun e' -> Exp(Field(e', x), t))
-    | Ast_t.Module x -> Exp(Module x, t)
     | Ast_t.List(es) -> insert_lets es (fun es' -> Exp(List(es'), t))
     | Ast_t.Tuple(es) -> insert_lets es (fun es' -> Exp(Tuple(es'), t))
     | Ast_t.Array(es) -> insert_lets es (fun es' -> Exp(Array(es'), t))

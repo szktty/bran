@@ -24,7 +24,6 @@ and string_of_expr =
   | Bitstring x -> Bitstring.to_string x
   | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
   | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
-  | Module x -> "module type " ^ x
   | Tuple(es) -> "(" ^ (String.concat_map ", " string_of_typed_expr es) ^ ")"
   | List(es) -> "[" ^ (String.concat_map ", " string_of_typed_expr es) ^ "]"
   | Array(es) -> "[|" ^ (String.concat_map "; " string_of_typed_expr es) ^ "|]"
@@ -77,7 +76,7 @@ let rec vars_of_pattern =
       
 let rec fv_of_expr (e, _) = 
   match e with
-  | Bool(_) | Int(_) | Float _ | Char _ | String _ | Atom _ | Bitstring _ | Module _ -> S.empty
+  | Bool(_) | Int(_) | Float _ | Char _ | String _ | Atom _ | Bitstring _ -> S.empty
   | Record(xes) -> List.fold_left (fun s (_, e) -> S.union s (fv_of_expr e)) S.empty xes
   | Field(e, _) -> fv_of_expr e
   | Tuple(es) | List(es) | Array(es) ->
@@ -156,7 +155,6 @@ let rec h env known (expr, ty) =
     | KNormal_t.Bitstring s -> Bitstring s
     | KNormal_t.Record(xes) -> Record(List.map (fun (x, e) -> x, h env known e) xes)
     | KNormal_t.Field(e, x) -> Field(h env known e, x)
-    | KNormal_t.Module x -> Module x
     | KNormal_t.Tuple(es) -> Tuple(List.map (h env known) es)
     | KNormal_t.List(es) -> List(List.map (h env known) es)
     | KNormal_t.Array(es) -> Array(List.map (h env known) es)
@@ -176,16 +174,6 @@ let rec h env known (expr, ty) =
     | KNormal_t.App((KNormal_t.Var(x), ft), ys) when S.mem x known -> (* 関数適用の場合 (caml2html: closure_app) *)
         Log.debug "directly applying %s\n" x;
         AppDir(Id.L(x), List.map (h env known) ys)
-    | KNormal_t.App((KNormal_t.Field ((Module mx, _), fx), ft), es) ->
-      Log.debug "# directly applying %s.%s\n" mx fx;
-      let m = Library.find mx in
-      let fx' =
-        match Module.find_ext_opt m fx with
-        | Some x -> x
-        | None -> Module.erl_name m ^ ":" ^ fx
-      in
-      Log.debug "#    -> %s\n" fx';
-      AppDir(Id.L(fx'), List.map (h env known) es)
     | KNormal_t.App(e, es) -> 
         AppCls(h env known e, List.map (h env known) es)
     | KNormal_t.ExtFunApp(x, ys) -> 

@@ -33,7 +33,6 @@ and expr =
   | Var of Id.t
   | Concat of t * t
   | Constr of Id.t * t list
-  | Module of Id.t
   | LetRec of fundef * t
   | App of t * t list
   | Get of t * t

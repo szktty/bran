@@ -19,7 +19,6 @@ let rec h ids (e, t) =
     | Bitstring s -> Bitstring s
     | Record(xes) -> Record(List.map (fun (x, e) -> find x ids, (h ids e)) xes)
     | Field(e, x) -> Field(h ids e, find x ids)
-    | Module x -> Module x
     | Tuple(es) -> Tuple(List.map (h ids) es)
     | List(es) -> List(List.map (h ids) es)
     | Array(es) -> Array(List.map (h ids) es)
