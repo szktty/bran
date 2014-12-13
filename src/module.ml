@@ -1,11 +1,20 @@
 open Base
 
 type t = {
+  parent : t option;
   name : Id.t;
   tycons : (Id.t * Type_t.tycon) list;
   vals : (Id.t * Type_t.t) list;
   exts : (Id.t * string) list;
 }
+
+let path m =
+  let rec f m accu =
+    match m.parent with
+    | None -> m.name :: accu
+    | Some p -> f p & m.name :: accu
+  in
+  Binding.of_list & f m []
 
 let find_tycon_opt m x =
   List.find_map_opt

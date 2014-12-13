@@ -70,9 +70,23 @@ let print_exc fpath e =
   | Ast_t.Syntax_error (loc, Some msg) ->
     print_error fpath loc ("Syntax error: " ^ msg)
   | Ast_t.Unbound_value_error (loc, x) ->
+    (* deprecated *)
     print_error fpath loc ("Unbound value `" ^ x ^ "'")
   | Ast_t.Unbound_module_error (loc, x) ->
+    (* deprecated *)
     print_error fpath loc ("Unbound module `" ^ x ^ "'")
+  | Naming.Unbound_value_error (loc, x, []) ->
+    print_error fpath loc ("Unbound value `" ^ x ^ "'")
+  | Naming.Unbound_value_error (loc, x, suggests) ->
+    print_error fpath loc
+      (sprintf "Unbound value `%s'. Did you mean %s?" x
+         (String.concat ", " suggests))
+  | Naming.Unbound_module_error (loc, x, []) ->
+    print_error fpath loc ("Unbound module `" ^ x ^ "'")
+  | Naming.Unbound_module_error (loc, x, suggests) ->
+    print_error fpath loc
+      (sprintf "Unbound module `%s'. Did you mean %s?" x
+         (String.concat ", " suggests))
   | Typing.Error (e, t1, t2) ->
     let oc = Buffer.create 16 in
     bprintf oc "Type mismatch: This expression has type `%s', but the expression was expected of type `%s'\n\n"

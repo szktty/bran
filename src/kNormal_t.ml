@@ -33,9 +33,9 @@ and expr =
   | Div of et * et
   | Eq of et * et
   | LE of et * et
-  | Var of Id.t
+  | Var of Binding.t
   | Concat of et * et
-  | Constr of Id.t * et list
+  | Constr of Binding.t * et list
   | App of et * et list
   | ExtFunApp of Id.t * et list
   | Get of et * et

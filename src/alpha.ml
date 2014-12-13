@@ -1,6 +1,7 @@
 (* rename identifiers to make them unique (alpha-conversion) *)
 
 open KNormal_t
+open Base
 
 let find x ids = try M.find x ids with Not_found -> x
 let genid x ids = if (M.mem x ids) then Id.genid x else x
@@ -22,9 +23,11 @@ let rec h ids (e, t) =
     | Tuple(es) -> Tuple(List.map (h ids) es)
     | List(es) -> List(List.map (h ids) es)
     | Array(es) -> Array(List.map (h ids) es)
-    | Var(x) -> Var(find x ids)
+    | Var(x) -> Var(Binding.of_string & find (Binding.to_string x) ids)
     | Concat(e1, e2) -> Concat(h ids e1, h ids e2)
-    | Constr(x, es) -> Constr(find x ids, List.map (h ids) es)
+    | Constr(x, es) ->
+      Constr(Binding.of_string & find (Binding.to_string x) ids,
+             List.map (h ids) es)
     | Not(e) -> Not(h ids e)
     | And(e1, e2) -> And(h ids e1, h ids e2)
     | Or(e1, e2) -> Or(h ids e1, h ids e2)

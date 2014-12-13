@@ -40,7 +40,7 @@ let load src =
   let name = src.Source.mod_name in
   Log.verbose "# begin loading module %s\n" name;
   let (tycons, vals, exts) = parse src in
-  Library.register { Module.name; tycons; vals; exts };
+  Library.register { Module.parent = None; name; tycons; vals; exts };
   Log.verbose "# end loading module %s\n" name
 
 let load_file fpath = 
@@ -53,8 +53,10 @@ let load_file fpath =
   end else
     false
 
-let load_module (name : Id.t) =
-  load_file & String.uncapitalize name ^ ".bri"
+let load_module path =
+  match Binding.path_name path with
+  | Some _, _ -> failwith "not yet supported"
+  | None, name -> load_file & String.uncapitalize name ^ ".bri"
 
 let empty = ref None
 
@@ -63,9 +65,8 @@ let create_env () =
   | Some env -> env
   | None ->
     let env = !Env.empty in
-    let mx = "Pervasives" in
-    if not & load_module mx then
+    if not & load_module Binding.pervasives then
       raise Pervasives_not_found;
-    let env' = Env.import env & Library.find mx in
+    let env' = Env.import env & Library.find_module Binding.pervasives in
     empty := Some env';
     env'

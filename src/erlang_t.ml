@@ -26,10 +26,10 @@ type t =
   | Concat of t * t
   | Eq of t * t
   | LE of t * t
-  | Var of Id.t
-  | Constr of Id.t * t list
+  | Var of Binding.t
+  | Constr of Binding.t * t list
   | AppCls of t * t list
-  | AppDir of Id.l * t list
+  | AppDir of Binding.t * t list
   | If of (t * t) list
   | Match of Id.t * (pattern * t) list
   | Let of Id.t * t * t

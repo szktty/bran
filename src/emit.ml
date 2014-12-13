@@ -57,7 +57,11 @@ let rec gen_exp oc = function
           end) es;
       bprintf oc ">>";
     end
-  | Var x -> bprintf oc "%s" (gen_var x)
+  | Var path ->
+    begin match Binding.path_name path with
+    | None, x -> bprintf oc "%s" (gen_var x)
+    | Some _, _ -> bprintf oc "%s()" (Binding.to_erl_fun path)
+    end
   | Tuple es ->
     bprintf oc "{";
     inject_sep oc ", " (gen_exp oc) es;
@@ -81,8 +85,8 @@ let rec gen_exp oc = function
   | Concat (e1, e2) -> gen_bin_exp oc e1 "++" e2
   | Eq (e1, e2) -> gen_bin_exp oc e1 "=:=" e2
   | LE (e1, e2) -> gen_bin_exp oc e1 "=<" e2
-  | AppDir (Id.L x, es) ->
-    bprintf oc "%s(" x;
+  | AppDir (x, es) ->
+    bprintf oc "%s(" (Binding.to_erl_fun x);
     inject_sep oc ", " (gen_exp oc) es;
     bprintf oc ")"
   | If ptns ->
@@ -105,9 +109,10 @@ let rec gen_exp oc = function
     bprintf oc ", ";
     gen_exp oc e2
   | Constr (x, []) ->
-    bprintf oc "'%s'" x
+    (* Printf.printf "# Constr = '%s'\n" (Binding.to_erl_atom x); *)
+    bprintf oc "'%s'" (Binding.to_erl_atom x)
   | Constr (x, es) ->
-    bprintf oc "{'%s', " x;
+    bprintf oc "{'%s', " (Binding.to_erl_atom x);
     inject_sep oc ", " (gen_exp oc) es;
     bprintf oc "}"
   | _ -> assert false

@@ -38,10 +38,12 @@ and string_of_expr =
   | Concat (e1, e2) -> (string_of_typed_expr e1) ^ " ^ " ^ (string_of_typed_expr e2)
   | Eq(e1, e2) -> (string_of_typed_expr e1) ^ " = " ^ (string_of_typed_expr e2)
   | LE(e1, e2) -> (string_of_typed_expr e1) ^ " <= " ^ (string_of_typed_expr e2) 
-  | Var(x) -> "Var(" ^ x ^ ")"
-  | Constr(x, es) -> "Constr(" ^ x ^ ", [" ^ (String.concat "; " (List.map string_of_typed_expr es)) ^ "])"
+  | Var(x) -> "Var(" ^ (Binding.to_string x) ^ ")"
+  | Constr(x, es) ->
+    "Constr(" ^ (Binding.to_string x) ^ ", [" ^ (String.concat_map "; " string_of_typed_expr es) ^ "])"
   | AppCls(e, args) -> "AppCls(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat "; " (List.map string_of_typed_expr args)) ^ "])"
-  | AppDir(Id.L(x), args) -> "AppDir(" ^ x ^ ", [" ^ (String.concat " " (List.map string_of_typed_expr args)) ^ "])"
+  | AppDir(x, args) ->
+    "AppDir(" ^ (Binding.to_string x) ^ ", [" ^ (String.concat_map " " string_of_typed_expr args) ^ "])"
   | Get(e1, e2) -> "Get(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2)
   | Put(e1, e2, e3) -> "Put(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2) ^ ", " ^ (string_of_typed_expr e3)
       
@@ -86,7 +88,7 @@ let rec fv_of_expr (e, _) =
   | Add(e1, e2) | Sub(e1, e2) | Mul(e1, e2) | Div(e1, e2) | Concat(e1, e2)
   | Eq(e1, e2) | LE(e1, e2) | Get(e1, e2) ->
     S.union (fv_of_expr e1) (fv_of_expr e2)
-  | Var(x) -> S.singleton x
+  | Var(x) -> S.singleton (Binding.to_string x)
   | Constr(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
   | AppCls(e, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty (e :: es)
   | AppDir(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
@@ -171,13 +173,14 @@ let rec h env known (expr, ty) =
     | KNormal_t.LE(e1, e2)  -> LE(h env known e1, h env known e2)
     | KNormal_t.Var(x) -> Var(x)
     | KNormal_t.Constr(x, es) -> Constr(x, List.map (h env known) es)
-    | KNormal_t.App((KNormal_t.Var(x), ft), ys) when S.mem x known -> (* 関数適用の場合 (caml2html: closure_app) *)
-        Log.debug "directly applying %s\n" x;
-        AppDir(Id.L(x), List.map (h env known) ys)
+    | KNormal_t.App((KNormal_t.Var(x), ft), ys)
+      when S.mem (Binding.to_string x) known ->
+      Log.debug "directly applying %s\n" (Binding.to_string x);
+      AppDir(x, List.map (h env known) ys)
     | KNormal_t.App(e, es) -> 
         AppCls(h env known e, List.map (h env known) es)
     | KNormal_t.ExtFunApp(x, ys) -> 
-        AppDir(Id.L(x), List.map (h env known) ys)
+      AppDir(Binding.of_string x, List.map (h env known) ys)
     | KNormal_t.Get (e1, e2)  -> Get (h env known e1, h env known e2)
     | KNormal_t.Put (e1, e2, e3) ->
       Put (h env known e1, h env known e2, h env known e3)

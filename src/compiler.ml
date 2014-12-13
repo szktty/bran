@@ -87,11 +87,12 @@ let parse defs =
 let register name defs =
   Log.verbose "# register module %s\n" name;
   let (tycons, vals, exts) = parse defs in
-  Library.register { Module.name; tycons; vals; exts }
+  Library.register { Module.parent = None; name; tycons; vals; exts }
 
 let compile_file' src =
   let open Source in
-  let typed = Typing.f src.defs in
+  let mx = Binding.of_string src.mod_name in
+  let typed = Typing.f & Naming.f mx src.defs in
   let prog = Erlang.f & Closure.f & Alpha.f & KNormal.f typed in
   let outbuf = Buffer.create 128 in
   Emit.f src.erl_name outbuf prog;

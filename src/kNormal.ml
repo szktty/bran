@@ -39,9 +39,9 @@ and string_of_expr =
   | Sub(e1, e2) -> (string_of_typed_expr e1) ^ " - " ^ (string_of_typed_expr e2)
   | Mul(e1, e2) -> (string_of_typed_expr e1) ^ " * " ^ (string_of_typed_expr e2)
   | Div(e1, e2) -> (string_of_typed_expr e1) ^ " / " ^ (string_of_typed_expr e2)
-  | Var(x) -> "Var(" ^ x ^ ")"
+  | Var(x) -> "Var(" ^ (Binding.to_string x) ^ ")"
   | Concat(e1, e2) -> (string_of_typed_expr e1) ^ " ^ " ^ (string_of_typed_expr e2)
-  | Constr(x, es) -> "Constr(" ^ x ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ "])"
+  | Constr(x, es) -> "Constr(" ^ (Binding.to_string x) ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ "])"
   | Eq(e1, e2) -> (string_of_typed_expr e1) ^ " = " ^ (string_of_typed_expr e2)
   | LE(e1, e2) -> (string_of_typed_expr e1) ^ " <= " ^ (string_of_typed_expr e2) 
   | App(e, args) -> "App(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr args)) ^ "])"
@@ -73,7 +73,7 @@ let rec insert_let (e, t) k = (* letを挿入する補助関数 (caml2html: knor
       LetRec(fundef, (e', t))
   | _ ->
       let x = Id.gentmp (Type.prefix t) in
-      let e' = k (Var(x), t) in
+      let e' = k (Var(Binding.of_string x), t) in
       Let((x, t), (e, t), (e', t))
 
 let rec pattern env p = 
@@ -137,9 +137,9 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { loc = loc; desc = (e, t) }
     | Ast_t.Sub(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Sub(e1', e2'), t))
     | Ast_t.Mul(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Mul(e1', e2'), t))
     | Ast_t.Div(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Div(e1', e2'), t))
-    | Ast_t.Var(x) -> Exp(Var(x), t)
+    | Ast_t.Var(x) -> Exp(Var(!x), t)
     | Ast_t.Concat(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Concat(e1', e2'), t))
-    | Ast_t.Constr(x, es) -> insert_lets es (fun es' -> Exp(Constr(x, es'), t))
+    | Ast_t.Constr(x, es) -> insert_lets es (fun es' -> Exp(Constr(!x, es'), t))
     | Ast_t.Eq(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Eq(e1', e2'), t))
     | Ast_t.LE(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(LE(e1', e2'), t))
     | Ast_t.If(e1, e2, e3) -> insert_let (g env e1) (fun e1' -> If(e1', (g env e2), (g env e3)))
@@ -150,7 +150,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { loc = loc; desc = (e, t) }
             let e' = g env' e in 
             p', e')
           pes in
-        Match(x, pes')
+        Match(Binding.to_string !x, pes')
     | Ast_t.Match(e, pes) ->
         let e' = g env e in
         let pes' = List.map 
@@ -170,9 +170,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { loc = loc; desc = (e, t) }
         let e2' = g { env with Env.venv = venv' } e2 in
         let e1' = g { env with Env.venv = M.add_list yts venv' } e1 in
         LetRec({ name = (x, t); args = yts; body = e1' }, e2')
-    | Ast_t.App({ desc = (Ast_t.Var(f), _) }, e2s) when not (M.mem f venv) -> (* 外部関数の呼び出し (caml2html: knormal_extfunapp) *)
-      Log.debug "# external variable `%s'\n" f;
-      assert false
+          (*
     | Ast_t.App({ desc = (Ast_t.Var(f), _) }, e2s)
       when Env.is_module_val env f ->
       let m = Env.find_module_of_val env f in
@@ -183,6 +181,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { loc = loc; desc = (e, t) }
         | [] -> Exp(ExtFunApp(f', xs), t)
         | e2 :: e2s -> insert_let (g env e2) (fun x -> bind (xs @ [x]) e2s) in
       (bind [] e2s) (* left-to-right evaluation *)
+           *)
     | Ast_t.App(e1, e2s) ->
         insert_let (g env e1)
           (fun f ->

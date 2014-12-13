@@ -573,12 +573,11 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
           unify env t t1';
           let e2', t2' = g (Env.add_var env x t1') et2 in
           LetVar((x, t1'), set et1 (e1', t1'), set et2 (e2', t2')), t2'
-      | Var(x) when M.mem x venv -> 
-          expr, instantiate env (M.find x venv) (* 変数の型推論 (caml2html: typing_var) *)
-      | Var(x) ->
-        raise (Ast_t.Unbound_value_error (e.loc, x))
+      | Var { contents = x } when M.mem (Binding.name x) venv ->
+        expr, instantiate env (M.find (Binding.name x) venv)
+      | Var(x) -> assert false
       | Constr(x, []) -> 
-          expr, instantiate env (M.find x venv)
+          expr, instantiate env (M.find (Binding.to_string !x) venv)
       | Constr(x, ets) -> 
         let ets', ts' =
           List.fold_left
@@ -588,7 +587,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
             ([], []) (List.rev ets)
         in
         begin
-          let t = instantiate env (M.find x venv) in
+          let t = instantiate env (M.find (Binding.to_string !x) venv) in
           match t.desc with
           | Type_t.App(Type_t.Arrow, ys) -> 
             List.iter2 (unify env) ts' (List.init ys);

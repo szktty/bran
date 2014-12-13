@@ -39,10 +39,10 @@ and expr =
   | Concat of et * et
   | Eq of et * et
   | LE of et * et
-  | Var of Id.t
-  | Constr of Id.t * et list
+  | Var of Binding.t
+  | Constr of Binding.t * et list
   | AppCls of et * et list
-  | AppDir of Id.l * et list
+  | AppDir of Binding.t * et list
   | Get of et * et
   | Put of et * et * et
 
