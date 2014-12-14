@@ -38,7 +38,8 @@ and string_of_expr =
   | Concat (e1, e2) -> (string_of_typed_expr e1) ^ " ^ " ^ (string_of_typed_expr e2)
   | Eq(e1, e2) -> (string_of_typed_expr e1) ^ " = " ^ (string_of_typed_expr e2)
   | LE(e1, e2) -> (string_of_typed_expr e1) ^ " <= " ^ (string_of_typed_expr e2) 
-  | Var(x) -> "Var(" ^ (Binding.to_string x) ^ ")"
+  | Var(`Local x) -> "Var(`Local " ^ x ^ ")"
+  | Var(`Module x) -> "Var(`Module " ^ (Binding.to_string x) ^ ")"
   | Constr(x, es) ->
     "Constr(" ^ (Binding.to_string x) ^ ", [" ^ (String.concat_map "; " string_of_typed_expr es) ^ "])"
   | AppCls(e, args) -> "AppCls(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat "; " (List.map string_of_typed_expr args)) ^ "])"
@@ -88,7 +89,8 @@ let rec fv_of_expr (e, _) =
   | Add(e1, e2) | Sub(e1, e2) | Mul(e1, e2) | Div(e1, e2) | Concat(e1, e2)
   | Eq(e1, e2) | LE(e1, e2) | Get(e1, e2) ->
     S.union (fv_of_expr e1) (fv_of_expr e2)
-  | Var(x) -> S.singleton (Binding.to_string x)
+  | Var(`Local x) -> S.singleton x
+  | Var (`Module _) -> S.empty
   | Constr(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
   | AppCls(e, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty (e :: es)
   | AppDir(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
@@ -173,8 +175,10 @@ let rec h env known (expr, ty) =
     | KNormal_t.LE(e1, e2)  -> LE(h env known e1, h env known e2)
     | KNormal_t.Var(x) -> Var(x)
     | KNormal_t.Constr(x, es) -> Constr(x, List.map (h env known) es)
-    | KNormal_t.App((KNormal_t.Var(x), ft), ys)
-      when S.mem (Binding.to_string x) known ->
+    | KNormal_t.App((KNormal_t.Var(`Local x), ft), ys) when S.mem x known ->
+      Log.debug "directly applying %s\n" x;
+      AppDir(Binding.of_string x, List.map (h env known) ys)
+    | KNormal_t.App((KNormal_t.Var(`Module x), ft), ys) ->
       Log.debug "directly applying %s\n" (Binding.to_string x);
       AppDir(x, List.map (h env known) ys)
     | KNormal_t.App(e, es) -> 

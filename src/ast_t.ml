@@ -30,9 +30,9 @@ and expr =
   | If of t * t * t
   | Match of t * (pattern * t) list
   | LetVar of (Id.t * Type_t.t) * t * t
-  | Var of Binding.t ref
+  | Var of [`Unbound of Binding.t | `Local of Id.t | `Module of Binding.t]
   | Concat of t * t
-  | Constr of Binding.t ref * t list
+  | Constr of Binding.t * t list
   | LetRec of fundef * t
   | App of t * t list
   | Get of t * t

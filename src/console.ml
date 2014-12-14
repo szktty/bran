@@ -81,6 +81,12 @@ let print_exc fpath e =
     print_error fpath loc
       (sprintf "Unbound value `%s'. Did you mean %s?" x
          (String.concat ", " suggests))
+  | Naming.Unbound_constr_error (loc, x, []) ->
+    print_error fpath loc ("Unbound constructor `" ^ x ^ "'")
+  | Naming.Unbound_constr_error (loc, x, suggests) ->
+    print_error fpath loc
+      (sprintf "Unbound constructor `%s'. Did you mean %s?" x
+         (String.concat ", " suggests))
   | Naming.Unbound_module_error (loc, x, []) ->
     print_error fpath loc ("Unbound module `" ^ x ^ "'")
   | Naming.Unbound_module_error (loc, x, suggests) ->

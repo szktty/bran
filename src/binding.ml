@@ -19,6 +19,8 @@ let path_name (C (path, x)) = path, x
 let path = fst ** path_name
 let name = snd ** path_name
 
+let add path x = C (Some path, x)
+
 let to_list path =
   let rec f accu = function
     | C (None, x) -> x :: accu

@@ -39,8 +39,6 @@ let rev_combine_list = function
   | init :: stmts ->
     List.fold_left (fun s1 s2 -> combine s2 s1) init stmts
 
-let bindref = ref ** Binding.of_string
-
 %}
 
 /* 字句を表すデータ型の定義 (caml2html: parser_token) */
@@ -250,7 +248,7 @@ primary:
     | ATOM
       { ast $1.loc (Atom $1.desc) }
     | UIDENT
-      { ast $1.loc (Constr(bindref $1.desc, [])) }
+      { ast $1.loc (Constr(Binding.of_string $1.desc, [])) }
     | LBRACK list_ RBRACK
       { ast_on $1 $3 (List $2) }
     | LBRACK PIPE list_ PIPE RBRACK
@@ -260,9 +258,9 @@ primary:
 
 binding:
     | value_name
-      { ast $1.loc (Var (bindref $1.desc)) }
+      { ast $1.loc (Var (`Unbound (Binding.of_string $1.desc))) }
     | rev_module_path value_name
-      { ast $2.loc (Var (ref & Binding.of_list & List.rev & $2.desc :: $1)) }
+      { ast $2.loc (Var (`Unbound (Binding.of_list & List.rev & $2.desc :: $1))) }
 
 value_name:
     | IDENT { $1 }
@@ -319,7 +317,7 @@ expr:
       { ast_on $1.loc $3.loc (Concat($1, $3)) }
     | expr CONS expr
       (* TODO: Cons *)
-      { ast_on $1.loc $3.loc (Constr(bindref "Cons", [$1; $3])) }
+      { ast_on $1.loc $3.loc (Constr(Binding.of_string "Cons", [$1; $3])) }
     | expr LAND expr
       { ast_on $1.loc $3.loc (And($1, $3)) }
     | expr LOR expr
@@ -349,7 +347,7 @@ expr:
     | expr actual_args do_block
       { ast_on $1.loc $3.loc (App($1, $2)) }
     | UIDENT simple_expr
-      { ast_on $1.loc $2.loc (Constr(bindref $1.desc, constr_args $2)) }
+      { ast_on $1.loc $2.loc (Constr(Binding.of_string $1.desc, constr_args $2)) }
     | LBRACE fields RBRACE
       { ast_on $1 $3 (Record($2)) }
     | VAR IDENT EQUAL nl_opt expr term block
@@ -462,7 +460,7 @@ fundef:
           (fun (i, args, e1) (ptn, t) ->
              let x = "_t" ^ string_of_int i in
              let e2 = Match (create ptn.loc
-                               (Var (bindref x), t),
+                               (Var (`Local x), t),
                              [(ptn, e1)])
              in
              (i + 1, (x, t) :: args, ast_on ptn.loc e1.loc e2))

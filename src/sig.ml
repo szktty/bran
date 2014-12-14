@@ -49,9 +49,9 @@ let load_file fpath =
   Log.verbose "#    load %s\n" fpath';
   if Sys.file_exists fpath' then begin
     load & Source.parse fpath';
-    true
+    `Ok
   end else
-    false
+    `Error
 
 let load_module path =
   match Binding.path_name path with
@@ -65,7 +65,7 @@ let create_env () =
   | Some env -> env
   | None ->
     let env = !Env.empty in
-    if not & load_module Binding.pervasives then
+    if load_module Binding.pervasives = `Error then
       raise Pervasives_not_found;
     let env' = Env.import env & Library.find_module Binding.pervasives in
     empty := Some env';

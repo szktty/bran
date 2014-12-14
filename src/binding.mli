@@ -11,6 +11,8 @@ val path_name : t -> t option * Id.t
 val path : t -> t option
 val name : t -> Id.t
 
+val add : t -> Id.t -> t
+
 val to_string : t -> string
 val to_list : t -> Id.t list
 val to_erl_fun : t -> string

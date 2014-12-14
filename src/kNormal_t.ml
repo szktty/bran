@@ -33,7 +33,7 @@ and expr =
   | Div of et * et
   | Eq of et * et
   | LE of et * et
-  | Var of Binding.t
+  | Var of [`Local of Id.t | `Module of Binding.t]
   | Concat of et * et
   | Constr of Binding.t * et list
   | App of et * et list

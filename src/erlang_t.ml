@@ -26,7 +26,7 @@ type t =
   | Concat of t * t
   | Eq of t * t
   | LE of t * t
-  | Var of Binding.t
+  | Var of [`Local of Id.t | `Module of Binding.t]
   | Constr of Binding.t * t list
   | AppCls of t * t list
   | AppDir of Binding.t * t list

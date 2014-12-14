@@ -39,7 +39,7 @@ and expr =
   | Concat of et * et
   | Eq of et * et
   | LE of et * et
-  | Var of Binding.t
+  | Var of [`Local of Id.t | `Module of Binding.t]
   | Constr of Binding.t * et list
   | AppCls of et * et list
   | AppDir of Binding.t * et list

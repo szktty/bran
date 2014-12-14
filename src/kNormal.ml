@@ -39,7 +39,8 @@ and string_of_expr =
   | Sub(e1, e2) -> (string_of_typed_expr e1) ^ " - " ^ (string_of_typed_expr e2)
   | Mul(e1, e2) -> (string_of_typed_expr e1) ^ " * " ^ (string_of_typed_expr e2)
   | Div(e1, e2) -> (string_of_typed_expr e1) ^ " / " ^ (string_of_typed_expr e2)
-  | Var(x) -> "Var(" ^ (Binding.to_string x) ^ ")"
+  | Var(`Local x) -> "Var(`Local " ^ x ^ ")"
+  | Var(`Module x) -> "Var(`Module " ^ (Binding.to_string x) ^ ")"
   | Concat(e1, e2) -> (string_of_typed_expr e1) ^ " ^ " ^ (string_of_typed_expr e2)
   | Constr(x, es) -> "Constr(" ^ (Binding.to_string x) ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ "])"
   | Eq(e1, e2) -> (string_of_typed_expr e1) ^ " = " ^ (string_of_typed_expr e2)
@@ -73,7 +74,7 @@ let rec insert_let (e, t) k = (* letを挿入する補助関数 (caml2html: knor
       LetRec(fundef, (e', t))
   | _ ->
       let x = Id.gentmp (Type.prefix t) in
-      let e' = k (Var(Binding.of_string x), t) in
+      let e' = k (Var(`Local x), t) in
       Let((x, t), (e, t), (e', t))
 
 let rec pattern env p = 
@@ -137,20 +138,23 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { loc = loc; desc = (e, t) }
     | Ast_t.Sub(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Sub(e1', e2'), t))
     | Ast_t.Mul(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Mul(e1', e2'), t))
     | Ast_t.Div(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Div(e1', e2'), t))
-    | Ast_t.Var(x) -> Exp(Var(!x), t)
+    | Ast_t.Var(`Local x) -> Exp(Var(`Local x), t)
+    | Ast_t.Var(`Module x) -> Exp(Var(`Module x), t)
+    | Ast_t.Var(`Unbound _) -> assert false
     | Ast_t.Concat(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Concat(e1', e2'), t))
-    | Ast_t.Constr(x, es) -> insert_lets es (fun es' -> Exp(Constr(!x, es'), t))
+    | Ast_t.Constr(x, es) -> insert_lets es (fun es' -> Exp(Constr(x, es'), t))
     | Ast_t.Eq(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(Eq(e1', e2'), t))
     | Ast_t.LE(e1, e2) -> binop e1 e2 (fun e1' e2' -> Exp(LE(e1', e2'), t))
     | Ast_t.If(e1, e2, e3) -> insert_let (g env e1) (fun e1' -> If(e1', (g env e2), (g env e3)))
-    | Ast_t.Match({ desc = (Ast_t.Var(x), _) }, pes) ->
-        let pes' = List.map 
+    | Ast_t.Match({ desc = (Ast_t.Var(`Local x), _) }, pes) ->
+      let pes' = List.map 
           (fun (p, e) -> 
-            let env', p' = pattern env p in
-            let e' = g env' e in 
-            p', e')
-          pes in
-        Match(Binding.to_string !x, pes')
+             let env', p' = pattern env p in
+             let e' = g env' e in 
+             p', e')
+          pes
+      in
+      Match(x, pes')
     | Ast_t.Match(e, pes) ->
         let e' = g env e in
         let pes' = List.map 

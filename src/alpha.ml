@@ -23,7 +23,8 @@ let rec h ids (e, t) =
     | Tuple(es) -> Tuple(List.map (h ids) es)
     | List(es) -> List(List.map (h ids) es)
     | Array(es) -> Array(List.map (h ids) es)
-    | Var(x) -> Var(Binding.of_string & find (Binding.to_string x) ids)
+    | Var(`Local x) -> Var(`Local (find x ids))
+    | Var(`Module x) -> Var(`Module x)
     | Concat(e1, e2) -> Concat(h ids e1, h ids e2)
     | Constr(x, es) ->
       Constr(Binding.of_string & find (Binding.to_string x) ids,
