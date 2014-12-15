@@ -10,6 +10,7 @@ let suites = [
   Test_literals.suite;
   Test_typdef.suite;
   Test_variant.suite;
+  Test_pattern.suite;
 ]
 
 let _ =

@@ -1,0 +1,6 @@
+def test _ =
+  match false with
+  | true -> false
+  | false -> true
+  end
+def expected_value _ = "true."

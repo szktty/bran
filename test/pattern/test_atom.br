@@ -1,0 +1,8 @@
+def test _ =
+  match @hello with
+  | @hell -> false
+  | @Hello -> false
+  | @hello -> true
+  | _ -> false
+  end
+def expected_value _ = "true."
