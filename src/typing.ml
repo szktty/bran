@@ -588,19 +588,24 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
             assert false
         end
       | Constr(x, ets) -> 
-        let ets', ts' =
-          List.fold_left
-            (fun (ets, ts) e ->
-               let e', t' = g env e in
-               set e (e', t') :: ets, t' :: ts)
-            ([], []) (List.rev ets)
-        in
-        begin
-          let t = instantiate env ty in
-          match t.desc with
-          | Type_t.App(Type_t.Arrow, ys) -> 
-            List.iter2 (unify env) ts' (List.init ys);
-            Constr(x, ets'), t
+        let t = instantiate env ty in
+        begin match t.desc with
+          | Type_t.App(Type_t.Variant (_, constrs), []) ->
+            let _, ys = List.find (fun (x', _) -> Binding.name x = x') constrs in
+            if List.length ys <> List.length ets then
+              raise (Invalid_constr_arguments
+                       (e.loc, x, List.length ys, List.length ets))
+            else begin
+              let ets', ts' =
+                List.fold_left
+                  (fun (ets, ts) e ->
+                     let e', t' = g env e in
+                     set e (e', t') :: ets, t' :: ts)
+                  ([], []) (List.rev ets)
+              in
+              List.iter2 (unify env) ts' ys;
+              Constr(x, ets'), t
+            end
           | _ ->
             Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
             assert false

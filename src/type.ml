@@ -41,7 +41,7 @@ and string_of_tycon reached =
   | Module x -> "Module(" ^ x ^ ")"
   | Record(x, fs) -> "Record(" ^ x ^ ", {" ^ (String.concat ", " fs) ^ "})"
   | Variant(x, constrs) when S.mem x reached -> "Variant(" ^ x ^ ")"
-  | Variant(x, constrs) -> "Variant(" ^ x ^ ", " ^ (String.concat " | " (List.map (string_of_constr (S.add x reached)) constrs)) ^ ")"
+  | Variant(x, constrs) -> "Variant(" ^ x ^ ", [" ^ (String.concat " | " (List.map (string_of_constr (S.add x reached)) constrs)) ^ "])"
   | TyFun(xs, t) ->
     Printf.sprintf "TyFun([%s], %s)" (String.concat ", " xs) (string_of_t reached t)
   | Instance (xts, t) ->
@@ -192,7 +192,8 @@ module Tycon = struct
       List.map 
         (function
           | y, [] -> y, create t.loc (Poly(xs, t))
-          | y, ts -> y, create t.loc (Poly(xs, create t.loc (App(Arrow, ts @ [t])))))
+          (*| y, ts -> y, create t.loc (Poly(xs, create t.loc (App(Arrow, ts @ [t])))))*)
+          | y, ts -> y, create t.loc (Poly(xs, t)))
         constrs
     | _ -> []
 
