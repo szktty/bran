@@ -1,4 +1,3 @@
 type t = T of int
 def test _ = T 0
-def expected_type _ = @tuple
 def expected_value _ = "{'Test_args.T', 0}."
