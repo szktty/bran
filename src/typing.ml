@@ -8,7 +8,8 @@ open Base
 exception Unify of Type_t.t * Type_t.t
 exception Topdef_error of (Id.t * Type_t.t) * Type_t.t * Type_t.t
 exception Error of expr Locating.t * Type_t.t * Type_t.t
-    
+exception Invalid_constr_arguments of Location.t * Binding.t * int * int
+
 (* experimental: for type inference error message *)
 let topdefs = ref []
 
@@ -577,7 +578,15 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
         expr, instantiate env (M.find x venv)
       | Var _ -> assert false
       | Constr(x, []) -> 
-        expr, instantiate env ty
+        let t = instantiate env ty in
+        begin match t.desc with
+          | Type_t.App(Type_t.Variant _, []) -> expr, t
+          | Type_t.App(Type_t.Arrow, ys) -> 
+            raise (Invalid_constr_arguments (e.loc, x, List.length ys - 1, 0))
+          | _ ->
+            Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
+            assert false
+        end
       | Constr(x, ets) -> 
         let ets', ts' =
           List.fold_left
