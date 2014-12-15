@@ -9,6 +9,7 @@ let suites = [
   (* compiling *)
   Test_literals.suite;
   Test_typdef.suite;
+  Test_variant.suite;
 ]
 
 let _ =

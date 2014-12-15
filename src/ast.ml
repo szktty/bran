@@ -42,10 +42,11 @@ and string_of_expr =
   | If(e1, e2, e3) -> "If(" ^ (string_of_typed_expr e1) ^ " then " ^ (string_of_typed_expr e2) ^ " else " ^ (string_of_typed_expr e3) ^ ")"
   | Match(e, pes) -> "Match(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat "; " (List.map (fun (p, e) -> (string_of_pattern p) ^ " -> " ^ (string_of_typed_expr e)) pes)) ^ "])"
   | LetVar((x, t), e1, e2) -> "LetVar(" ^ x ^ " : " ^ (Type.to_string t) ^ " = " ^ (string_of_typed_expr e1) ^ " in " ^ (string_of_typed_expr e2) ^ ")"
-  | Var(x) -> "Var(" ^ x ^ ")"
+  | Var (`Unbound x) -> "Var(`Unbound " ^ (Binding.to_string x) ^ ")"
+  | Var (`Local x) -> "Var(`Local " ^ x ^ ")"
+  | Var (`Module x) -> "Var(`Module " ^ (Binding.to_string x) ^ ")"
   | Concat (e1, e2) -> "Concat(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2) ^ ")"
-  | Constr(x, es) -> "Constr(" ^ x ^ ", " ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ ")"
-  | Module x -> "Module(" ^ x ^ ")"
+  | Constr(x, es) -> "Constr(" ^ (Binding.to_string x) ^ ", " ^ (String.concat_map ", " string_of_typed_expr es) ^ ")"
   | LetRec({ name = (x, t); args = yts; body = e1 }, e2) -> "LetRec(" ^ x ^ "(" ^ (String.concat ", " (List.map (fun (y, t) -> y ^ " : " ^ (Type.to_string t)) yts)) ^ ") : " ^ (Type.to_string t) ^ " = " ^ (string_of_typed_expr e1) ^ " in " ^ (string_of_typed_expr e2) ^ ")"
   | App(e, es) -> "App(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat ", " (List.map string_of_typed_expr es)) ^ "])"
   | Get (e1, e2) ->
@@ -95,6 +96,3 @@ let fold f defs env =
         | _ -> assert false)
       (env, []) defs in
   List.rev defs'
-
-let cons ts = Constr (Type.cons_id, ts)
-let nil = Constr (Type.nil_id, [])

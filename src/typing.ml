@@ -8,7 +8,8 @@ open Base
 exception Unify of Type_t.t * Type_t.t
 exception Topdef_error of (Id.t * Type_t.t) * Type_t.t * Type_t.t
 exception Error of expr Locating.t * Type_t.t * Type_t.t
-    
+exception Invalid_constr_arguments of Location.t * Binding.t * int * int
+
 (* experimental: for type inference error message *)
 let topdefs = ref []
 
@@ -342,7 +343,7 @@ let rec deref_typed_expr ({ Env.venv = venv } as env) le =
   set le (deref_expr env e, deref_type env t)
 
 and deref_expr ({ Env.venv = venv } as env) = function
-  | Int _ | Float _ | Bool _ | Char _ | String _ | Atom _ | Bitstring _ | Unit | Var _ | Module _ as e -> e
+  | Int _ | Float _ | Bool _ | Char _ | String _ | Atom _ | Bitstring _ | Unit | Var _ as e -> e
   | Record(xes) -> Record(List.map (fun (x, e) -> x, deref_typed_expr env e) xes)
   | Field(e, x) -> Field(deref_typed_expr env e, x)
   | Tuple(es) -> Tuple(List.map (deref_typed_expr env) es)
@@ -486,19 +487,6 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
             Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
             assert false
         end
-      | Field ({ desc = (Module mx, _) }, x) ->
-        begin match Library.find_opt mx with
-        | Some _ -> ()
-        | None ->
-          if not & Sig.load_module mx then
-            raise (Unbound_module_error (e.loc, mx))
-        end;
-        let m = Library.find mx in
-        Log.debug "#   => module val %s.%s\n" mx x;
-        begin match Module.find_val_opt m x with
-        | None -> raise (Unbound_value_error (e.loc, Module.(m.name) ^ "." ^ x))
-        | Some t -> expr, t
-        end
       | Field(et, x) ->
         let _, ty_rec' as et' = g env et in
         let ty_f = instantiate env (M.find x tenv) in
@@ -586,12 +574,19 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
           unify env t t1';
           let e2', t2' = g (Env.add_var env x t1') et2 in
           LetVar((x, t1'), set et1 (e1', t1'), set et2 (e2', t2')), t2'
-      | Var(x) when M.mem x venv -> 
-          expr, instantiate env (M.find x venv) (* 変数の型推論 (caml2html: typing_var) *)
-      | Var(x) ->
-        raise (Ast_t.Unbound_value_error (e.loc, x))
+      | Var (`Local x) when M.mem x venv ->
+        expr, instantiate env (M.find x venv)
+      | Var _ -> assert false
       | Constr(x, []) -> 
-          expr, instantiate env (M.find x venv)
+        let t = instantiate env ty in
+        begin match t.desc with
+          | Type_t.App(Type_t.Variant _, []) -> expr, t
+          | Type_t.App(Type_t.Arrow, ys) -> 
+            raise (Invalid_constr_arguments (e.loc, x, List.length ys - 1, 0))
+          | _ ->
+            Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
+            assert false
+        end
       | Constr(x, ets) -> 
         let ets', ts' =
           List.fold_left
@@ -601,19 +596,15 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
             ([], []) (List.rev ets)
         in
         begin
-          let t = instantiate env (M.find x venv) in
+          let t = instantiate env ty in
           match t.desc with
           | Type_t.App(Type_t.Arrow, ys) -> 
             List.iter2 (unify env) ts' (List.init ys);
-            Constr(x, ets'), (List.last ys)
+            Constr(x, ets'), t
           | _ ->
             Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
             assert false
         end
-      | Module x when Library.mem x ->
-        expr, instantiate env (Type.void_app e.loc & Type_t.Module x)
-      | Module x ->
-        raise (Ast_t.Unbound_module_error (e.loc, x))
       | LetRec({ name = (x, ty_f); args = yts; body = et1 }, et2) -> (* let recの型推論 (caml2html: typing_letrec) *)
         let t2 = create et2.loc & Type_t.Meta(Type.newmetavar()) in
         let ty_f' = create et2.loc & Type_t.App (Type_t.Arrow, ((List.map snd yts) @ [t2])) in

@@ -24,7 +24,6 @@ and string_of_expr =
   | Bitstring x -> Bitstring.to_string x
   | Record(xes) -> "{" ^ (String.concat "; " (List.map (fun (x, e) -> x ^ " = " ^ (string_of_typed_expr e)) xes)) ^ "}"
   | Field(e, x) -> (string_of_typed_expr e) ^ "." ^ x
-  | Module x -> "module type " ^ x
   | Tuple(es) -> "(" ^ (String.concat_map ", " string_of_typed_expr es) ^ ")"
   | List(es) -> "[" ^ (String.concat_map ", " string_of_typed_expr es) ^ "]"
   | Array(es) -> "[|" ^ (String.concat_map "; " string_of_typed_expr es) ^ "|]"
@@ -39,10 +38,13 @@ and string_of_expr =
   | Concat (e1, e2) -> (string_of_typed_expr e1) ^ " ^ " ^ (string_of_typed_expr e2)
   | Eq(e1, e2) -> (string_of_typed_expr e1) ^ " = " ^ (string_of_typed_expr e2)
   | LE(e1, e2) -> (string_of_typed_expr e1) ^ " <= " ^ (string_of_typed_expr e2) 
-  | Var(x) -> "Var(" ^ x ^ ")"
-  | Constr(x, es) -> "Constr(" ^ x ^ ", [" ^ (String.concat "; " (List.map string_of_typed_expr es)) ^ "])"
+  | Var(`Local x) -> "Var(`Local " ^ x ^ ")"
+  | Var(`Module x) -> "Var(`Module " ^ (Binding.to_string x) ^ ")"
+  | Constr(x, es) ->
+    "Constr(" ^ (Binding.to_string x) ^ ", [" ^ (String.concat_map "; " string_of_typed_expr es) ^ "])"
   | AppCls(e, args) -> "AppCls(" ^ (string_of_typed_expr e) ^ ", [" ^ (String.concat "; " (List.map string_of_typed_expr args)) ^ "])"
-  | AppDir(Id.L(x), args) -> "AppDir(" ^ x ^ ", [" ^ (String.concat " " (List.map string_of_typed_expr args)) ^ "])"
+  | AppDir(x, args) ->
+    "AppDir(" ^ (Binding.to_string x) ^ ", [" ^ (String.concat_map " " string_of_typed_expr args) ^ "])"
   | Get(e1, e2) -> "Get(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2)
   | Put(e1, e2, e3) -> "Put(" ^ (string_of_typed_expr e1) ^ ", " ^ (string_of_typed_expr e2) ^ ", " ^ (string_of_typed_expr e3)
       
@@ -77,7 +79,7 @@ let rec vars_of_pattern =
       
 let rec fv_of_expr (e, _) = 
   match e with
-  | Bool(_) | Int(_) | Float _ | Char _ | String _ | Atom _ | Bitstring _ | Module _ -> S.empty
+  | Bool(_) | Int(_) | Float _ | Char _ | String _ | Atom _ | Bitstring _ -> S.empty
   | Record(xes) -> List.fold_left (fun s (_, e) -> S.union s (fv_of_expr e)) S.empty xes
   | Field(e, _) -> fv_of_expr e
   | Tuple(es) | List(es) | Array(es) ->
@@ -87,7 +89,8 @@ let rec fv_of_expr (e, _) =
   | Add(e1, e2) | Sub(e1, e2) | Mul(e1, e2) | Div(e1, e2) | Concat(e1, e2)
   | Eq(e1, e2) | LE(e1, e2) | Get(e1, e2) ->
     S.union (fv_of_expr e1) (fv_of_expr e2)
-  | Var(x) -> S.singleton x
+  | Var(`Local x) -> S.singleton x
+  | Var (`Module _) -> S.empty
   | Constr(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
   | AppCls(e, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty (e :: es)
   | AppDir(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
@@ -156,7 +159,6 @@ let rec h env known (expr, ty) =
     | KNormal_t.Bitstring s -> Bitstring s
     | KNormal_t.Record(xes) -> Record(List.map (fun (x, e) -> x, h env known e) xes)
     | KNormal_t.Field(e, x) -> Field(h env known e, x)
-    | KNormal_t.Module x -> Module x
     | KNormal_t.Tuple(es) -> Tuple(List.map (h env known) es)
     | KNormal_t.List(es) -> List(List.map (h env known) es)
     | KNormal_t.Array(es) -> Array(List.map (h env known) es)
@@ -173,23 +175,16 @@ let rec h env known (expr, ty) =
     | KNormal_t.LE(e1, e2)  -> LE(h env known e1, h env known e2)
     | KNormal_t.Var(x) -> Var(x)
     | KNormal_t.Constr(x, es) -> Constr(x, List.map (h env known) es)
-    | KNormal_t.App((KNormal_t.Var(x), ft), ys) when S.mem x known -> (* 関数適用の場合 (caml2html: closure_app) *)
-        Log.debug "directly applying %s\n" x;
-        AppDir(Id.L(x), List.map (h env known) ys)
-    | KNormal_t.App((KNormal_t.Field ((Module mx, _), fx), ft), es) ->
-      Log.debug "# directly applying %s.%s\n" mx fx;
-      let m = Library.find mx in
-      let fx' =
-        match Module.find_ext_opt m fx with
-        | Some x -> x
-        | None -> Module.erl_name m ^ ":" ^ fx
-      in
-      Log.debug "#    -> %s\n" fx';
-      AppDir(Id.L(fx'), List.map (h env known) es)
+    | KNormal_t.App((KNormal_t.Var(`Local x), ft), ys) when S.mem x known ->
+      Log.debug "directly applying %s\n" x;
+      AppDir(Binding.of_string x, List.map (h env known) ys)
+    | KNormal_t.App((KNormal_t.Var(`Module x), ft), ys) ->
+      Log.debug "directly applying %s\n" (Binding.to_string x);
+      AppDir(x, List.map (h env known) ys)
     | KNormal_t.App(e, es) -> 
         AppCls(h env known e, List.map (h env known) es)
     | KNormal_t.ExtFunApp(x, ys) -> 
-        AppDir(Id.L(x), List.map (h env known) ys)
+      AppDir(Binding.of_string x, List.map (h env known) ys)
     | KNormal_t.Get (e1, e2)  -> Get (h env known e1, h env known e2)
     | KNormal_t.Put (e1, e2, e3) ->
       Put (h env known e1, h env known e2, h env known e3)

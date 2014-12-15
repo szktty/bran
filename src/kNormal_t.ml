@@ -20,7 +20,6 @@ and expr =
   | Bitstring of Bitstring.t
   | Record of (Id.t * et) list
   | Field of et * Id.t
-  | Module of Id.t
   | List of et list
   | Tuple of et list
   | Array of et list
@@ -34,9 +33,9 @@ and expr =
   | Div of et * et
   | Eq of et * et
   | LE of et * et
-  | Var of Id.t
+  | Var of [`Local of Id.t | `Module of Binding.t]
   | Concat of et * et
-  | Constr of Id.t * et list
+  | Constr of Binding.t * et list
   | App of et * et list
   | ExtFunApp of Id.t * et list
   | Get of et * et

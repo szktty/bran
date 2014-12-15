@@ -248,7 +248,7 @@ primary:
     | ATOM
       { ast $1.loc (Atom $1.desc) }
     | UIDENT
-      { ast $1.loc (Constr($1.desc, [])) }
+      { ast $1.loc (Constr(Binding.of_string $1.desc, [])) }
     | LBRACK list_ RBRACK
       { ast_on $1 $3 (List $2) }
     | LBRACK PIPE list_ PIPE RBRACK
@@ -258,24 +258,18 @@ primary:
 
 binding:
     | value_name
-      { $1 }
-    | module_path value_name
-      (* TODO: Ast.Binding *)
-      { $2 }
+      { ast $1.loc (Var (`Unbound (Binding.of_string $1.desc))) }
+    | rev_module_path value_name
+      { ast $2.loc (Var (`Unbound (Binding.of_list & List.rev & $2.desc :: $1))) }
 
 value_name:
-    | IDENT
-      { ast $1.loc (Var $1.desc) }
-
-module_path:
-    | rev_module_path
-      { List.rev $1 }
+    | IDENT { $1 }
 
 rev_module_path:
     | UIDENT DOT
-      { [$1] }
+      { [$1.desc] }
     | rev_module_path UIDENT DOT
-      { $2 :: $1 }
+      { $2.desc :: $1 }
 
 field_expr:
     | primary DOT binding
@@ -322,7 +316,8 @@ expr:
     | expr UARROW expr
       { ast_on $1.loc $3.loc (Concat($1, $3)) }
     | expr CONS expr
-      { ast_on $1.loc $3.loc (Constr("Cons", [$1; $3])) }
+      (* TODO: Cons *)
+      { ast_on $1.loc $3.loc (Constr(Binding.of_string "Cons", [$1; $3])) }
     | expr LAND expr
       { ast_on $1.loc $3.loc (And($1, $3)) }
     | expr LOR expr
@@ -352,7 +347,7 @@ expr:
     | expr actual_args do_block
       { ast_on $1.loc $3.loc (App($1, $2)) }
     | UIDENT simple_expr
-      { ast_on $1.loc $2.loc (Constr($1.desc, constr_args $2)) }
+      { ast_on $1.loc $2.loc (Constr(Binding.of_string $1.desc, constr_args $2)) }
     | LBRACE fields RBRACE
       { ast_on $1 $3 (Record($2)) }
     | VAR IDENT EQUAL nl_opt expr term block
@@ -464,7 +459,10 @@ fundef:
       { let (_, args, body) = List.fold_left
           (fun (i, args, e1) (ptn, t) ->
              let x = "_t" ^ string_of_int i in
-             let e2 = Match (create ptn.loc (Var x, t), [(ptn, e1)]) in
+             let e2 = Match (create ptn.loc
+                               (Var (`Local x), t),
+                             [(ptn, e1)])
+             in
              (i + 1, (x, t) :: args, ast_on ptn.loc e1.loc e2))
           (0, [], $5) $2
         in

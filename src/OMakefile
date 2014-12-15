@@ -180,6 +180,7 @@ FILES[] =
 	m
 	main
 	module
+	naming
 	parser
 	position
 	s

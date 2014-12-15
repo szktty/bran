@@ -5,35 +5,28 @@ let modules = ref []
 let register m =
   modules := m :: !modules
 
-let find_opt x =
-  List.find_opt (fun m -> m.Module.name = x) !modules
+let find_module_opt x =
+  List.find_opt (fun m -> Module.path m = x) !modules
 
-let find x =
-  match find_opt x with
+let find_module x =
+  match find_module_opt x with
   | None -> raise Not_found
   | Some m -> m
 
-let mem x = find_opt x <> None
+let path_name path =
+  match Binding.path_name path with
+  | None, x -> Binding.pervasives, x
+  | Some path, x -> path, x
 
-let find_tycon_opt (path, base) =
-  match begin
-    match path with
-    | [] -> find_opt "Pervasives"
-    | [x] -> find_opt x
-    | _ -> assert false (* not yet support *)
-  end with
-  | None -> None
-  | Some m -> Module.find_tycon_opt m base
+let mem_module x = find_module_opt x <> None
 
-let find_type_opt (path, base) =
-  match begin
-    match path with
-    | [] -> find_opt "Pervasives"
-    | [x] -> find_opt x
-    | _ -> assert false (* not yet support *)
-  end with
-  | None -> None
-  | Some m -> Module.find_val_opt m base
+let find_tycon_opt path =
+  let path, x = path_name path in
+  Module.find_tycon_opt (find_module path) x
+
+let find_val_opt path =
+  let path, x = path_name path in
+  Module.find_val_opt (find_module path) x
 
 (* builtin types *)
 

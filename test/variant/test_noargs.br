@@ -1,0 +1,4 @@
+type t = T
+def test _ = T
+def expected_type _ = @atom
+def expected_value _ = "'Test_noargs.T'."
