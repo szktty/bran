@@ -16,6 +16,7 @@ let test_file file test_ctx =
 
 let test_files = [
   ("noargs", "test_noargs.br");
+  ("args", "test_args.br");
 ]
 
 let suite =

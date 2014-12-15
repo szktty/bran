@@ -591,7 +591,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
           match t.desc with
           | Type_t.App(Type_t.Arrow, ys) -> 
             List.iter2 (unify env) ts' (List.init ys);
-            Constr(x, ets'), (List.last ys)
+            Constr(x, ets'), t
           | _ ->
             Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
             assert false

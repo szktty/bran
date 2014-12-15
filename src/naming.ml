@@ -94,7 +94,7 @@ let resolve_def env mx def =
   | TypeDef _ -> def.desc
   | VarDef (xt, et) -> VarDef (xt, resolve env mx et)
   | RecDef({ name = (x, ty_f); args = yts; body = et } as f) ->
-    let env' = List.fold_left (fun env (x, t) -> Env.add_var env x t) env yts in
+    let env' = Env.add_vars env yts in
     RecDef { f with body = resolve env' mx et }
   | _ -> assert false
 
