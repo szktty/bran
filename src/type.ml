@@ -8,9 +8,15 @@ let cons_id = "Cons"
 let nil_id = "Nil"
 
 let counter = ref 0
+
 let newtyvar () = 
+  let base = Char.code 'z' - Char.code 'a' + 1 in
+  let q = !counter / base in
+  let m = !counter mod base in
   incr counter;
-  Printf.sprintf "tyvar_%d" !counter
+  Printf.sprintf "%c%s" (Char.chr & Char.code 'a' + m)
+    (if q > 0 then string_of_int q else "")
+
 let newmetavar () = ref None
 
 let rec string_of_t reached t = 
