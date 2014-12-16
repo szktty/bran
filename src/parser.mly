@@ -530,6 +530,10 @@ pattern:
     | FLOAT
       (* TODO *)
       { create $1.loc PtUnit }
+    | ATOM
+      { create $1.loc (PtAtom $1.desc) }
+    | STRING
+      { create $1.loc (PtString $1.desc) }
     | pattern AS value_name
       (* TODO *)
       { create $1.loc PtUnit }

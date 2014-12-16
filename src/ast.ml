@@ -6,6 +6,8 @@ let rec string_of_pattern { Locating.desc = p } =
   | PtUnit -> "PtUnit"
   | PtBool(b) -> "PtBool(" ^ (string_of_bool b) ^ ")"
   | PtInt (b, v) -> Printf.sprintf "PtInt(%d, %s)" b v
+  | PtAtom(v) -> "PtAtom(" ^ v ^ ")"
+  | PtString(v) -> "PtString(" ^ v ^ ")"
   | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.to_string t) ^ ")"
   | PtTuple(ps) -> "PtTuple([" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
   | PtRecord(xps) -> "PtRecord([" ^ (String.concat "; " (List.map (fun (x, p) -> x ^ ", " ^ (string_of_pattern p)) xps)) ^ "])"

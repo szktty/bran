@@ -45,6 +45,8 @@ and pattern_desc =
   | PtUnit
   | PtBool of bool
   | PtInt of IntRepr.t
+  | PtAtom of string
+  | PtString of string
   | PtVar of Id.t * Type_t.t
   | PtTuple of pattern list
   | PtRecord of (Id.t * pattern) list

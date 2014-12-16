@@ -10,6 +10,8 @@ let rec ocaml_of_pattern =
   | PtUnit -> "()"
   | PtBool(b) -> string_of_bool b
   | PtInt(n) -> IntRepr.to_string n
+  | PtAtom(v) -> "@\"" ^ v ^ "\""
+  | PtString(v) -> "\"" ^ v ^ "\""
   | PtVar(x, t) -> x
   | PtTuple(ps) -> String.concat ", " (List.map ocaml_of_pattern ps)
   | PtField(xps) -> String.concat ", " (List.map (fun (x, p) -> x ^ " = " ^ (ocaml_of_pattern p)) xps)
@@ -81,8 +83,10 @@ let rec pattern env p =
   Log.debug "KNormal.pattern %s\n" (Ast.string_of_pattern p);
   match p.desc with
   | Ast_t.PtUnit -> env, PtUnit
-  | Ast_t.PtBool(b) -> env, (PtBool(b))
-  | Ast_t.PtInt(n) -> env, (PtInt(n))
+  | Ast_t.PtBool(b) -> env, PtBool b
+  | Ast_t.PtInt(n) -> env, PtInt n
+  | Ast_t.PtAtom v -> env, PtAtom v
+  | Ast_t.PtString v -> env, PtString v
   | Ast_t.PtVar(x, t) -> Env.add_var env x t, (PtVar(x, t))
   | Ast_t.PtTuple(ps) -> 
       let env, ps' = List.fold_left (fun (env, ps) p -> let env', p' = pattern env p in env', p' :: ps) (env, []) (List.rev ps) in

@@ -51,6 +51,8 @@ let rec pattern ids =
   | PtUnit -> ids, PtUnit
   | PtBool(b) -> ids, (PtBool(b))
   | PtInt(n) -> ids, (PtInt(n))
+  | PtAtom v -> ids, PtAtom v
+  | PtString v -> ids, PtString v
   | PtVar(x, t) -> let x' = genid x ids in (add x x' ids), (PtVar(x', t)) 
   | PtTuple(ps) -> 
       let ids', ps' = 
