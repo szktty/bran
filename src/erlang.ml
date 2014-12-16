@@ -44,7 +44,7 @@ let rec gen_exp (e, t) =
   | _ -> failwith & "not implemented: " ^ (Closure.string_of_expr e)
 
 let rec gen_ptn = function
-  | Closure_t.PtUnit -> PtAtom "ok"
+  | Closure_t.PtUnit -> PtTuple []
   | Closure_t.PtBool v -> PtBool v
   | Closure_t.PtInt v -> PtInt v
   | Closure_t.PtAtom v -> PtAtom v
