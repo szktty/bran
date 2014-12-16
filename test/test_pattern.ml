@@ -20,6 +20,15 @@ let test_files = [
   ("atom", "test_atom.br");
   ("int", "test_int.br");
   ("string", "test_string.br");
+  ("unit", "test_unit.br");
+  ("tuple", "test_tuple.br");
+  ("list", "test_list.br");
+  ("empty_list", "test_empty_list.br");
+  ("one_list", "test_one_list.br");
+  ("cons", "test_cons.br");
+  ("as", "test_as.br");
+  ("constr", "test_constr.br");
+  ("constr_args", "test_constr_args.br");
 ]
 
 let suite =
