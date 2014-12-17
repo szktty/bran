@@ -22,6 +22,7 @@ let test_files = [
   ("string", "test_string.br");
   ("unit", "test_unit.br");
   ("tuple", "test_tuple.br");
+  ("tuple_var", "test_tuple_var.br");
   ("list", "test_list.br");
   ("empty_list", "test_empty_list.br");
   ("one_list", "test_one_list.br");
