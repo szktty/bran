@@ -9,13 +9,11 @@ def f x =
   | Some v -> v
   | (foo, bar, baz) -> 0
   | { foo = x, bar = y, baz = z } -> 0
-  | { foo = x, bar = y, baz = z, } -> 0
+  | { foo = x, bar = y, baz = z } -> 0
   | [] -> 0
   | [0, 1, 2] -> 0
-  | [0, 1, 2,] -> 0
   | hd :: tl -> 0
   | hd :: tl :: tl -> 0
   | [||] -> 0
   | [|0, 1, 2|] -> 0
-  | [|0, 1, 2,|] -> 0
   end
