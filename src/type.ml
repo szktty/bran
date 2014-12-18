@@ -4,9 +4,6 @@ open Locating
 
 type t = Type_t.t
 
-let cons_id = "Cons"
-let nil_id = "Nil"
-
 let counter = ref 0
 
 let newtyvar () = 
@@ -113,7 +110,8 @@ let rec repr_of t =
   | App(Bitstring, []) -> "bitstring"
   | App(Binary, []) -> "binary"
   | App(Arrow, xs) -> String.concat " -> " (List.map repr_of xs)
-  | App(List, _) -> "list"
+  | App(List, []) -> "list"
+  | App(List, x :: _) -> (repr_of x) ^ " list"
   | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map repr_of xs)) ^ ")"
   | App(Module x, []) -> "module type " ^ x
   | App(Record(_, xs), ys) -> 

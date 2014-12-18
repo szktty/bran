@@ -97,6 +97,8 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
              | None -> raise (Unify (t1, t2))
              | Some (x, t) -> raise (Topdef_error ((x, t), t1, t2)))
         xs ys
+    | Type_t.App(Type_t.List, x :: _), Type_t.App(Type_t.List, y :: _) ->
+      unify' x y
     | Type_t.App(Type_t.Record(x, fs), xs), Type_t.App(Type_t.Record(y, fs'), ys) when fs = fs' -> List.iter2 unify' xs ys
     | Type_t.App(Type_t.Variant(x, constrs), xs), Type_t.App(Type_t.Variant(y, constrs'), ys) when x = y -> 
       List.iter2 (fun (_, ts) (_, ts') ->
@@ -328,6 +330,17 @@ let rec deref_pattern env lp =
            p' :: ps, env')
         ps ([], env) in
     PtTuple(ps'), env'
+  | PtList(ps) -> 
+    let ps', env' = List.fold_right
+        (fun p (ps, env) ->
+           let p', env' = deref_pattern env p in
+           p' :: ps, env')
+        ps ([], env) in
+    PtList(ps'), env'
+  | PtCons (p1, p2) ->
+    let p1', env' = deref_pattern env p1 in
+    let p2', env'' = deref_pattern env' p2 in
+    PtCons (p1', p2'), env''
   | PtRecord(xps) -> 
       let xps', env' = List.fold_right (fun (x, p) (xps, env) -> let p', env' = deref_pattern env p in (x, p') :: xps, env') xps ([], env) in
       PtRecord(xps'), env'
@@ -392,7 +405,7 @@ let deref_def env def =
       | _ -> assert false)
 
 let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p : Env.t * Type_t.t =
-  Log.debug "Typing.pattern (%s)\n" (string_of_pattern p);
+  Log.debug "# Typing.pattern (%s)\n" (string_of_pattern p);
   let with_loc = create p.loc in
   match p.desc with
   | PtUnit -> env, with_loc & Type_t.App(Type_t.Unit, [])
@@ -404,6 +417,16 @@ let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p : Env.t * Type_t.t =
   | PtTuple(ps) -> 
     let env', ts' = List.fold_left (fun (env, ts) p -> let env', t' = pattern env p in env', t' :: ts) (env, []) (List.rev ps) in
     env', with_loc & Type_t.App(Type_t.Tuple, ts')
+  | PtList(ps) -> 
+    let env', ts' = List.fold_left (fun (env, ts) p -> let env', t' = pattern env p in env', t' :: ts) (env, []) (List.rev ps) in
+    env', with_loc & Type_t.App(Type_t.List, ts')
+  | PtCons (p1, p2) ->
+    let env', t1 = pattern env p1 in
+    let env'', t2 = pattern env' p2 in
+    (*let t3 = with_loc & Type_t.App (Type_t.List, [t1]) in*)
+    let t3 = with_loc & Type_t.Meta(Type.newmetavar ()) in
+    (*unify env'' t2 t3;*)
+    env'', t3
   | PtRecord(xps) -> 
     let env', ts' = List.fold_left (fun (env, ts) (_, p) -> let env', t' = pattern env p in env', t' :: ts) (env, []) (List.rev xps) in
     begin

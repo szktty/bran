@@ -551,11 +551,9 @@ pattern:
     | UIDENT pattern
       { range $1.loc $2.loc (PtConstr($1.desc, constr_pattern_args $2)) }
     | LBRACK list_pattern RBRACK
-      { List.fold_right (fun x xs ->
-          create $1 (PtConstr("Cons", [x; xs])))
-            $2 (create $3 (PtConstr("Nil", []))) }
+      { range $1 $3 (PtList $2) }
     | pattern CONS pattern
-      { range $1.loc $3.loc (PtConstr("Cons", [$1; $3])) }
+      { range $1.loc $3.loc (PtCons ($1, $3)) }
     | LBRACK PIPE list_pattern PIPE RBRACK
       (* TODO *)
       { create $1 PtUnit }

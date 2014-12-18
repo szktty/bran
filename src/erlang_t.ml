@@ -42,6 +42,7 @@ and pattern =
   | PtString of string
   | PtVar of Id.t
   | PtList of pattern list
+  | PtCons of pattern * pattern
   | PtTuple of pattern list
   | PtRecord of (Id.t * pattern) list
 

@@ -49,6 +49,8 @@ and pattern_desc =
   | PtString of string
   | PtVar of Id.t * Type_t.t
   | PtTuple of pattern list
+  | PtList of pattern list
+  | PtCons of pattern * pattern
   | PtRecord of (Id.t * pattern) list
   | PtConstr of Id.t * pattern list
 and fundef = { name : Id.t * Type_t.t; args : (Id.t * Type_t.t) list; body : t; }

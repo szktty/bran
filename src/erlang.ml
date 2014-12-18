@@ -51,6 +51,8 @@ let rec gen_ptn = function
   | Closure_t.PtString v -> PtString v
   | Closure_t.PtVar (x, _) -> PtVar x
   | Closure_t.PtTuple ps -> PtTuple (List.map gen_ptn ps)
+  | Closure_t.PtList ps -> PtList (List.map gen_ptn ps)
+  | Closure_t.PtCons (p1, p2) -> PtCons (gen_ptn p1, gen_ptn p2)
   | Closure_t.PtRecord xps ->
     PtRecord (List.map (fun (x, p) -> (x, gen_ptn p)) xps)
   | Closure_t.PtConstr (x, ps) -> assert false

@@ -9,7 +9,10 @@ let rec string_of_pattern =
   | PtAtom v -> "PtAtom(" ^ v ^ ")"
   | PtString v -> "PtString(" ^ v ^ ")"
   | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.to_string t) ^ ")"
-  | PtTuple(ps) -> "PtTuple([" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
+  | PtTuple(ps) -> "PtTuple(" ^ (String.concat_map "; " string_of_pattern ps) ^ ")"
+  | PtList(ps) -> "PtList(" ^ (String.concat_map "; " string_of_pattern ps) ^ ")"
+  | PtCons (p1, p2) ->
+    Printf.sprintf "PtCons(%s)" (String.concat_map ", " string_of_pattern [p1; p2])
   | PtRecord(xps) -> "PtRecord([" ^ (String.concat "; " (List.map (fun (x, p) -> x ^ ", " ^ (string_of_pattern p)) xps)) ^ "])"
   | PtConstr(x, ps) -> "PtConstr(" ^ x ^ ", [" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
 
@@ -76,7 +79,10 @@ let rec vars_of_pattern =
   function
   | PtUnit | PtBool _ | PtInt _ | PtAtom _ | PtString _ -> S.empty
   | PtVar(x, _) -> S.singleton x
-  | PtTuple(ps) | PtConstr(_, ps) -> List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty ps
+  | PtTuple(ps) | PtList ps | PtConstr(_, ps) ->
+    List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty ps
+  | PtCons (p1, p2) -> 
+    List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty [p1; p2]
   | PtRecord(xps) -> List.fold_left (fun s (_, p) -> S.union s (vars_of_pattern p)) S.empty xps
       
 let rec fv_of_expr (e, _) = 
@@ -120,7 +126,6 @@ let ids_of_defs defs =
     ) [] defs
     
 let rec pattern env = 
-
   function
   | KNormal_t.PtUnit -> env, PtUnit
   | KNormal_t.PtBool(b) -> env, PtBool(b)
@@ -135,6 +140,17 @@ let rec pattern env =
           env', p' :: ps) 
         (env, []) ps in
       env, PtTuple(List.rev ps')
+  | KNormal_t.PtList(ps) -> 
+      let env, ps' = List.fold_left 
+        (fun (env, ps) p -> 
+          let env', p' = pattern env p in 
+          env', p' :: ps) 
+        (env, []) ps in
+      env, PtList(List.rev ps')
+  | KNormal_t.PtCons (p1, p2) -> 
+    let env', p1' = pattern env p1 in
+    let env'', p2' = pattern env' p2 in
+    env'', PtCons (p1', p2')
   | KNormal_t.PtField(xps) -> 
       let env, xps' = List.fold_left 
         (fun (env, xps) (x, p) -> 

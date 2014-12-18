@@ -13,7 +13,9 @@ let rec ocaml_of_pattern =
   | PtAtom(v) -> "@\"" ^ v ^ "\""
   | PtString(v) -> "\"" ^ v ^ "\""
   | PtVar(x, t) -> x
-  | PtTuple(ps) -> String.concat ", " (List.map ocaml_of_pattern ps)
+  | PtTuple(ps) -> String.concat_map ", " ocaml_of_pattern ps
+  | PtList(ps) -> String.concat_map ", " ocaml_of_pattern ps
+  | PtCons (p1, p2) -> (ocaml_of_pattern p1) ^ "::" ^ (ocaml_of_pattern p2)
   | PtField(xps) -> String.concat ", " (List.map (fun (x, p) -> x ^ " = " ^ (ocaml_of_pattern p)) xps)
   | PtConstr(x, ps) -> x ^ ", " ^ String.concat ", " (List.map ocaml_of_pattern ps)
 
@@ -81,6 +83,12 @@ let rec insert_let (e, t) k = (* letを挿入する補助関数 (caml2html: knor
 
 let rec pattern env p = 
   Log.debug "KNormal.pattern %s\n" (Ast.string_of_pattern p);
+  let fold env ps =
+    List.fold_left (fun (env, ps) p ->
+        let env', p' = pattern env p in
+        env', p' :: ps)
+      (env, []) (List.rev ps)
+  in
   match p.desc with
   | Ast_t.PtUnit -> env, PtUnit
   | Ast_t.PtBool(b) -> env, PtBool b
@@ -89,14 +97,20 @@ let rec pattern env p =
   | Ast_t.PtString v -> env, PtString v
   | Ast_t.PtVar(x, t) -> Env.add_var env x t, (PtVar(x, t))
   | Ast_t.PtTuple(ps) -> 
-      let env, ps' = List.fold_left (fun (env, ps) p -> let env', p' = pattern env p in env', p' :: ps) (env, []) (List.rev ps) in
-      env, PtTuple(ps')
+    let env, ps' = fold env ps in
+    env, PtTuple ps'
+  | Ast_t.PtList(ps) -> 
+    let env, ps' = fold env ps in
+    env, PtList ps'
+  | Ast_t.PtCons (p1, p2) ->
+    let env, ps' = fold env [p1; p2] in
+    env, PtCons (List.nth ps' 0, List.nth ps' 1)
   | Ast_t.PtRecord(xps) -> 
       let env, xps' = List.fold_left (fun (env, xps) (x, p) -> let env', p' = pattern env p in env', (x, p') :: xps) (env, []) (List.rev xps) in
       env, PtField(xps')
   | Ast_t.PtConstr(x, ps) -> 
-      let env, ps' = List.fold_left (fun (env, ps) p -> let env', p' = pattern env p in env', p' :: ps) (env, []) (List.rev ps) in
-      env, PtConstr(x, ps')
+    let env, ps' = fold env ps in
+    env, PtConstr(x, ps')
         
 let rec g ({ Env.venv = venv; tenv = tenv } as env) { loc = loc; desc = (e, t) } = (* K正規化ルーチン本体 (caml2html: knormal_g) *)
   Log.debug "kNormal.g %s\n" (Ast.string_of_expr e);

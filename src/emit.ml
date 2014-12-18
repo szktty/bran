@@ -138,6 +138,16 @@ and gen_ptn oc = function
     bprintf oc "{";
     inject_sep oc ", " (fun p -> gen_ptn oc p) ps;
     bprintf oc "}"
+  | PtList ps ->
+    bprintf oc "[";
+    inject_sep oc ", " (fun p -> gen_ptn oc p) ps;
+    bprintf oc "]"
+  | PtCons (p1, p2) ->
+    bprintf oc "[";
+    gen_ptn oc p1;
+    bprintf oc "|";
+    gen_ptn oc p2;
+    bprintf oc "]"
   | _ -> assert false (* TODO *)
 
 let rec gen_type_tycon ~format oc t =

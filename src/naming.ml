@@ -33,6 +33,29 @@ let find_val env loc path =
     | None -> `Not_found name
     | Some t -> `Module (Binding.add (Module.path m) name, t)
 
+let rec resolve_ptn env mx p =
+  let env', p' =
+    match p.desc with
+    | PtBool _ -> env, p.desc
+    | PtVar (x, t) -> Env.add_var env x t, p.desc
+    | PtList ps ->
+      let env', ps' = List.fold_left
+                        (fun (env, accu) p ->
+                           let env', p' = resolve_ptn env mx p in
+                             env', p' :: accu)
+                        (env, []) (List.rev ps)
+      in
+      env', PtList ps'
+    | PtCons (p1, p2) ->
+      let env', p1' = resolve_ptn env mx p1 in
+      let env'', p2' = resolve_ptn env' mx p2 in
+      env'', PtCons (p1', p2')
+    | _ ->
+      Printf.printf "%s\n" (Ast.string_of_pattern p);
+      failwith "not implemented"
+  in
+  env', set p p'
+
 let rec resolve env mx { loc = loc; desc = (e, t) } =
   Log.debug "# Naming.resolve : %s\n" (Ast.string_of_expr e);
   let f = resolve env mx in
@@ -41,7 +64,11 @@ let rec resolve env mx { loc = loc; desc = (e, t) } =
     match e with
     | Unit | Bool _ | Int _ | Float _ | Char _ | String _ | Atom _ | Bitstring _ -> e, t
     | Match (e1, ptns) ->
-      Match (f e1, List.map (fun (p, e) -> p, f e) ptns), t
+      Match (f e1, List.map
+               (fun (p, e) ->
+                  let env', p' = resolve_ptn env mx p in
+                  let e' = resolve env' mx e in
+                  p', e') ptns), t
     | Var (`Unbound x) ->
       begin match find_val env loc x with
         | `Not_found name -> raise (Unbound_value_error (loc, name, []))

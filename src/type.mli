@@ -14,9 +14,6 @@ val app : Location.t -> Type_t.tycon -> t list -> t (* App *)
 val void_app : Location.t -> Type_t.tycon -> t (* App (tycon, []) *)
 val app_unit : Location.t -> t (* App (Unit, []) *)
 
-val cons_id : Id.t
-val nil_id : Id.t
-
 module Tycon : sig
 
   type t = Type_t.tycon
