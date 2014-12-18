@@ -101,3 +101,34 @@ let fold f defs env =
         | _ -> assert false)
       (env, []) defs in
   List.rev defs'
+
+module Pattern = struct
+
+  type t = pattern
+
+  let to_string = string_of_pattern
+
+  let fold ret f env es =
+    let env', es' =
+      List.fold_left
+        (fun (env, accu) e ->
+           let env', e' = f env e in
+           env', e' :: accu)
+        (env, []) es
+    in
+    env', ret & List.rev es'
+
+  let fold_bin ret f env e1 e2 =
+    fold (fun es -> ret (List.nth es 0) (List.nth es 1)) f env [e1; e2]
+
+  let fold_assoc ret f env es =
+    let env', es' =
+      List.fold_left
+        (fun (env, accu) (k, v) ->
+           let env', v' = f env v in
+           env', (k, v') :: accu)
+        (env, []) es
+    in
+    env', ret & List.rev es'
+
+end

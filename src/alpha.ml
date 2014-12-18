@@ -47,15 +47,7 @@ let rec h ids (e, t) =
   (e', t)
 
 let rec pattern ids p =
-  let fold f ids ps =
-    let ids', ps' =
-      List.fold_left
-        (fun (ids, ps) p ->
-           let ids', p = pattern ids p in
-           (ids', p :: ps))
-        (ids, []) (List.rev ps) in
-    ids', f ps'
-  in
+  let open Ast.Pattern in
   match p with
   | PtUnit -> ids, PtUnit
   | PtBool(b) -> ids, (PtBool(b))
@@ -63,24 +55,14 @@ let rec pattern ids p =
   | PtAtom v -> ids, PtAtom v
   | PtString v -> ids, PtString v
   | PtVar(x, t) -> let x' = genid x ids in (add x x' ids), (PtVar(x', t)) 
-  | PtTuple ps ->
-    fold (fun ps' -> PtTuple ps') ids ps
-  | PtList ps ->
-    fold (fun ps' -> PtList ps') ids ps
+  | PtTuple ps -> fold (fun ps' -> PtTuple ps') pattern ids ps
+  | PtList ps -> fold (fun ps' -> PtList ps') pattern ids ps
   | PtCons (p1, p2) ->
-    let ids', p1' = pattern ids p1 in
-    let ids'', p2' = pattern ids' p2 in
-    ids'', PtCons (p1', p2')
+    fold_bin (fun p1' p2' -> PtCons (p1', p2')) pattern ids p1 p2
   | PtField(xps) -> 
-      let ids', xps' = 
-        List.fold_left 
-          (fun (ids, xps) (x, p) -> 
-            let ids', p = pattern ids p in
-            (ids', (x, p) :: xps))
-          (ids, []) (List.rev xps) in
-      ids', PtField(xps')
+    fold_assoc (fun xps' -> PtField xps') pattern ids xps
   | PtConstr(x, ps) -> 
-    fold (fun ps' -> PtConstr (x, ps')) ids ps
+    fold (fun ps' -> PtConstr (x, ps')) pattern ids ps
 
 let rec g ids (e, t) = (* α変換ルーチン本体 (caml2html: alpha_g) *)
   let e' = 

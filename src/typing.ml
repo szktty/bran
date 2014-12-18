@@ -405,7 +405,7 @@ let deref_def env def =
       | _ -> assert false)
 
 let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p : Env.t * Type_t.t =
-  Log.debug "# Typing.pattern (%s)\n" (string_of_pattern p);
+  Log.debug "# Typing.pattern (%s)\n" (Pattern.to_string p);
   let with_loc = create p.loc in
   match p.desc with
   | PtUnit -> env, with_loc & Type_t.App(Type_t.Unit, [])
