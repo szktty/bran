@@ -39,6 +39,7 @@ and pattern =
   | PtAtom of string
   | PtBool of bool
   | PtInt of IntRepr.t
+  | PtFloat of float
   | PtString of string
   | PtVar of Id.t
   | PtList of pattern list

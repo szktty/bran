@@ -19,6 +19,7 @@ let test_files = [
   ("bool", "test_bool.br");
   ("atom", "test_atom.br");
   ("int", "test_int.br");
+  ("float", "test_float.br");
   ("string", "test_string.br");
   ("unit", "test_unit.br");
   ("tuple", "test_tuple.br");

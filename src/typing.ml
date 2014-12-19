@@ -82,10 +82,11 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
       (Type.to_string ty1) (Location.to_string ty1.loc)
       (Type.to_string ty2) (Location.to_string ty2.loc);
     match t1.desc, t2.desc with
-    | Type_t.App(Type_t.Unit, xs), Type_t.App(Type_t.Unit, ys) 
-    | Type_t.App(Type_t.Bool, xs), Type_t.App(Type_t.Bool, ys) 
-    | Type_t.App(Type_t.Int, xs), Type_t.App(Type_t.Int, ys) 
-    | Type_t.App(Type_t.Atom, xs), Type_t.App(Type_t.Atom, ys) 
+    | Type_t.App(Type_t.Unit, xs), Type_t.App(Type_t.Unit, ys)
+    | Type_t.App(Type_t.Bool, xs), Type_t.App(Type_t.Bool, ys)
+    | Type_t.App(Type_t.Int, xs), Type_t.App(Type_t.Int, ys)
+    | Type_t.App(Type_t.Float, xs), Type_t.App(Type_t.Float, ys)
+    | Type_t.App(Type_t.Atom, xs), Type_t.App(Type_t.Atom, ys)
     | Type_t.App(Type_t.String, xs), Type_t.App(Type_t.String, ys) 
     | Type_t.App(Type_t.Tuple, xs), Type_t.App(Type_t.Tuple, ys) 
     | Type_t.App(Type_t.Arrow, xs), Type_t.App(Type_t.Arrow, ys) ->
@@ -321,7 +322,7 @@ let deref_type env ty =
 
 let rec deref_pattern env lp =
   let (d, env) = match desc lp with
-  | PtUnit | PtBool _ | PtInt _ | PtAtom _ | PtString _ as p -> p, env
+  | PtUnit | PtBool _ | PtInt _ | PtFloat _ | PtAtom _ | PtString _ as p -> p, env
   | PtVar(x, t) -> PtVar(x, deref_type env t), Env.add_var env x t
   | PtTuple(ps) -> 
     let ps', env' = List.fold_right
@@ -411,6 +412,7 @@ let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p : Env.t * Type_t.t =
   | PtUnit -> env, with_loc & Type_t.App(Type_t.Unit, [])
   | PtBool(b) -> env, with_loc & Type_t.App(Type_t.Bool, [])
   | PtInt(n) -> env, with_loc & Type_t.App(Type_t.Int, [])
+  | PtFloat _ -> env, with_loc & Type_t.App(Type_t.Float, [])
   | PtAtom _ -> env, with_loc & Type_t.App(Type_t.Atom, [])
   | PtString _ -> env, with_loc & Type_t.App(Type_t.String, [])
   | PtVar(x, t') -> Env.add_var env x t', t'

@@ -6,6 +6,7 @@ let rec string_of_pattern =
   | PtUnit -> "PtUnit"
   | PtBool(b) -> "PtBool(" ^ (string_of_bool b) ^ ")"
   | PtInt(n) -> "PtInt(" ^ (IntRepr.to_string n) ^ ")"
+  | PtFloat v -> "PtFloat(" ^ (string_of_float v) ^ ")"
   | PtAtom v -> "PtAtom(" ^ v ^ ")"
   | PtString v -> "PtString(" ^ v ^ ")"
   | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.to_string t) ^ ")"
@@ -77,7 +78,7 @@ let string_of_def =
 
 let rec vars_of_pattern = 
   function
-  | PtUnit | PtBool _ | PtInt _ | PtAtom _ | PtString _ -> S.empty
+  | PtUnit | PtBool _ | PtInt _ | PtFloat _ | PtAtom _ | PtString _ -> S.empty
   | PtVar(x, _) -> S.singleton x
   | PtTuple(ps) | PtList ps | PtConstr(_, ps) ->
     List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty ps
@@ -130,6 +131,7 @@ let rec pattern env =
   | KNormal_t.PtUnit -> env, PtUnit
   | KNormal_t.PtBool(b) -> env, PtBool(b)
   | KNormal_t.PtInt(n) -> env, PtInt(n)
+  | KNormal_t.PtFloat v -> env, PtFloat v
   | KNormal_t.PtAtom v -> env, PtAtom v
   | KNormal_t.PtString v -> env, PtString v
   | KNormal_t.PtVar(x, t) -> M.add x t env, PtVar(x, t)

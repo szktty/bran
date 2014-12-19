@@ -528,8 +528,7 @@ pattern:
     | INT
       { create $1.loc (PtInt $1.desc) }
     | FLOAT
-      (* TODO *)
-      { create $1.loc PtUnit }
+      { create $1.loc (PtFloat $1.desc) }
     | ATOM
       { create $1.loc (PtAtom $1.desc) }
     | STRING

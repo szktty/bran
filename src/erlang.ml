@@ -47,6 +47,7 @@ let rec gen_ptn = function
   | Closure_t.PtUnit -> PtTuple []
   | Closure_t.PtBool v -> PtBool v
   | Closure_t.PtInt v -> PtInt v
+  | Closure_t.PtFloat v -> PtFloat v
   | Closure_t.PtAtom v -> PtAtom v
   | Closure_t.PtString v -> PtString v
   | Closure_t.PtVar (x, _) -> PtVar x

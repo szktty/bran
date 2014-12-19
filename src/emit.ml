@@ -132,6 +132,7 @@ and gen_ptn oc = function
   | PtAtom s -> bprintf oc "'%s'" s
   | PtBool v -> bprintf oc "%s" (string_of_bool v)
   | PtInt (b, v) -> bprintf oc "%d#%s" b v
+  | PtFloat v -> bprintf oc "%f" v
   | PtString s -> bprintf oc "\"%s\"" s
   | PtVar x -> bprintf oc "%s" (gen_var x)
   | PtTuple ps ->

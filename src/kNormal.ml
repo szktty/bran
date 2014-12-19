@@ -10,6 +10,7 @@ let rec ocaml_of_pattern =
   | PtUnit -> "()"
   | PtBool(b) -> string_of_bool b
   | PtInt(n) -> IntRepr.to_string n
+  | PtFloat v -> string_of_float v
   | PtAtom(v) -> "@\"" ^ v ^ "\""
   | PtString(v) -> "\"" ^ v ^ "\""
   | PtVar(x, t) -> x
@@ -88,6 +89,7 @@ let rec pattern env p =
   | Ast_t.PtUnit -> env, PtUnit
   | Ast_t.PtBool(b) -> env, PtBool b
   | Ast_t.PtInt(n) -> env, PtInt n
+  | Ast_t.PtFloat v -> env, PtFloat v
   | Ast_t.PtAtom v -> env, PtAtom v
   | Ast_t.PtString v -> env, PtString v
   | Ast_t.PtVar(x, t) -> Env.add_var env x t, (PtVar(x, t))
