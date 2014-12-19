@@ -10,6 +10,8 @@ let rec string_of_pattern =
   | PtAtom v -> "PtAtom(" ^ v ^ ")"
   | PtString v -> "PtString(" ^ v ^ ")"
   | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.to_string t) ^ ")"
+  | PtAlias (p, x, t) ->
+    Printf.sprintf "PtAlias(%s, %s, %s)" (string_of_pattern p) x (Type.to_string t)
   | PtTuple(ps) -> "PtTuple(" ^ (String.concat_map "; " string_of_pattern ps) ^ ")"
   | PtList(ps) -> "PtList(" ^ (String.concat_map "; " string_of_pattern ps) ^ ")"
   | PtCons (p1, p2) ->
@@ -80,6 +82,7 @@ let rec vars_of_pattern =
   function
   | PtUnit | PtBool _ | PtInt _ | PtFloat _ | PtAtom _ | PtString _ -> S.empty
   | PtVar(x, _) -> S.singleton x
+  | PtAlias (p, x, _) -> S.add x & S.union S.empty & vars_of_pattern p
   | PtTuple(ps) | PtList ps | PtConstr(_, ps) ->
     List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty ps
   | PtCons (p1, p2) -> 
@@ -135,6 +138,9 @@ let rec pattern env =
   | KNormal_t.PtAtom v -> env, PtAtom v
   | KNormal_t.PtString v -> env, PtString v
   | KNormal_t.PtVar(x, t) -> M.add x t env, PtVar(x, t)
+  | KNormal_t.PtAlias (p, x, t) ->
+    let env', p' = pattern env p in
+    M.add x t env', PtAlias (p', x, t)
   | KNormal_t.PtTuple(ps) -> 
       let env, ps' = List.fold_left 
         (fun (env, ps) p -> 

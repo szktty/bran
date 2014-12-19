@@ -129,6 +129,7 @@ let rev_combine_list = function
 %right LARROW
 %left RARROW
 %nonassoc prec_pattern
+%nonassoc AS
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %right LAND
 %right LOR
@@ -140,7 +141,7 @@ let rev_combine_list = function
 %left prec_app
 %left DOT
 %right UIDENT
-%nonassoc INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO ASSIGN EXCL AS
+%nonassoc INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO ASSIGN EXCL
 %left LPAREN LBRACE LBRACK
 
 %nonassoc prec_type_expr_tuple
@@ -534,8 +535,7 @@ pattern:
     | STRING
       { create $1.loc (PtString $1.desc) }
     | pattern AS value_name
-      (* TODO *)
-      { create $1.loc PtUnit }
+      { create $1.loc (PtAlias ($1, $3.desc, create $3.loc & meta_type ())) }
     | LPAREN pattern RPAREN
       { $2 }
     | LPAREN pattern COLON type_expr RPAREN

@@ -14,6 +14,7 @@ let rec ocaml_of_pattern =
   | PtAtom(v) -> "@\"" ^ v ^ "\""
   | PtString(v) -> "\"" ^ v ^ "\""
   | PtVar(x, t) -> x
+  | PtAlias (p, x, _) -> ocaml_of_pattern p ^ " as " ^ x
   | PtTuple(ps) -> String.concat_map ", " ocaml_of_pattern ps
   | PtList(ps) -> String.concat_map ", " ocaml_of_pattern ps
   | PtCons (p1, p2) -> (ocaml_of_pattern p1) ^ "::" ^ (ocaml_of_pattern p2)
@@ -93,6 +94,9 @@ let rec pattern env p =
   | Ast_t.PtAtom v -> env, PtAtom v
   | Ast_t.PtString v -> env, PtString v
   | Ast_t.PtVar(x, t) -> Env.add_var env x t, (PtVar(x, t))
+  | Ast_t.PtAlias (p, x, t) ->
+    let env', p' = pattern env p in
+    Env.add_var env x t, (PtAlias (p', x, t))
   | Ast_t.PtTuple(ps) -> 
     fold (fun ps' -> PtTuple ps') pattern env ps
   | Ast_t.PtList(ps) -> 

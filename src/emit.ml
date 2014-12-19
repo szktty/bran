@@ -135,6 +135,10 @@ and gen_ptn oc = function
   | PtFloat v -> bprintf oc "%f" v
   | PtString s -> bprintf oc "\"%s\"" s
   | PtVar x -> bprintf oc "%s" (gen_var x)
+  | PtAlias (p, x) ->
+    bprintf oc "(";
+    gen_ptn oc p;
+    bprintf oc ") = %s" (gen_var x)
   | PtTuple ps ->
     bprintf oc "{";
     inject_sep oc ", " (fun p -> gen_ptn oc p) ps;

@@ -326,6 +326,9 @@ let rec deref_pattern env lp =
   let (d, env) = match desc lp with
   | PtUnit | PtBool _ | PtInt _ | PtFloat _ | PtAtom _ | PtString _ as p -> p, env
   | PtVar(x, t) -> PtVar(x, deref_type env t), Env.add_var env x t
+  | PtAlias (p, x, t) ->
+    let p', env' = deref_pattern env p in
+    PtAlias (p', x, deref_type env' t), Env.add_var env' x t
   | PtTuple(ps) -> 
     let ps', env' = List.fold_right
         (fun p (ps, env) ->
@@ -418,6 +421,9 @@ let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p : Env.t * Type_t.t =
   | PtAtom _ -> env, with_loc & Type_t.App(Type_t.Atom, [])
   | PtString _ -> env, with_loc & Type_t.App(Type_t.String, [])
   | PtVar(x, t') -> Env.add_var env x t', t'
+  | PtAlias (p, x, t) ->
+    let env', t' = pattern env p in
+    Env.add_var env' x t', t'
   | PtTuple(ps) -> 
     let env', ts' = List.fold_left (fun (env, ts) p -> let env', t' = pattern env p in env', t' :: ts) (env, []) (List.rev ps) in
     env', with_loc & Type_t.App(Type_t.Tuple, ts')

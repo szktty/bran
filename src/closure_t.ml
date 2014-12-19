@@ -54,6 +54,7 @@ and pattern =
   | PtAtom of string
   | PtString of string
   | PtVar of Id.t * Type_t.t
+  | PtAlias of pattern * Id.t * Type_t.t
   | PtTuple of pattern list
   | PtList of pattern list
   | PtCons of pattern * pattern

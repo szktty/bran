@@ -10,6 +10,8 @@ let rec string_of_pattern { Locating.desc = p } =
   | PtAtom(v) -> "PtAtom(" ^ v ^ ")"
   | PtString(v) -> "PtString(" ^ v ^ ")"
   | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.to_string t) ^ ")"
+  | PtAlias (p, x, t) ->
+    Printf.sprintf "PtAlias(%s, %s, %s)" (string_of_pattern p) x (Type.to_string t)
   | PtTuple(ps) -> "PtTuple(" ^ (String.concat_map "; " string_of_pattern ps) ^ ")"
   | PtList(ps) -> "PtList([" ^ (String.concat_map "; " string_of_pattern ps) ^ "])"
   | PtCons (p1, p2) ->

@@ -56,6 +56,10 @@ let rec pattern ids p =
   | PtAtom v -> ids, PtAtom v
   | PtString v -> ids, PtString v
   | PtVar(x, t) -> let x' = genid x ids in (add x x' ids), (PtVar(x', t)) 
+  | PtAlias (p, x, t) ->
+    let ids', p' = pattern ids p in
+    let x' = genid x ids' in
+    add x x' ids, PtAlias (p', x', t)
   | PtTuple ps -> fold (fun ps' -> PtTuple ps') pattern ids ps
   | PtList ps -> fold (fun ps' -> PtList ps') pattern ids ps
   | PtCons (p1, p2) ->
