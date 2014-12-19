@@ -41,6 +41,7 @@ let rec resolve_ptn mx env p =
     | PtUnit | PtBool _ | PtInt _ | PtFloat _ | PtAtom _ | PtString _ ->
       env, p.desc
     | PtVar (x, t) -> Env.add_var env x t, p.desc
+    | PtTuple ps -> fold (fun ps -> PtTuple ps) f env ps
     | PtList ps -> fold (fun ps -> PtList ps) f env ps
     | PtCons (p1, p2) -> fold_bin (fun p1 p2 -> PtCons (p1, p2)) f env p1 p2
     | _ ->
