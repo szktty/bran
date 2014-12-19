@@ -98,6 +98,8 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
              | None -> raise (Unify (t1, t2))
              | Some (x, t) -> raise (Topdef_error ((x, t), t1, t2)))
         xs ys
+    | Type_t.App(Type_t.List, []), Type_t.App(Type_t.List, _)
+    | Type_t.App(Type_t.List, _), Type_t.App(Type_t.List, []) -> ()
     | Type_t.App(Type_t.List, x :: _), Type_t.App(Type_t.List, y :: _) ->
       unify' x y
     | Type_t.App(Type_t.Record(x, fs), xs), Type_t.App(Type_t.Record(y, fs'), ys) when fs = fs' -> List.iter2 unify' xs ys
