@@ -311,13 +311,9 @@ and deref_type env reached t = (* 型変数を中身でおきかえる関数 (ca
     r := Some(t');
     t', reached'
 
-let deref_tycon env tycon = 
-  let tycon', _ = deref_tycon env M.empty tycon in
-  tycon'
+let deref_tycon env tycon = fst & deref_tycon env M.empty tycon
 
-let deref_type env ty = 
-  let t', _ = deref_type env M.empty ty in
-  t'
+let deref_type env ty = fst & deref_type env M.empty ty
 
 let rec deref_pattern env lp =
   let (d, env) = match desc lp with
