@@ -132,11 +132,31 @@ and gen_ptn oc = function
   | PtAtom s -> bprintf oc "'%s'" s
   | PtBool v -> bprintf oc "%s" (string_of_bool v)
   | PtInt (b, v) -> bprintf oc "%d#%s" b v
+  | PtFloat v -> bprintf oc "%f" v
   | PtString s -> bprintf oc "\"%s\"" s
   | PtVar x -> bprintf oc "%s" (gen_var x)
+  | PtAlias (p, x) ->
+    bprintf oc "(";
+    gen_ptn oc p;
+    bprintf oc ") = %s" (gen_var x)
   | PtTuple ps ->
     bprintf oc "{";
     inject_sep oc ", " (fun p -> gen_ptn oc p) ps;
+    bprintf oc "}"
+  | PtList ps ->
+    bprintf oc "[";
+    inject_sep oc ", " (fun p -> gen_ptn oc p) ps;
+    bprintf oc "]"
+  | PtCons (p1, p2) ->
+    bprintf oc "[";
+    gen_ptn oc p1;
+    bprintf oc "|";
+    gen_ptn oc p2;
+    bprintf oc "]"
+  | PtConstr (x, []) -> bprintf oc "%s" (Binding.to_erl_atom x)
+  | PtConstr (x, ps) ->
+    bprintf oc "{%s, " (Binding.to_erl_atom x);
+    inject_sep oc ", " (gen_ptn oc) ps;
     bprintf oc "}"
   | _ -> assert false (* TODO *)
 

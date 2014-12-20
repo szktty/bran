@@ -44,14 +44,20 @@ let rec gen_exp (e, t) =
   | _ -> failwith & "not implemented: " ^ (Closure.string_of_expr e)
 
 let rec gen_ptn = function
-  | Closure_t.PtUnit -> PtAtom "ok"
+  | Closure_t.PtUnit -> PtTuple []
   | Closure_t.PtBool v -> PtBool v
   | Closure_t.PtInt v -> PtInt v
+  | Closure_t.PtFloat v -> PtFloat v
+  | Closure_t.PtAtom v -> PtAtom v
+  | Closure_t.PtString v -> PtString v
   | Closure_t.PtVar (x, _) -> PtVar x
+  | Closure_t.PtAlias (p, x, _) -> PtAlias (gen_ptn p, x)
   | Closure_t.PtTuple ps -> PtTuple (List.map gen_ptn ps)
+  | Closure_t.PtList ps -> PtList (List.map gen_ptn ps)
+  | Closure_t.PtCons (p1, p2) -> PtCons (gen_ptn p1, gen_ptn p2)
   | Closure_t.PtRecord xps ->
     PtRecord (List.map (fun (x, p) -> (x, gen_ptn p)) xps)
-  | Closure_t.PtConstr (x, ps) -> assert false
+  | Closure_t.PtConstr (x, ps) -> PtConstr (x, List.map gen_ptn ps)
 
 and gen_term (term, t) =
   Log.debug "# Erlang.gen_term %s\n" (Closure.string_of_term term);

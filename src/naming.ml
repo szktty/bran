@@ -33,15 +33,47 @@ let find_val env loc path =
     | None -> `Not_found name
     | Some t -> `Module (Binding.add (Module.path m) name, t)
 
-let rec resolve env mx { loc = loc; desc = (e, t) } =
+let rec resolve_ptn mx env p =
+  let open Ast.Pattern in
+  let f = resolve_ptn mx in
+  let env', p' =
+    match p.desc with
+    | PtUnit | PtBool _ | PtInt _ | PtFloat _ | PtAtom _ | PtString _ ->
+      env, p.desc
+    | PtVar (x, t) -> Env.add_var env x t, p.desc
+    | PtAlias (p, x, t) ->
+      let env', p' = resolve_ptn mx env p in
+      Env.add_var env' x t, PtAlias (p', x, t)
+    | PtTuple ps -> fold (fun ps -> PtTuple ps) f env ps
+    | PtList ps -> fold (fun ps -> PtList ps) f env ps
+    | PtCons (p1, p2) -> fold_bin (fun p1 p2 -> PtCons (p1, p2)) f env p1 p2
+    | PtConstr (x, ps, _) ->
+      begin match find_val env p.loc x with
+        | `Not_found name -> raise (Unbound_constr_error (p.loc, name, []))
+        | `Local (name, t) ->
+          fold (fun ps -> PtConstr (Binding.add mx name, ps, t)) f env ps
+        | `Module (x', t) ->
+          fold (fun ps -> PtConstr (x', ps, t)) f env ps
+      end
+    | _ ->
+      Printf.printf "%s\n" (Ast.Pattern.to_string p);
+      failwith "not implemented"
+  in
+  env', set p p'
+
+let rec resolve mx env { loc = loc; desc = (e, t) } =
   Log.debug "# Naming.resolve : %s\n" (Ast.string_of_expr e);
-  let f = resolve env mx in
+  let f = resolve mx env in
   let map = List.map f in
   let e', t' =
     match e with
     | Unit | Bool _ | Int _ | Float _ | Char _ | String _ | Atom _ | Bitstring _ -> e, t
     | Match (e1, ptns) ->
-      Match (f e1, List.map (fun (p, e) -> p, f e) ptns), t
+      Match (f e1, List.map
+               (fun (p, e) ->
+                  let env', p' = resolve_ptn mx env p in
+                  let e' = resolve mx env' e in
+                  p', e') ptns), t
     | Var (`Unbound x) ->
       begin match find_val env loc x with
         | `Not_found name -> raise (Unbound_value_error (loc, name, []))
@@ -77,10 +109,10 @@ let rec resolve env mx { loc = loc; desc = (e, t) } =
     | Field (e, x) -> Field (f e, x), t
     | LetVar ((x, t), e1, e2) ->
       let env' = Env.add_var env x t in
-      LetVar ((x, t), f e1, resolve env' mx e2), t
+      LetVar ((x, t), f e1, resolve mx env' e2), t
     | LetRec ({ name = xt; args = yts; body = e1 }, e2) ->
       let env' = Env.add_vars env yts in
-      LetRec ({ name = xt; args = yts; body = resolve env' mx e1 }, f e2), t
+      LetRec ({ name = xt; args = yts; body = resolve mx env' e1 }, f e2), t
     | App (e, es) -> App (f e, map es), t
     | Perform e -> Perform (f e), t
     | Bind (xt, e) -> Bind (xt, f e), t
@@ -88,17 +120,17 @@ let rec resolve env mx { loc = loc; desc = (e, t) } =
   in
   create loc (e', t')
 
-let resolve_def env mx def =
+let resolve_def mx env def =
   Log.debug "# Naming.resolve_def: %s\n" (Ast.string_of_def def);
   set def & match def.desc with
   | TypeDef _ -> def.desc
-  | VarDef (xt, et) -> VarDef (xt, resolve env mx et)
+  | VarDef (xt, et) -> VarDef (xt, resolve mx env et)
   | RecDef({ name = (x, ty_f); args = yts; body = et } as f) ->
     let env' = Env.add_vars env yts in
-    RecDef { f with body = resolve env' mx et }
+    RecDef { f with body = resolve mx env' et }
   | _ -> assert false
 
 let f mx defs = 
   Ast.fold
-    (fun (env, defs) def -> resolve_def env mx def :: defs)
+    (fun (env, defs) def -> resolve_def mx env def :: defs)
     defs (Sig.create_env ())

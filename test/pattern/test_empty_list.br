@@ -1,0 +1,7 @@
+def test _ =
+  match [] with
+  | [1, 2] -> false
+  | [] -> true
+  | _ -> false
+  end
+def expected_value _ = "true."

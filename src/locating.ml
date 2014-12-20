@@ -10,6 +10,9 @@ let create loc desc = { loc; desc }
 let range start_loc end_loc desc =
   create (Location.union start_loc end_loc) desc
 
+let of_list es =
+  Location.union (List.hd es).loc (List.last es).loc
+
 let loc lx = lx.loc
 let desc lx = lx.desc
 
@@ -22,3 +25,6 @@ let concat es =
       (Location.zero, []) es
   in
   create loc & List.rev es'
+
+let values es =
+  List.rev & List.fold_left (fun accu e -> e.desc :: accu) [] es

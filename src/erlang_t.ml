@@ -39,11 +39,15 @@ and pattern =
   | PtAtom of string
   | PtBool of bool
   | PtInt of IntRepr.t
+  | PtFloat of float
   | PtString of string
   | PtVar of Id.t
+  | PtAlias of pattern * Id.t
   | PtList of pattern list
+  | PtCons of pattern * pattern
   | PtTuple of pattern list
   | PtRecord of (Id.t * pattern) list
+  | PtConstr of Binding.t * pattern list
 
 type fundef = {
   name : Id.l * Type_t.t;

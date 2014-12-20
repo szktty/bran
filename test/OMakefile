@@ -15,6 +15,7 @@ FILES[] =
 	test_literals
 	test_typdef
 	test_variant
+	test_pattern
 
 PROGRAM = run
 

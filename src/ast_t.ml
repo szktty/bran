@@ -45,10 +45,16 @@ and pattern_desc =
   | PtUnit
   | PtBool of bool
   | PtInt of IntRepr.t
+  | PtFloat of float
+  | PtAtom of string
+  | PtString of string
   | PtVar of Id.t * Type_t.t
+  | PtAlias of pattern * Id.t * Type_t.t
   | PtTuple of pattern list
+  | PtList of pattern list
+  | PtCons of pattern * pattern
   | PtRecord of (Id.t * pattern) list
-  | PtConstr of Id.t * pattern list
+  | PtConstr of Binding.t * pattern list * Type_t.t
 and fundef = { name : Id.t * Type_t.t; args : (Id.t * Type_t.t) list; body : t; }
 and sigdef = {
   sig_name : Id.t * Type_t.t;

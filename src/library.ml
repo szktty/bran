@@ -28,6 +28,11 @@ let find_val_opt path =
   let path, x = path_name path in
   Module.find_val_opt (find_module path) x
 
+let find_val path =
+  match find_val_opt path with
+  | None -> raise Not_found
+  | Some t -> t
+
 (* builtin types *)
 
 let predefloc x =

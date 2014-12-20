@@ -6,10 +6,20 @@ let rec string_of_pattern =
   | PtUnit -> "PtUnit"
   | PtBool(b) -> "PtBool(" ^ (string_of_bool b) ^ ")"
   | PtInt(n) -> "PtInt(" ^ (IntRepr.to_string n) ^ ")"
+  | PtFloat v -> "PtFloat(" ^ (string_of_float v) ^ ")"
+  | PtAtom v -> "PtAtom(" ^ v ^ ")"
+  | PtString v -> "PtString(" ^ v ^ ")"
   | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.to_string t) ^ ")"
-  | PtTuple(ps) -> "PtTuple([" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
+  | PtAlias (p, x, t) ->
+    Printf.sprintf "PtAlias(%s, %s, %s)" (string_of_pattern p) x (Type.to_string t)
+  | PtTuple(ps) -> "PtTuple(" ^ (String.concat_map "; " string_of_pattern ps) ^ ")"
+  | PtList(ps) -> "PtList(" ^ (String.concat_map "; " string_of_pattern ps) ^ ")"
+  | PtCons (p1, p2) ->
+    Printf.sprintf "PtCons(%s)" (String.concat_map ", " string_of_pattern [p1; p2])
   | PtRecord(xps) -> "PtRecord([" ^ (String.concat "; " (List.map (fun (x, p) -> x ^ ", " ^ (string_of_pattern p)) xps)) ^ "])"
-  | PtConstr(x, ps) -> "PtConstr(" ^ x ^ ", [" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
+  | PtConstr(x, ps) ->
+    "PtConstr(" ^ (Binding.to_string x) ^ ", [" ^
+    (String.concat_map "; " string_of_pattern ps) ^ "])"
 
 let rec string_of_typed_expr (e, t) = (string_of_expr e) ^ " : " ^ (Type.to_string t)
 
@@ -72,9 +82,13 @@ let string_of_def =
 
 let rec vars_of_pattern = 
   function
-  | PtUnit | PtBool _ | PtInt _ -> S.empty
+  | PtUnit | PtBool _ | PtInt _ | PtFloat _ | PtAtom _ | PtString _ -> S.empty
   | PtVar(x, _) -> S.singleton x
-  | PtTuple(ps) | PtConstr(_, ps) -> List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty ps
+  | PtAlias (p, x, _) -> S.add x & S.union S.empty & vars_of_pattern p
+  | PtTuple(ps) | PtList ps | PtConstr(_, ps) ->
+    List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty ps
+  | PtCons (p1, p2) -> 
+    List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty [p1; p2]
   | PtRecord(xps) -> List.fold_left (fun s (_, p) -> S.union s (vars_of_pattern p)) S.empty xps
       
 let rec fv_of_expr (e, _) = 
@@ -118,12 +132,17 @@ let ids_of_defs defs =
     ) [] defs
     
 let rec pattern env = 
-
   function
   | KNormal_t.PtUnit -> env, PtUnit
   | KNormal_t.PtBool(b) -> env, PtBool(b)
   | KNormal_t.PtInt(n) -> env, PtInt(n)
+  | KNormal_t.PtFloat v -> env, PtFloat v
+  | KNormal_t.PtAtom v -> env, PtAtom v
+  | KNormal_t.PtString v -> env, PtString v
   | KNormal_t.PtVar(x, t) -> M.add x t env, PtVar(x, t)
+  | KNormal_t.PtAlias (p, x, t) ->
+    let env', p' = pattern env p in
+    M.add x t env', PtAlias (p', x, t)
   | KNormal_t.PtTuple(ps) -> 
       let env, ps' = List.fold_left 
         (fun (env, ps) p -> 
@@ -131,6 +150,17 @@ let rec pattern env =
           env', p' :: ps) 
         (env, []) ps in
       env, PtTuple(List.rev ps')
+  | KNormal_t.PtList(ps) -> 
+      let env, ps' = List.fold_left 
+        (fun (env, ps) p -> 
+          let env', p' = pattern env p in 
+          env', p' :: ps) 
+        (env, []) ps in
+      env, PtList(List.rev ps')
+  | KNormal_t.PtCons (p1, p2) -> 
+    let env', p1' = pattern env p1 in
+    let env'', p2' = pattern env' p2 in
+    env'', PtCons (p1', p2')
   | KNormal_t.PtField(xps) -> 
       let env, xps' = List.fold_left 
         (fun (env, xps) (x, p) -> 

@@ -6,10 +6,22 @@ let rec string_of_pattern { Locating.desc = p } =
   | PtUnit -> "PtUnit"
   | PtBool(b) -> "PtBool(" ^ (string_of_bool b) ^ ")"
   | PtInt (b, v) -> Printf.sprintf "PtInt(%d, %s)" b v
+  | PtFloat v -> Printf.sprintf "PtFloat(%f)" v
+  | PtAtom(v) -> "PtAtom(" ^ v ^ ")"
+  | PtString(v) -> "PtString(" ^ v ^ ")"
   | PtVar(x, t) -> "PtVar(" ^ x ^ "," ^ (Type.to_string t) ^ ")"
-  | PtTuple(ps) -> "PtTuple([" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
+  | PtAlias (p, x, t) ->
+    Printf.sprintf "PtAlias(%s, %s, %s)" (string_of_pattern p) x (Type.to_string t)
+  | PtTuple(ps) -> "PtTuple(" ^ (String.concat_map "; " string_of_pattern ps) ^ ")"
+  | PtList(ps) -> "PtList([" ^ (String.concat_map "; " string_of_pattern ps) ^ "])"
+  | PtCons (p1, p2) ->
+    Printf.sprintf "PtCons(%s, %s)" (string_of_pattern p1) (string_of_pattern p2)
   | PtRecord(xps) -> "PtRecord([" ^ (String.concat "; " (List.map (fun (x, p) -> x ^ ", " ^ (string_of_pattern p)) xps)) ^ "])"
-  | PtConstr(x, ps) -> "PtConstr(" ^ x ^ ", [" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
+  | PtConstr(x, ps, t) ->
+    Printf.sprintf "PtConstr(%s, [%s], %s)"
+      (Binding.to_string x)
+      (String.concat_map "; " string_of_pattern ps)
+      (Type.to_string t)
 
 let rec string_of_typed_expr { Locating.desc = (e, t) } =
   (string_of_expr e) ^ " : " ^ (Type.to_string t)
@@ -96,3 +108,34 @@ let fold f defs env =
         | _ -> assert false)
       (env, []) defs in
   List.rev defs'
+
+module Pattern = struct
+
+  type t = pattern
+
+  let to_string = string_of_pattern
+
+  let fold ret f env es =
+    let env', es' =
+      List.fold_left
+        (fun (env, accu) e ->
+           let env', e' = f env e in
+           env', e' :: accu)
+        (env, []) es
+    in
+    env', ret & List.rev es'
+
+  let fold_bin ret f env e1 e2 =
+    fold (fun es -> ret (List.nth es 0) (List.nth es 1)) f env [e1; e2]
+
+  let fold_assoc ret f env es =
+    let env', es' =
+      List.fold_left
+        (fun (env, accu) (k, v) ->
+           let env', v' = f env v in
+           env', (k, v') :: accu)
+        (env, []) es
+    in
+    env', ret & List.rev es'
+
+end

@@ -4,13 +4,16 @@ open Locating
 
 type t = Type_t.t
 
-let cons_id = "Cons"
-let nil_id = "Nil"
-
 let counter = ref 0
+
 let newtyvar () = 
+  let base = Char.code 'z' - Char.code 'a' + 1 in
+  let q = !counter / base in
+  let m = !counter mod base in
   incr counter;
-  Printf.sprintf "tyvar_%d" !counter
+  Printf.sprintf "%c%s" (Char.chr & Char.code 'a' + m)
+    (if q > 0 then string_of_int q else "")
+
 let newmetavar () = ref None
 
 let rec string_of_t reached t = 
@@ -41,7 +44,7 @@ and string_of_tycon reached =
   | Module x -> "Module(" ^ x ^ ")"
   | Record(x, fs) -> "Record(" ^ x ^ ", {" ^ (String.concat ", " fs) ^ "})"
   | Variant(x, constrs) when S.mem x reached -> "Variant(" ^ x ^ ")"
-  | Variant(x, constrs) -> "Variant(" ^ x ^ ", " ^ (String.concat " | " (List.map (string_of_constr (S.add x reached)) constrs)) ^ ")"
+  | Variant(x, constrs) -> "Variant(" ^ x ^ ", [" ^ (String.concat " | " (List.map (string_of_constr (S.add x reached)) constrs)) ^ "])"
   | TyFun(xs, t) ->
     Printf.sprintf "TyFun([%s], %s)" (String.concat ", " xs) (string_of_t reached t)
   | Instance (xts, t) ->
@@ -107,7 +110,8 @@ let rec repr_of t =
   | App(Bitstring, []) -> "bitstring"
   | App(Binary, []) -> "binary"
   | App(Arrow, xs) -> String.concat " -> " (List.map repr_of xs)
-  | App(List, _) -> "list"
+  | App(List, []) -> "list"
+  | App(List, x :: _) -> (repr_of x) ^ " list"
   | App(Tuple, xs) -> "(" ^ (String.concat " * " (List.map repr_of xs)) ^ ")"
   | App(Module x, []) -> "module type " ^ x
   | App(Record(_, xs), ys) -> 
@@ -192,7 +196,8 @@ module Tycon = struct
       List.map 
         (function
           | y, [] -> y, create t.loc (Poly(xs, t))
-          | y, ts -> y, create t.loc (Poly(xs, create t.loc (App(Arrow, ts @ [t])))))
+          (*| y, ts -> y, create t.loc (Poly(xs, create t.loc (App(Arrow, ts @ [t])))))*)
+          | y, ts -> y, create t.loc (Poly(xs, t)))
         constrs
     | _ -> []
 

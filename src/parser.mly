@@ -26,9 +26,6 @@ let constr_pattern_args = function
   | { Locating.desc = PtTuple(xs) } -> xs
   | x -> [x]
 
-let loc_of_list es =
-  Location.union (List.hd es).loc (List.last es).loc
-
 let combine e1 e2 =
   let typ = Type.app_unit e1.loc in
   ast_on e1.loc e2.loc
@@ -129,6 +126,7 @@ let rev_combine_list = function
 %right LARROW
 %left RARROW
 %nonassoc prec_pattern
+%nonassoc AS
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %right LAND
 %right LOR
@@ -140,7 +138,7 @@ let rev_combine_list = function
 %left prec_app
 %left DOT
 %right UIDENT
-%nonassoc INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO ASSIGN EXCL AS
+%nonassoc INT FLOAT IDENT BOOL CHAR STRING ATOM LESS_LESS DO ASSIGN EXCL
 %left LPAREN LBRACE LBRACK
 
 %nonassoc prec_type_expr_tuple
@@ -259,17 +257,21 @@ primary:
 binding:
     | value_name
       { ast $1.loc (Var (`Unbound (Binding.of_string $1.desc))) }
-    | rev_module_path value_name
-      { ast $2.loc (Var (`Unbound (Binding.of_list & List.rev & $2.desc :: $1))) }
+    | module_path
+      { ast (of_list $1) (Var (`Unbound (Binding.of_list & values $1))) }
 
 value_name:
     | IDENT { $1 }
 
+module_path:
+    | rev_module_path value_name
+      { List.rev & $2 :: $1 }
+
 rev_module_path:
     | UIDENT DOT
-      { [$1.desc] }
+      { [$1] }
     | rev_module_path UIDENT DOT
-      { $2.desc :: $1 }
+      { $2 :: $1 }
 
 field_expr:
     | primary DOT binding
@@ -528,11 +530,13 @@ pattern:
     | INT
       { create $1.loc (PtInt $1.desc) }
     | FLOAT
-      (* TODO *)
-      { create $1.loc PtUnit }
+      { create $1.loc (PtFloat $1.desc) }
+    | ATOM
+      { create $1.loc (PtAtom $1.desc) }
+    | STRING
+      { create $1.loc (PtString $1.desc) }
     | pattern AS value_name
-      (* TODO *)
-      { create $1.loc PtUnit }
+      { create $1.loc (PtAlias ($1, $3.desc, create $3.loc & meta_type ())) }
     | LPAREN pattern RPAREN
       { $2 }
     | LPAREN pattern COLON type_expr RPAREN
@@ -542,19 +546,23 @@ pattern:
       { range $1 $3 (PtTuple $2) }
     | LBRACE field_patterns RBRACE
       { range $1 $3 (PtRecord $2) }
-    | UIDENT 
-      { create $1.loc (PtConstr($1.desc, [])) }
-    | UIDENT pattern
-      { range $1.loc $2.loc (PtConstr($1.desc, constr_pattern_args $2)) }
+    | constr_name
+      { create (of_list $1) (PtConstr(Binding.of_list & values $1, [], create (of_list $1) & meta_type ())) }
+    | constr_name pattern
+      { range (of_list $1) $2.loc (PtConstr(Binding.of_list & values $1, constr_pattern_args $2, create (of_list $1) & meta_type ())) }
     | LBRACK list_pattern RBRACK
-      { List.fold_right (fun x xs ->
-          create $1 (PtConstr("Cons", [x; xs])))
-            $2 (create $3 (PtConstr("Nil", []))) }
+      { range $1 $3 (PtList $2) }
     | pattern CONS pattern
-      { range $1.loc $3.loc (PtConstr("Cons", [$1; $3])) }
+      { range $1.loc $3.loc (PtCons ($1, $3)) }
     | LBRACK PIPE list_pattern PIPE RBRACK
       (* TODO *)
       { create $1 PtUnit }
+
+constr_name:
+    | UIDENT
+      { [$1] }
+    | rev_module_path UIDENT
+      { List.rev & $2 :: $1 }
 
 tuple_pattern:
     | rev_tuple_pattern
@@ -637,7 +645,7 @@ simple_type_expr:
 type_expr_tuple:
     | simple_type_expr rev_type_expr_tuple_tail
       { let es = $1 :: List.rev $2 in
-        create (loc_of_list es) (Type_t.App (Type_t.Tuple, es)) }
+        create (of_list es) (Type_t.App (Type_t.Tuple, es)) }
 
 rev_type_expr_tuple_tail:
     | AST simple_type_expr

@@ -45,10 +45,16 @@ and pattern =
   | PtUnit
   | PtBool of bool
   | PtInt of IntRepr.t
+  | PtFloat of float
+  | PtAtom of string
+  | PtString of string
   | PtVar of Id.t * Type_t.t
+  | PtAlias of pattern * Id.t * Type_t.t
   | PtTuple of pattern list
+  | PtList of pattern list
+  | PtCons of pattern * pattern
   | PtField of (Id.t * pattern) list
-  | PtConstr of Id.t * pattern list
+  | PtConstr of Binding.t * pattern list
 
 and fundef = {
   name : Id.t * Type_t.t;

@@ -1,0 +1,11 @@
+type t = A | B | C of int
+def test _ =
+  match (C 2) with
+  | A -> false
+  | B -> false
+  | C 0 -> false
+  | C 1 -> false
+  | C 2 -> true
+  | C _ -> false
+  end
+def expected_value _ = "true."
