@@ -14,8 +14,6 @@ let newtyvar () =
   Printf.sprintf "%c%s" (Char.chr & Char.code 'a' + m)
     (if q > 0 then string_of_int q else "")
 
-let newmetavar () = ref None
-
 let rec string_of_t reached t = 
   match t.desc with
   | Var(v) -> "Var(" ^ v ^ ")"
@@ -183,13 +181,14 @@ let app_unit loc = create loc (App (Unit, []))
 
 module With = struct
 
-  type _t = t
+  type with_ = t
+
   type 'a t = {
-    t : _t;
+    with_ : with_;
     desc : 'a;
   }
 
-  let create t desc = { t; desc }
+  let create with_ desc = { with_; desc }
 
 end
 
@@ -229,5 +228,11 @@ module Constr = struct
   type t = Type_t.constr
 
   let to_string = string_of_constr
+
+end
+
+module Meta = struct
+
+  let create loc = Locating.create loc & Meta (ref None)
 
 end

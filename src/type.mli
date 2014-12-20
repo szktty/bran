@@ -1,7 +1,6 @@
 type t = Type_t.t
 
 val newtyvar : unit -> Id.t
-val newmetavar : unit -> t option ref
 
 val to_string : t -> Id.t
 val to_repr : t -> string
@@ -16,13 +15,14 @@ val app_unit : Location.t -> t (* App (Unit, []) *)
 
 module With : sig
 
-  type _t = t
+  type with_ = t
+
   type 'a t = {
-    t : _t;
+    with_ : with_;
     desc : 'a;
   }
 
-  val create : _t -> 'a -> 'a t
+  val create : with_ -> 'a -> 'a t
 
 end
 
@@ -43,5 +43,11 @@ module Constr : sig
   type t = Type_t.constr
 
   val to_string : t -> string
+
+end
+
+module Meta : sig
+
+  val create : Location.t -> t
 
 end

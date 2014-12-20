@@ -4,10 +4,8 @@ open Base
 open Ast_t
 open Locating
 
-let meta_type () = Type_t.Meta (Type.newmetavar ())
-
 let add_type loc x =
-  (x, create loc & meta_type ())
+  (x, Type.Meta.create loc)
 
 let add_type_loc x =
   add_type x.loc x.desc
@@ -522,7 +520,7 @@ pattern_matching_elt:
 
 pattern:
     | IDENT
-      { create $1.loc (PtVar ($1.desc, create $1.loc & meta_type ())) }
+      { create $1.loc (PtVar ($1.desc, Type.Meta.create $1.loc)) }
     | LPAREN RPAREN
       { range $1 $2 PtUnit }
     | BOOL
@@ -536,7 +534,7 @@ pattern:
     | STRING
       { create $1.loc (PtString $1.desc) }
     | pattern AS value_name
-      { create $1.loc (PtAlias ($1, $3.desc, create $3.loc & meta_type ())) }
+      { create $1.loc (PtAlias ($1, $3.desc, Type.Meta.create $3.loc)) }
     | LPAREN pattern RPAREN
       { $2 }
     | LPAREN pattern COLON type_expr RPAREN
@@ -547,9 +545,9 @@ pattern:
     | LBRACE field_patterns RBRACE
       { range $1 $3 (PtRecord $2) }
     | constr_name
-      { create (of_list $1) (PtConstr(Binding.of_list & values $1, [], create (of_list $1) & meta_type ())) }
+      { create (of_list $1) (PtConstr(Binding.of_list & values $1, [], Type.Meta.create (of_list $1))) }
     | constr_name pattern
-      { range (of_list $1) $2.loc (PtConstr(Binding.of_list & values $1, constr_pattern_args $2, create (of_list $1) & meta_type ())) }
+      { range (of_list $1) $2.loc (PtConstr(Binding.of_list & values $1, constr_pattern_args $2, Type.Meta.create (of_list $1))) }
     | LBRACK list_pattern RBRACK
       { range $1 $3 (PtList $2) }
     | pattern CONS pattern

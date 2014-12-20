@@ -146,7 +146,7 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
         Log.debug "#         Unified! -> %s\n" (Type.to_string t1);
       end
     | _, Type_t.Meta(y) -> unify' t2 t1
-    | _, _ -> 
+    | _, _ ->
       Log.debug "# Error: Unify failed:\n#    t1 = %s\n#    t2 = %s\n"
         (Type.to_string t1) (Type.to_string t2);
       raise (Unify(t1, t2)) in
@@ -215,10 +215,7 @@ let instantiate env ty =
     match ty.desc with
     | Type_t.Poly (xs, t) -> 
       snd & subst env (M.add_list
-                   (List.map
-                      (fun x ->
-                         (x, create t.loc & Type_t.Meta(Type.newmetavar ())))
-                      xs) 
+                   (List.map (fun x -> (x, Type.Meta.create t.loc)) xs)
                    M.empty) t
     | _ -> ty
   in
@@ -434,7 +431,7 @@ let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p : Env.t * Type_t.t =
     let env', t1 = pattern env p1 in
     let env'', t2 = pattern env' p2 in
     (*let t3 = with_loc & Type_t.App (Type_t.List, [t1]) in*)
-    let t3 = with_loc & Type_t.Meta(Type.newmetavar ()) in
+    let t3 = Type.Meta.create p.loc in
     (*unify env'' t2 t3;*)
     env'', t3
   | PtRecord(xps) -> 
@@ -522,7 +519,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
       | Field(et, x) ->
         let _, ty_rec' as et' = g env et in
         let ty_f = instantiate env (M.find x tenv) in
-        let ty_f' = create et.loc & Type_t.Meta(Type.newmetavar ()) in
+        let ty_f' = Type.Meta.create et.loc in
         unify env ty_f (with_loc & Type_t.Field(ty_rec', ty_f'));
         Field({ e with desc = et' }, x), ty_f'
       | Tuple(ets) ->
@@ -643,7 +640,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
             assert false
         end
       | LetRec({ name = (x, ty_f); args = yts; body = et1 }, et2) -> (* let recの型推論 (caml2html: typing_letrec) *)
-        let t2 = create et2.loc & Type_t.Meta(Type.newmetavar()) in
+        let t2 = Type.Meta.create et2.loc in
         let ty_f' = create et2.loc & Type_t.App (Type_t.Arrow, ((List.map snd yts) @ [t2])) in
         let e1', t1' = g { env with Env.venv = M.add_list yts (M.add x ty_f' venv) } et1 in
         unify env ty_f ty_f';
@@ -660,7 +657,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
                set e (e', t') :: ets, t' :: ts)
             ([], []) (List.rev ets)
         in
-        let result = with_loc & Type_t.Meta(Type.newmetavar ()) in
+        let result = Type.Meta.create e.loc in
         unify env t' (with_loc & Type_t.App(Type_t.Arrow, ts' @ [result]));
         App(set et (e', t'), ets'), result
       | Get(et1, et2) ->
@@ -727,7 +724,7 @@ let f defs =
             let et' = f' env (et, t) in
             Env.add_var env x t, VarDef((x, t), set et et')
         | RecDef({ name = (x, ty_f); args = yts; body = et }) -> 
-          let ty_r = create def.loc & Type_t.Meta(Type.newmetavar()) in
+          let ty_r = Type.Meta.create def.loc in
           let ty_f' = create def.loc & Type_t.App(Type_t.Arrow, ((List.map snd yts) @ [ty_r])) in
           let et' = f' { env with Env.venv = M.add_list yts (M.add x ty_f' env.Env.venv) } (et, ty_r) in
           unify env ty_f ty_f';
