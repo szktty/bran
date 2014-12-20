@@ -20,7 +20,7 @@ let find_lib_file path =
 
 let parse src =
   let open Ast_t in
-  let open Locating in
+  let open Location.With in
   let parse' (typs, vals, exts) def =
     match def.desc with
     | SigDef { sig_name = (x, t); sig_ext = sig_ext } ->
@@ -32,7 +32,7 @@ let parse src =
       in
       (typs, (x, t) :: vals, exts')
     | _ ->
-      raise (Error (def.loc, "Signature definition only at .bri file"))
+      raise (Error (def.with_, "Signature definition only at .bri file"))
   in
   List.fold_left parse' ([], [], []) src.Source.defs
 

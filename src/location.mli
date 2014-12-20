@@ -30,3 +30,26 @@ val contains_pos : t -> Position.t -> bool
 val contains_offset : t -> int -> bool
 
 val to_string : t -> string
+
+module With : sig
+
+  type with_ = t
+
+  type 'a t = {
+    with_ : with_;
+    desc : 'a;
+  }
+
+  val create : with_ -> 'a -> 'a t
+  val range : with_ -> with_ -> 'a -> 'a t
+  val of_list : 'a t list -> with_
+
+  val with_ : 'a t -> with_
+  val desc : 'a t -> 'a
+
+  val set : 'a t -> 'b -> 'b t
+
+  val concat : 'a t list -> 'a list t
+  val values : 'a t list -> 'a list
+
+end

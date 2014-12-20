@@ -36,7 +36,7 @@ let find_val path =
 (* builtin types *)
 
 let predefloc x =
-  Locating.create Location.zero x
+  Location.With.create Location.zero x
 
 let app tycon ts =
   predefloc (Type_t.App (tycon, ts))

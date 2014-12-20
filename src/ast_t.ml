@@ -2,7 +2,7 @@ exception Syntax_error of Location.t * string option
 exception Unbound_value_error of Location.t * Id.t
 exception Unbound_module_error of Location.t * Id.t
 
-type t = (expr * Type_t.t) Locating.t
+type t = (expr * Type_t.t) Location.With.t
 and expr =
     Unit
   | Bool of bool
@@ -40,7 +40,7 @@ and expr =
   | Perform of t
   | Bind of (Id.t * Type_t.t) * t
   | Return of t
-and pattern = pattern_desc Locating.t
+and pattern = pattern_desc Location.With.t
 and pattern_desc =
   | PtUnit
   | PtBool of bool
@@ -60,7 +60,7 @@ and sigdef = {
   sig_name : Id.t * Type_t.t;
   sig_ext : string option;
 }
-and def = def_desc Locating.t
+and def = def_desc Location.With.t
 and def_desc =
   | Nop
   | TypeDef of Id.t * Type_t.tycon

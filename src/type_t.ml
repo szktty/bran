@@ -1,4 +1,4 @@
-type t = desc Locating.t
+type t = desc Location.With.t
 
 and desc =
   | Var of tyvar

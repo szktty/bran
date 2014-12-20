@@ -47,15 +47,15 @@ let to_loc lexbuf =
     l
 
 let to_word lexbuf =
-  Locating.create (to_loc lexbuf) (lexeme lexbuf)
+  Location.With.create (to_loc lexbuf) (lexeme lexbuf)
 
 let strlit_to_word lexbuf read =
-  Locating.create
+  Location.With.create
     (Location.create (start_pos lexbuf) (end_pos lexbuf))
     (read (Buffer.create 17) lexbuf)
 
 let with_word lexbuf s =
-  Locating.create (to_loc lexbuf) s
+  Location.With.create (to_loc lexbuf) s
 
 }
 
@@ -108,9 +108,9 @@ rule token = parse
 | '}'
     { RBRACE (to_loc lexbuf) }
 | "true"
-    { BOOL (Locating.create (to_loc lexbuf) true) }
+    { BOOL (Location.With.create (to_loc lexbuf) true) }
 | "false"
-    { BOOL (Locating.create (to_loc lexbuf) false) }
+    { BOOL (Location.With.create (to_loc lexbuf) false) }
 | "assert"
     { ASSERT (to_loc lexbuf) }
 | "as"
@@ -122,12 +122,12 @@ rule token = parse
       if not (2 <= b' && b' <= 36) then
         raise (Error (to_loc lexbuf, "base must be in range 2..36"))
       else
-        INT (Locating.create (to_loc lexbuf) (b', v))
+        INT (Location.With.create (to_loc lexbuf) (b', v))
     }
 | digit+
-    { INT (Locating.create (to_loc lexbuf) (10, lexeme lexbuf)) }
+    { INT (Location.With.create (to_loc lexbuf) (10, lexeme lexbuf)) }
 | float as s
-    { FLOAT (Locating.create (to_loc lexbuf) (float_of_string s)) }
+    { FLOAT (Location.With.create (to_loc lexbuf) (float_of_string s)) }
 | '-'
     { MINUS (to_loc lexbuf) }
 | '+'
@@ -208,9 +208,9 @@ rule token = parse
     { COMMA (to_loc lexbuf) }
 | '_'
     { let loc = to_loc lexbuf in
-      IDENT (Locating.create loc
+      IDENT (Location.With.create loc
         (Id.gentmp (Type.prefix
-                      (Locating.create loc (Type_t.App(Type_t.Unit, [])))))) }
+                      (Location.With.create loc (Type_t.App(Type_t.Unit, [])))))) }
 | '.'
     { DOT (to_loc lexbuf) }
 | '$'
@@ -240,7 +240,7 @@ rule token = parse
 | '"'
     { STRING (strlit_to_word lexbuf string) }
 | '@' atom
-    { ATOM (Locating.create (to_loc lexbuf)
+    { ATOM (Location.With.create (to_loc lexbuf)
               (String.drop 1 & lexeme lexbuf)) }
 | '@' '"'
     { ATOM (strlit_to_word lexbuf string) }
@@ -255,7 +255,7 @@ rule token = parse
 | uident
     { UIDENT (to_word lexbuf) }
 | ''' (ident as s)
-    { QIDENT (Locating.create (to_loc lexbuf) s) }
+    { QIDENT (Location.With.create (to_loc lexbuf) s) }
 | _
     { raise (Error (to_loc lexbuf,
         Printf.sprintf "unknown token '%s'" (lexeme lexbuf))) }
