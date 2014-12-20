@@ -47,6 +47,14 @@ let rec resolve_ptn mx env p =
     | PtTuple ps -> fold (fun ps -> PtTuple ps) f env ps
     | PtList ps -> fold (fun ps -> PtList ps) f env ps
     | PtCons (p1, p2) -> fold_bin (fun p1 p2 -> PtCons (p1, p2)) f env p1 p2
+    | PtConstr (x, ps, _) ->
+      begin match find_val env p.loc x with
+        | `Not_found name -> raise (Unbound_constr_error (p.loc, name, []))
+        | `Local (name, t) ->
+          fold (fun ps -> PtConstr (Binding.add mx name, ps, t)) f env ps
+        | `Module (x', t) ->
+          fold (fun ps -> PtConstr (x', ps, t)) f env ps
+      end
     | _ ->
       Printf.printf "%s\n" (Ast.Pattern.to_string p);
       failwith "not implemented"

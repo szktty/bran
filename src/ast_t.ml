@@ -54,7 +54,7 @@ and pattern_desc =
   | PtList of pattern list
   | PtCons of pattern * pattern
   | PtRecord of (Id.t * pattern) list
-  | PtConstr of Id.t * pattern list
+  | PtConstr of Binding.t * pattern list * Type_t.t
 and fundef = { name : Id.t * Type_t.t; args : (Id.t * Type_t.t) list; body : t; }
 and sigdef = {
   sig_name : Id.t * Type_t.t;

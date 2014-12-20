@@ -17,7 +17,11 @@ let rec string_of_pattern { Locating.desc = p } =
   | PtCons (p1, p2) ->
     Printf.sprintf "PtCons(%s, %s)" (string_of_pattern p1) (string_of_pattern p2)
   | PtRecord(xps) -> "PtRecord([" ^ (String.concat "; " (List.map (fun (x, p) -> x ^ ", " ^ (string_of_pattern p)) xps)) ^ "])"
-  | PtConstr(x, ps) -> "PtConstr(" ^ x ^ ", [" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
+  | PtConstr(x, ps, t) ->
+    Printf.sprintf "PtConstr(%s, [%s], %s)"
+      (Binding.to_string x)
+      (String.concat_map "; " string_of_pattern ps)
+      (Type.to_string t)
 
 let rec string_of_typed_expr { Locating.desc = (e, t) } =
   (string_of_expr e) ^ " : " ^ (Type.to_string t)

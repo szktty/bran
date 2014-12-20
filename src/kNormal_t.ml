@@ -54,7 +54,7 @@ and pattern =
   | PtList of pattern list
   | PtCons of pattern * pattern
   | PtField of (Id.t * pattern) list
-  | PtConstr of Id.t * pattern list
+  | PtConstr of Binding.t * pattern list
 
 and fundef = {
   name : Id.t * Type_t.t;

@@ -57,7 +57,7 @@ let rec gen_ptn = function
   | Closure_t.PtCons (p1, p2) -> PtCons (gen_ptn p1, gen_ptn p2)
   | Closure_t.PtRecord xps ->
     PtRecord (List.map (fun (x, p) -> (x, gen_ptn p)) xps)
-  | Closure_t.PtConstr (x, ps) -> assert false
+  | Closure_t.PtConstr (x, ps) -> PtConstr (x, List.map gen_ptn ps)
 
 and gen_term (term, t) =
   Log.debug "# Erlang.gen_term %s\n" (Closure.string_of_term term);

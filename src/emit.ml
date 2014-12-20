@@ -153,6 +153,11 @@ and gen_ptn oc = function
     bprintf oc "|";
     gen_ptn oc p2;
     bprintf oc "]"
+  | PtConstr (x, []) -> bprintf oc "%s" (Binding.to_erl_atom x)
+  | PtConstr (x, ps) ->
+    bprintf oc "{%s, " (Binding.to_erl_atom x);
+    inject_sep oc ", " (gen_ptn oc) ps;
+    bprintf oc "}"
   | _ -> assert false (* TODO *)
 
 let rec gen_type_tycon ~format oc t =

@@ -17,7 +17,9 @@ let rec string_of_pattern =
   | PtCons (p1, p2) ->
     Printf.sprintf "PtCons(%s)" (String.concat_map ", " string_of_pattern [p1; p2])
   | PtRecord(xps) -> "PtRecord([" ^ (String.concat "; " (List.map (fun (x, p) -> x ^ ", " ^ (string_of_pattern p)) xps)) ^ "])"
-  | PtConstr(x, ps) -> "PtConstr(" ^ x ^ ", [" ^ (String.concat "; " (List.map string_of_pattern ps)) ^ "])"
+  | PtConstr(x, ps) ->
+    "PtConstr(" ^ (Binding.to_string x) ^ ", [" ^
+    (String.concat_map "; " string_of_pattern ps) ^ "])"
 
 let rec string_of_typed_expr (e, t) = (string_of_expr e) ^ " : " ^ (Type.to_string t)
 

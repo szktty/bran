@@ -350,9 +350,9 @@ let rec deref_pattern env lp =
   | PtRecord(xps) -> 
       let xps', env' = List.fold_right (fun (x, p) (xps, env) -> let p', env' = deref_pattern env p in (x, p') :: xps, env') xps ([], env) in
       PtRecord(xps'), env'
-  | PtConstr(x, ps) -> 
+  | PtConstr(x, ps, t) ->
       let ps', env' = List.fold_right (fun p (ps, env) -> let p', env' = deref_pattern env p in p' :: ps, env') ps ([], env) in
-      PtConstr(x, ps'), env'
+      PtConstr(x, ps', t), env'
   in
   set lp d, env
 
@@ -457,31 +457,27 @@ let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p : Env.t * Type_t.t =
         Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
         assert false
     end
-  | PtConstr(x, ps) -> 
-    let env', pts' = List.fold_left (fun (env, pts) p -> let env', t' = pattern env p in env', (p, t') :: pts) (env, []) (List.rev ps) in
-    begin
-      let t = instantiate env (M.find x venv) in
-      match t.desc with
-      | Type_t.App(Type_t.Variant(_, constrs), _) -> 
-        assert (ps = []);
-        assert (List.exists (function (y, []) -> x = y | _ -> false) constrs);
-        env, t
-      | Type_t.App(Type_t.Arrow, ys) -> 
-        begin 
-          let t = List.last ys in
-          match t.desc with
-          | Type_t.App(Type_t.Variant(_, constrs), _) -> 
-            List.iter
-              (function
-                | y, ts' when x = y -> List.iter2 (fun (_, t) t' -> unify env' t t') pts' ts'
-                | _  -> ()) constrs;
-            env', t
-          | _ ->
-            Printf.eprintf "invalid type : %s\n" (Type.to_string t);
-            assert false
+  | PtConstr(x, ps, ty) ->
+    let t = instantiate env ty in
+    begin match t.desc with
+      | Type_t.App(Type_t.Variant (_, constrs), []) ->
+        let _, ys = List.find (fun (x', _) -> Binding.name x = x') constrs in
+        if List.length ys <> List.length ps then
+          raise (Invalid_constr_arguments
+                   (p.loc, x, List.length ys, List.length ps))
+        else begin
+          let env', ts' =
+            List.fold_left
+              (fun (env, ts) e ->
+                 let env', t' = pattern env e in
+                 env', t' :: ts)
+              (env, []) (List.rev ps)
+          in
+          List.iter2 (unify env') ts' ys;
+          env', t
         end
       | _ ->
-        Printf.eprintf "invalid type : %s\n" (Type.to_string t);
+        Printf.eprintf "invalid type : t = %s\n" (Type.to_string t);
         assert false
     end
         

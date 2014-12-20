@@ -19,7 +19,8 @@ let rec ocaml_of_pattern =
   | PtList(ps) -> String.concat_map ", " ocaml_of_pattern ps
   | PtCons (p1, p2) -> (ocaml_of_pattern p1) ^ "::" ^ (ocaml_of_pattern p2)
   | PtField(xps) -> String.concat ", " (List.map (fun (x, p) -> x ^ " = " ^ (ocaml_of_pattern p)) xps)
-  | PtConstr(x, ps) -> x ^ ", " ^ String.concat ", " (List.map ocaml_of_pattern ps)
+  | PtConstr(x, ps) ->
+    (Binding.to_string x) ^ ", " ^ String.concat_map ", " ocaml_of_pattern ps
 
 let rec string_of_typed_expr (e, t) = (string_of_expr e) ^ " : " ^ (Type.to_string t)
 
@@ -105,7 +106,7 @@ let rec pattern env p =
     fold_bin (fun p1' p2' -> PtCons (p1', p2')) pattern env p1 p2
   | Ast_t.PtRecord(xps) -> 
     fold_assoc (fun xps' -> PtField xps') pattern env xps
-  | Ast_t.PtConstr(x, ps) -> 
+  | Ast_t.PtConstr(x, ps, _) -> 
     fold (fun ps' -> PtConstr (x, ps')) pattern env ps
 
 let rec g ({ Env.venv = venv; tenv = tenv } as env) { loc = loc; desc = (e, t) } = (* K正規化ルーチン本体 (caml2html: knormal_g) *)
