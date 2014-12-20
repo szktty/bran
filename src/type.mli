@@ -14,6 +14,18 @@ val app : Location.t -> Type_t.tycon -> t list -> t (* App *)
 val void_app : Location.t -> Type_t.tycon -> t (* App (tycon, []) *)
 val app_unit : Location.t -> t (* App (Unit, []) *)
 
+module With : sig
+
+  type _t = t
+  type 'a t = {
+    t : _t;
+    desc : 'a;
+  }
+
+  val create : _t -> 'a -> 'a t
+
+end
+
 module Tycon : sig
 
   type t = Type_t.tycon

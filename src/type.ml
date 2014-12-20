@@ -181,6 +181,18 @@ let app loc tycon args = create loc & App (tycon, args)
 let void_app loc tycon = app loc tycon []
 let app_unit loc = create loc (App (Unit, []))
 
+module With = struct
+
+  type _t = t
+  type 'a t = {
+    t : _t;
+    desc : 'a;
+  }
+
+  let create t desc = { t; desc }
+
+end
+
 module Tycon = struct
 
   type t = Type_t.tycon
