@@ -185,6 +185,7 @@ FILES[] =
 	s
 	sig
 	source
+	tagging
 	type
 	type_t
 	typing
