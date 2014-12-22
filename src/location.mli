@@ -31,25 +31,13 @@ val contains_offset : t -> int -> bool
 
 val to_string : t -> string
 
-module With : sig
+module Tag_base : Tagging.S with type tag = t
 
-  type with_ = t
+module Tag : sig
+  include module type of Tag_base
 
-  type 'a t = {
-    with_ : with_;
-    desc : 'a;
-  }
-
-  val create : with_ -> 'a -> 'a t
-  val range : with_ -> with_ -> 'a -> 'a t
-  val of_list : 'a t list -> with_
-
-  val with_ : 'a t -> with_
-  val desc : 'a t -> 'a
-
-  val set : 'a t -> 'b -> 'b t
-
-  val concat : 'a t list -> 'a list t
-  val values : 'a t list -> 'a list
+  val from_range : tag -> tag -> 'a -> 'a t
+  val tag_of_list : 'a t list -> tag
+  val union : 'a t list -> 'a list t
 
 end

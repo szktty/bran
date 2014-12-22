@@ -1,5 +1,5 @@
 open Base
-open Location.With
+open With.Loc
 open Ast_t
 
 exception Unbound_value_error of Location.t * Id.t * Id.t list
@@ -48,8 +48,8 @@ let rec resolve_ptn mx env p =
     | PtList ps -> fold (fun ps -> PtList ps) f env ps
     | PtCons (p1, p2) -> fold_bin (fun p1 p2 -> PtCons (p1, p2)) f env p1 p2
     | PtConstr (x, ps, _) ->
-      begin match find_val env p.with_ x with
-        | `Not_found name -> raise (Unbound_constr_error (p.with_, name, []))
+      begin match find_val env p.tag x with
+        | `Not_found name -> raise (Unbound_constr_error (p.tag, name, []))
         | `Local (name, t) ->
           fold (fun ps -> PtConstr (Binding.add mx name, ps, t)) f env ps
         | `Module (x', t) ->
@@ -61,7 +61,7 @@ let rec resolve_ptn mx env p =
   in
   env', set p p'
 
-let rec resolve mx env { with_ = loc; desc = (e, t) } =
+let rec resolve mx env { tag = loc; desc = (e, t) } =
   Log.debug "# Naming.resolve : %s\n" (Ast.string_of_expr e);
   let f = resolve mx env in
   let map = List.map f in

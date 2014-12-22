@@ -14,7 +14,7 @@ let newtyvar () =
     (if q > 0 then string_of_int q else "")
 
 let rec string_of_t reached t = 
-  match Location.With.desc t with
+  match With.Loc.desc t with
   | Var(v) -> "Var(" ^ v ^ ")"
   | Field(tid, t) -> "Field(" ^ (string_of_t reached tid) ^ ", " ^ (string_of_t reached t) ^ ")"
   | App(tycon, ts) -> "App(" ^ (string_of_tycon reached tycon) ^ ", [" ^ (String.concat ", " (List.map (string_of_t reached) ts)) ^ "])"
@@ -64,7 +64,7 @@ let string_of_tycon = string_of_tycon S.empty
 let string_of_constr = string_of_constr S.empty
       
 let rec prefix t =
-  match Location.With.desc t with
+  match With.Loc.desc t with
   | Var _ -> "p" 
   | Field(_, t) -> prefix t
   | App(tycon, _) -> prefix_of_tycon tycon
@@ -94,7 +94,7 @@ and prefix_of_tycon =
   | NameTycon(x, _) -> x
       
 let rec repr_of t =
-  match Location.With.desc t with
+  match With.Loc.desc t with
   | Var x -> "'" ^ x
   | Field(_, t) -> repr_of t
   | App(Unit, []) -> "unit"
@@ -153,7 +153,7 @@ let to_repr = repr_of
 
 (* 等値判定。型推論後のみ使用可能。*)
 let rec equal t1 t2 = 
-  match Location.With.desc t1, Location.With.desc t2 with
+  match With.Loc.desc t1, With.Loc.desc t2 with
   | App(Unit, xs), App(Unit, ys) 
   | App(Bool, xs), App(Bool, ys) 
   | App(Int, xs), App(Int, ys) 
@@ -174,22 +174,9 @@ let rec equal t1 t2 =
   | _, Meta(y) -> equal t2 t1
   | _, _ -> false
       
-let app loc tycon args = Location.With.create loc & App (tycon, args)
+let app loc tycon args = With.Loc.create loc & App (tycon, args)
 let void_app loc tycon = app loc tycon []
-let app_unit loc = Location.With.create loc (App (Unit, []))
-
-module With = struct
-
-  type with_ = t
-
-  type 'a t = {
-    with_ : with_;
-    desc : 'a;
-  }
-
-  let create with_ desc = { with_; desc }
-
-end
+let app_unit loc = With.Loc.create loc (App (Unit, []))
 
 module Tycon = struct
 
@@ -205,9 +192,9 @@ module Tycon = struct
     | TyFun (xs, ({ desc = App(Variant(x, constrs), _) } as t)) -> 
       List.map 
         (function
-          | y, [] -> y, Location.With.create t.with_ (Poly(xs, t))
-          (*| y, ts -> y, create t.with_ (Poly(xs, create t.with_ (App(Arrow, ts @ [t])))))*)
-          | y, ts -> y, Location.With.create t.with_ (Poly(xs, t)))
+          | y, [] -> y, With.Loc.create t.tag (Poly(xs, t))
+          (*| y, ts -> y, create t.tag (Poly(xs, create t.tag (App(Arrow, ts @ [t])))))*)
+          | y, ts -> y, With.Loc.create t.tag (Poly(xs, t)))
         constrs
     | _ -> []
 
@@ -217,7 +204,7 @@ module Tycon = struct
     match t with
     | TyFun(xs, ({ desc = App(Record(x, fs), ys) } as t)) ->
       (List.combine fs (List.map (fun y ->
-           Location.With.create t.with_ (Poly (xs, Location.With.create t.with_ (Field(t, y)))))  ys))
+           With.Loc.create t.tag (Poly (xs, With.Loc.create t.tag (Field(t, y)))))  ys))
     | _ -> []
 
 end
@@ -232,6 +219,6 @@ end
 
 module Meta = struct
 
-  let create loc = Location.With.create loc & Meta (ref None)
+  let create loc = With.Loc.create loc & Meta (ref None)
 
 end

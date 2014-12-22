@@ -2,13 +2,13 @@
 (* parserが利用する変数、関数、型などの定義 *)
 open Base
 open Ast_t
-open Location.With
+open With.Loc
 
 let add_type loc x =
   (x, Type.Meta.create loc)
 
 let add_type_loc x =
-  add_type x.with_ x.desc
+  add_type x.tag x.desc
 
 let ast loc x =
   create loc & add_type loc x
@@ -17,16 +17,16 @@ let ast_on start end_ x =
   ast (Location.union start end_) x
 
 let constr_args = function
-  | { Location.With.desc = (Tuple(xs), _) } -> xs
+  | { With.Loc.desc = (Tuple(xs), _) } -> xs
   | e -> [e]
 
 let constr_pattern_args = function
-  | { Location.With.desc = PtTuple(xs) } -> xs
+  | { With.Loc.desc = PtTuple(xs) } -> xs
   | x -> [x]
 
 let combine e1 e2 =
-  let typ = Type.app_unit e1.with_ in
-  ast_on e1.with_ e2.with_
+  let typ = Type.app_unit e1.tag in
+  ast_on e1.tag e2.tag
     (LetVar ((Id.gentmp (Type.prefix typ), typ), e1, e2))
 
 let rev_combine_list = function
@@ -37,12 +37,12 @@ let rev_combine_list = function
 %}
 
 /* 字句を表すデータ型の定義 (caml2html: parser_token) */
-%token <bool Location.With.t> BOOL
-%token <IntRepr.t Location.With.t> INT
-%token <float Location.With.t> FLOAT
-%token <string Location.With.t> CHAR
-%token <string Location.With.t> STRING
-%token <string Location.With.t> ATOM
+%token <bool With.Loc.t> BOOL
+%token <IntRepr.t With.Loc.t> INT
+%token <float With.Loc.t> FLOAT
+%token <string With.Loc.t> CHAR
+%token <string With.Loc.t> STRING
+%token <string With.Loc.t> ATOM
 %token <Location.t> AS
 %token <Location.t> ASSERT
 %token <Location.t> NOT
@@ -70,9 +70,9 @@ let rev_combine_list = function
 %token <Location.t> IF
 %token <Location.t> THEN
 %token <Location.t> ELSE
-%token <Id.t Location.With.t> IDENT
-%token <Id.t Location.With.t> UIDENT
-%token <Id.t Location.With.t> QIDENT (* 'a *)
+%token <Id.t With.Loc.t> IDENT
+%token <Id.t With.Loc.t> UIDENT
+%token <Id.t With.Loc.t> QIDENT (* 'a *)
 %token <Location.t> DEF
 %token <Location.t> TOPDEF
 %token <Location.t> VAR
@@ -166,7 +166,7 @@ rev_definitions:
 
 definition:
     | TOPVAR IDENT EQUAL nl_opt expr
-      { range $1 $5.with_ (VarDef (add_type_loc $2, $5)) }
+      { from_range $1 $5.tag (VarDef (add_type_loc $2, $5)) }
     | TOPDEF fundef mutual_fundefs_opt
     (* TODO: mutual *)
       { create $1 (RecDef $2) }
@@ -232,19 +232,19 @@ primary:
     | LPAREN RPAREN
       { ast_on $1 $2 Unit }
     | BOOL
-      { ast $1.with_ (Bool $1.desc) }
+      { ast $1.tag (Bool $1.desc) }
     | INT
-      { ast $1.with_ (Int $1.desc) }
+      { ast $1.tag (Int $1.desc) }
     | FLOAT
-      { ast $1.with_ (Float $1.desc) }
+      { ast $1.tag (Float $1.desc) }
     | CHAR
-      { ast $1.with_ (Char $1.desc) }
+      { ast $1.tag (Char $1.desc) }
     | STRING
-      { ast $1.with_ (String $1.desc) }
+      { ast $1.tag (String $1.desc) }
     | ATOM
-      { ast $1.with_ (Atom $1.desc) }
+      { ast $1.tag (Atom $1.desc) }
     | UIDENT
-      { ast $1.with_ (Constr(Binding.of_string $1.desc, [])) }
+      { ast $1.tag (Constr(Binding.of_string $1.desc, [])) }
     | LBRACK list_ RBRACK
       { ast_on $1 $3 (List $2) }
     | LBRACK PIPE list_ PIPE RBRACK
@@ -254,9 +254,9 @@ primary:
 
 binding:
     | value_name
-      { ast $1.with_ (Var (`Unbound (Binding.of_string $1.desc))) }
+      { ast $1.tag (Var (`Unbound (Binding.of_string $1.desc))) }
     | module_path
-      { ast (of_list $1) (Var (`Unbound (Binding.of_list & values $1))) }
+      { ast (tag_of_list $1) (Var (`Unbound (Binding.of_list & descs $1))) }
 
 value_name:
     | IDENT { $1 }
@@ -278,7 +278,7 @@ field_expr:
 
 array_expr:
     | primary DOT LPAREN expr RPAREN
-      { ast_on $1.with_ $5 (Get ($1, $4)) }
+      { ast_on $1.tag $5 (Get ($1, $4)) }
 
 expr:
     | simple_expr
@@ -286,76 +286,76 @@ expr:
       { $1 }
     | NOT expr
       %prec prec_app
-      { ast_on $1 $2.with_ (Not $2) }
+      { ast_on $1 $2.tag (Not $2) }
     | MINUS expr
       %prec prec_unary_minus
-      { ast_on $1 $2.with_ (Neg $2) }
+      { ast_on $1 $2.tag (Neg $2) }
     | expr PLUS expr
-      { ast_on $1.with_ $3.with_ (Add ($1, $3)) }
+      { ast_on $1.tag $3.tag (Add ($1, $3)) }
     | expr MINUS expr
-      { ast_on $1.with_ $3.with_ (Sub($1, $3)) }
+      { ast_on $1.tag $3.tag (Sub($1, $3)) }
     | expr AST expr
-      { ast_on $1.with_ $3.with_ (Mul($1, $3)) }
+      { ast_on $1.tag $3.tag (Mul($1, $3)) }
     | expr SLASH expr
-      { ast_on $1.with_ $3.with_ (Div($1, $3)) }
+      { ast_on $1.tag $3.tag (Div($1, $3)) }
     | expr MOD expr
     (* TODO *)
-      { ast_on $1.with_ $3.with_ (Div($1, $3)) }
+      { ast_on $1.tag $3.tag (Div($1, $3)) }
     | expr PLUS_DOT expr
     (* TODO: FAdd *)
-      { ast_on $1.with_ $3.with_ (Add($1, $3)) }
+      { ast_on $1.tag $3.tag (Add($1, $3)) }
     | expr MINUS_DOT expr
     (* TODO: FSub *)
-      { ast_on $1.with_ $3.with_ (Sub($1, $3)) }
+      { ast_on $1.tag $3.tag (Sub($1, $3)) }
     | expr AST_DOT expr
     (* TODO: FMul *)
-      { ast_on $1.with_ $3.with_ (Mul($1, $3)) }
+      { ast_on $1.tag $3.tag (Mul($1, $3)) }
     | expr SLASH_DOT expr
     (* TODO: FDiv *)
-      { ast_on $1.with_ $3.with_ (Div($1, $3)) }
+      { ast_on $1.tag $3.tag (Div($1, $3)) }
     | expr UARROW expr
-      { ast_on $1.with_ $3.with_ (Concat($1, $3)) }
+      { ast_on $1.tag $3.tag (Concat($1, $3)) }
     | expr CONS expr
       (* TODO: Cons *)
-      { ast_on $1.with_ $3.with_ (Constr(Binding.of_string "Cons", [$1; $3])) }
+      { ast_on $1.tag $3.tag (Constr(Binding.of_string "Cons", [$1; $3])) }
     | expr LAND expr
-      { ast_on $1.with_ $3.with_ (And($1, $3)) }
+      { ast_on $1.tag $3.tag (And($1, $3)) }
     | expr LOR expr
-      { ast_on $1.with_ $3.with_ (Or($1, $3)) }
+      { ast_on $1.tag $3.tag (Or($1, $3)) }
     | expr EQUAL expr
-      { ast_on $1.with_ $3.with_ (Eq($1, $3)) }
+      { ast_on $1.tag $3.tag (Eq($1, $3)) }
     | expr LESS_GREATER expr
-      { let body = ast_on $1.with_ $3.with_ (Eq ($1, $3)) in
-        ast_on $1.with_ $3.with_ (Not body) }
+      { let body = ast_on $1.tag $3.tag (Eq ($1, $3)) in
+        ast_on $1.tag $3.tag (Not body) }
     | expr LESS expr
-      { let body = ast_on $1.with_ $3.with_ (LE ($3, $1)) in
-        ast_on $1.with_ $3.with_ (Not body) }
+      { let body = ast_on $1.tag $3.tag (LE ($3, $1)) in
+        ast_on $1.tag $3.tag (Not body) }
     | expr GREATER expr
-      { let body = ast_on $1.with_ $3.with_ (LE ($1, $3)) in
-        ast_on $1.with_ $3.with_ (Not body) }
+      { let body = ast_on $1.tag $3.tag (LE ($1, $3)) in
+        ast_on $1.tag $3.tag (Not body) }
     | expr LESS_EQUAL expr
-      { ast_on $1.with_ $3.with_ (LE($1, $3)) }
+      { ast_on $1.tag $3.tag (LE($1, $3)) }
     | expr GREATER_EQUAL expr
-      { ast_on $1.with_ $3.with_ (LE($3, $1)) }
+      { ast_on $1.tag $3.tag (LE($3, $1)) }
     | expr DOL expr
-      { ast_on $1.with_ $3.with_ (App($1, [$3])) }
+      { ast_on $1.tag $3.tag (App($1, [$3])) }
     | tuple   { $1 }
     | if_exp   { $1 }
     | expr actual_args
       %prec prec_app
-      { ast_on $1.with_ (List.last $2).with_ (App($1, $2)) }
+      { ast_on $1.tag (List.last $2).tag (App($1, $2)) }
     | expr actual_args do_block
-      { ast_on $1.with_ $3.with_ (App($1, $2)) }
+      { ast_on $1.tag $3.tag (App($1, $2)) }
     | UIDENT simple_expr
-      { ast_on $1.with_ $2.with_ (Constr(Binding.of_string $1.desc, constr_args $2)) }
+      { ast_on $1.tag $2.tag (Constr(Binding.of_string $1.desc, constr_args $2)) }
     | LBRACE fields RBRACE
       { ast_on $1 $3 (Record($2)) }
     | VAR IDENT EQUAL nl_opt expr term block
-      { ast_on $1 $7.with_ (LetVar(add_type_loc $2, $5, $7)) }
+      { ast_on $1 $7.tag (LetVar(add_type_loc $2, $5, $7)) }
     | DEF fundef IN nl_opt block
-      { ast_on $1 $5.with_ (LetRec($2, $5)) }
+      { ast_on $1 $5.tag (LetRec($2, $5)) }
     | DEF REC fundef IN nl_opt block
-      { ast_on $1 $6.with_ (LetRec($3, $6)) }
+      { ast_on $1 $6.tag (LetRec($3, $6)) }
     | MATCH nl_opt expr WITH nl_opt pattern_matching END
       { ast_on $1 $7 (Match ($3, $6)) }
     | field_expr LARROW expr
@@ -364,15 +364,15 @@ expr:
     | array_expr LARROW expr
       { match $1.desc with
           | Get (e1, e2), _ ->
-        ast_on $1.with_ $3.with_ (Put (e1, e2, $3))
+        ast_on $1.tag $3.tag (Put (e1, e2, $3))
           | _ -> assert false
     }
     | PERFORM nl_opt block END
       { ast_on $1 $4 (Perform $3)  }
     | IDENT LARROW expr
-      { ast_on $1.with_ $3.with_ (Bind (add_type_loc $1, $3)) }
+      { ast_on $1.tag $3.tag (Bind (add_type_loc $1, $3)) }
     | RETURN expr %prec prec_app
-      { ast_on $1 $2.with_ (Return $2) }
+      { ast_on $1 $2.tag (Return $2) }
     | FOR IDENT EQUAL expr TO nl_opt expr nl_opt DO nl_opt block END
     (* TODO *)
       { ast_on $1 $12 Unit }
@@ -381,7 +381,7 @@ expr:
       { ast_on $1 $8 Unit }
     | RAISE expr %prec prec_app
     (* TODO *)
-      { ast_on $1 $2.with_ Unit }
+      { ast_on $1 $2.tag Unit }
     | FUN nl_opt rev_formal_args RARROW nl_opt block END
     (* TODO *)
       { ast_on $1 $7 Unit }
@@ -390,13 +390,13 @@ expr:
       { ast_on $1 $1 Unit }
     | ASSERT expr %prec prec_app
     (* TODO *)
-      { ast_on $1 $2.with_ Unit }
+      { ast_on $1 $2.tag Unit }
     | IDENT ASSIGN nl_opt expr
     (* TODO *)
-      { ast_on $1.with_ $4.with_ Unit }
+      { ast_on $1.tag $4.tag Unit }
     | field_expr ASSIGN nl_opt expr
     (* TODO *)
-      { ast_on $1.with_ $4.with_ Unit }
+      { ast_on $1.tag $4.tag Unit }
     | RECEIVE nl_opt pattern_matching END
     (* TODO *)
       { ast_on $1 $4 Unit }
@@ -408,7 +408,7 @@ if_exp:
     | IF expr THEN nl_opt multi_exps_block ELSE nl_opt multi_exps_block END
       { ast_on $1 $9 (If ($2, $5, $8)) }
     | IF expr THEN nl_opt simple_expr nl_opt ELSE nl_opt simple_expr
-      { ast_on $1 $9.with_ (If ($2, $5, $9)) }
+      { ast_on $1 $9.tag (If ($2, $5, $9)) }
 
 do_block:
     | DO nl_opt rev_formal_args RARROW nl_opt block END
@@ -459,11 +459,11 @@ fundef:
       { let (_, args, body) = List.fold_left
           (fun (i, args, e1) (ptn, t) ->
              let x = "_t" ^ string_of_int i in
-             let e2 = Match (create ptn.with_
+             let e2 = Match (create ptn.tag
                                (Var (`Local x), t),
                              [(ptn, e1)])
              in
-             (i + 1, (x, t) :: args, ast_on ptn.with_ e1.with_ e2))
+             (i + 1, (x, t) :: args, ast_on ptn.tag e1.tag e2))
           (0, [], $5) $2
         in
         { name = add_type_loc $1; args = args; body = body } }
@@ -520,38 +520,38 @@ pattern_matching_elt:
 
 pattern:
     | IDENT
-      { create $1.with_ (PtVar ($1.desc, Type.Meta.create $1.with_)) }
+      { create $1.tag (PtVar ($1.desc, Type.Meta.create $1.tag)) }
     | LPAREN RPAREN
-      { range $1 $2 PtUnit }
+      { from_range $1 $2 PtUnit }
     | BOOL
-      { create $1.with_ (PtBool $1.desc) }
+      { create $1.tag (PtBool $1.desc) }
     | INT
-      { create $1.with_ (PtInt $1.desc) }
+      { create $1.tag (PtInt $1.desc) }
     | FLOAT
-      { create $1.with_ (PtFloat $1.desc) }
+      { create $1.tag (PtFloat $1.desc) }
     | ATOM
-      { create $1.with_ (PtAtom $1.desc) }
+      { create $1.tag (PtAtom $1.desc) }
     | STRING
-      { create $1.with_ (PtString $1.desc) }
+      { create $1.tag (PtString $1.desc) }
     | pattern AS value_name
-      { create $1.with_ (PtAlias ($1, $3.desc, Type.Meta.create $3.with_)) }
+      { create $1.tag (PtAlias ($1, $3.desc, Type.Meta.create $3.tag)) }
     | LPAREN pattern RPAREN
       { $2 }
     | LPAREN pattern COLON type_expr RPAREN
       (* TODO *)
       { $2 }
     | LPAREN tuple_pattern RPAREN
-      { range $1 $3 (PtTuple $2) }
+      { from_range $1 $3 (PtTuple $2) }
     | LBRACE field_patterns RBRACE
-      { range $1 $3 (PtRecord $2) }
+      { from_range $1 $3 (PtRecord $2) }
     | constr_name
-      { create (of_list $1) (PtConstr(Binding.of_list & values $1, [], Type.Meta.create (of_list $1))) }
+      { create (tag_of_list $1) (PtConstr(Binding.of_list & descs $1, [], Type.Meta.create (tag_of_list $1))) }
     | constr_name pattern
-      { range (of_list $1) $2.with_ (PtConstr(Binding.of_list & values $1, constr_pattern_args $2, Type.Meta.create (of_list $1))) }
+      { from_range (tag_of_list $1) $2.tag (PtConstr(Binding.of_list & descs $1, constr_pattern_args $2, Type.Meta.create (tag_of_list $1))) }
     | LBRACK list_pattern RBRACK
-      { range $1 $3 (PtList $2) }
+      { from_range $1 $3 (PtList $2) }
     | pattern CONS pattern
-      { range $1.with_ $3.with_ (PtCons ($1, $3)) }
+      { from_range $1.tag $3.tag (PtCons ($1, $3)) }
     | LBRACK PIPE list_pattern PIPE RBRACK
       (* TODO *)
       { create $1 PtUnit }
@@ -592,11 +592,11 @@ typedef:
     | type_params_opt IDENT EQUAL nl_opt type_expr
       { TypeDef($2.desc, Type_t.TyFun($1, $5)) }
     | type_params_opt IDENT EQUAL nl_opt constr_decls
-      { TypeDef($2.desc, Type_t.TyFun($1, create $2.with_ (Type_t.App (Type_t.Variant ($2.desc, $5), [])))) }
+      { TypeDef($2.desc, Type_t.TyFun($1, create $2.tag (Type_t.App (Type_t.Variant ($2.desc, $5), [])))) }
     | type_params_opt IDENT EQUAL nl_opt PIPE constr_decls
-      { TypeDef($2.desc, Type_t.TyFun($1, create $2.with_ (Type_t.App (Type_t.Variant ($2.desc, $6), [])))) }
+      { TypeDef($2.desc, Type_t.TyFun($1, create $2.tag (Type_t.App (Type_t.Variant ($2.desc, $6), [])))) }
     | type_params_opt IDENT EQUAL nl_opt LBRACE field_decls RBRACE
-      { TypeDef($2.desc, Type_t.TyFun($1, create $2.with_ (Type_t.App(Type_t.Record($2.desc, List.map fst $6), List.map snd $6)))) }
+      { TypeDef($2.desc, Type_t.TyFun($1, create $2.tag (Type_t.App(Type_t.Record($2.desc, List.map fst $6), List.map snd $6)))) }
 
 type_params_opt:
     | (* empty *)
@@ -626,24 +626,24 @@ type_expr:
     | type_expr_tuple
       { $1 }
     | type_expr type_constr
-      { range $1.with_ $2.with_ & Type_t.App ($2.desc, [$1]) }
+      { from_range $1.tag $2.tag & Type_t.App ($2.desc, [$1]) }
     | type_expr RARROW type_expr
-      { range $1.with_ $3.with_ & Type_t.App (Type_t.Arrow, [$1; $3]) }
+      { from_range $1.tag $3.tag & Type_t.App (Type_t.Arrow, [$1; $3]) }
 
 simple_type_expr:
     | QIDENT
-      { create $1.with_ (Type_t.Var $1.desc) }
+      { create $1.tag (Type_t.Var $1.desc) }
     | LPAREN type_expr RPAREN
-      { range $1 $3 & Type_t.App (Type_t.Tuple, [$2]) }
+      { from_range $1 $3 & Type_t.App (Type_t.Tuple, [$2]) }
     | type_constr
-      { Type.void_app $1.with_ $1.desc }
+      { Type.void_app $1.tag $1.desc }
     | LPAREN type_constr_params RPAREN type_constr
-      { range $1 $4.with_ & Type_t.App ($4.desc, $2) }
+      { from_range $1 $4.tag & Type_t.App ($4.desc, $2) }
 
 type_expr_tuple:
     | simple_type_expr rev_type_expr_tuple_tail
       { let es = $1 :: List.rev $2 in
-        create (of_list es) (Type_t.App (Type_t.Tuple, es)) }
+        create (tag_of_list es) (Type_t.App (Type_t.Tuple, es)) }
 
 rev_type_expr_tuple_tail:
     | AST simple_type_expr
@@ -653,14 +653,14 @@ rev_type_expr_tuple_tail:
 
 type_constr:
     | constr
-      { create $1.with_ & Type_t.NameTycon (Binding.to_string $1.desc, ref None) }
+      { create $1.tag & Type_t.NameTycon (Binding.to_string $1.desc, ref None) }
 
 constr:
     | IDENT
-      { create $1.with_ & Binding.of_list [$1.desc] }
+      { create $1.tag & Binding.of_list [$1.desc] }
     | rev_constr_path IDENT
-      { let es = concat & List.rev ($2 :: $1) in
-        create es.with_ & Binding.of_list es.desc }
+      { let es = union & List.rev ($2 :: $1) in
+        create es.tag & Binding.of_list es.desc }
 
 rev_constr_path:
     | UIDENT
@@ -821,12 +821,12 @@ bits_spec:
         | "native" -> `Native
         | "signed" -> `Signed
         | "unsigned" -> `Unsigned
-        | _ -> raise (Syntax_error ($1.with_, Some ("Unknown type " ^ $1.desc)))
+        | _ -> raise (Syntax_error ($1.tag, Some ("Unknown type " ^ $1.desc)))
       }
     | IDENT COLON INT
       { match $1.desc with
         | "unit" -> `Unit (IntRepr.to_int $3.desc)
-        | _ -> raise (Syntax_error ($1.with_, Some ("Unknown type " ^ $1.desc)))
+        | _ -> raise (Syntax_error ($1.tag, Some ("Unknown type " ^ $1.desc)))
       }
 
 sigdef:

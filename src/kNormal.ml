@@ -2,7 +2,7 @@
 (* 変換後のコードをなるべくオリジナルに近いものにするため、実際にはほとんどK正規形にはしない。 *)
 
 open KNormal_t
-open Location.With
+open With.Loc
 open Base
 
 let rec ocaml_of_pattern =
@@ -109,7 +109,7 @@ let rec pattern env p =
   | Ast_t.PtConstr(x, ps, _) -> 
     fold (fun ps' -> PtConstr (x, ps')) pattern env ps
 
-let rec g ({ Env.venv = venv; tenv = tenv } as env) { with_ = loc; desc = (e, t) } = (* K正規化ルーチン本体 (caml2html: knormal_g) *)
+let rec g ({ Env.venv = venv; tenv = tenv } as env) { tag = loc; desc = (e, t) } = (* K正規化ルーチン本体 (caml2html: knormal_g) *)
   Log.debug "kNormal.g %s\n" (Ast.string_of_expr e);
   let insert_lets es k =
     let rec insert_lets' es k args =

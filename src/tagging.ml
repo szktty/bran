@@ -7,7 +7,11 @@ end
 module type S = sig
 
   type tag
-  type +'a t
+
+  type +'a t = {
+    tag : tag;
+    desc : 'a;
+  }
 
   val create : tag -> 'a -> 'a t
   val tag : 'a t -> tag

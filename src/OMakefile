@@ -194,6 +194,7 @@ FILES[] =
 	xbase
 	xlist
 	xstring
+	with
 
 BINDIR = ../bin
 PROGRAM = bran

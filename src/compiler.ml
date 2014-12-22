@@ -66,7 +66,7 @@ let gen_sig_file fpath defs =
 
 let parse defs =
   let open Ast_t in
-  let open Location.With in
+  let open With.Loc in
   let parse' (tycons, vals, exts) def =
     match def.desc with
     | TypeDef (x, tycon) ->
@@ -79,7 +79,7 @@ let parse defs =
       Log.debug "# def %s : %s\n" x (Type.to_string t);
       (tycons, (x, t) :: vals, exts)
     | SigDef _ ->
-      raise (Sig.Error (def.with_, "Signature definition only at .bri file"))
+      raise (Sig.Error (def.tag, "Signature definition only at .bri file"))
     | _ -> (tycons, vals, exts)
   in
   List.fold_left parse' ([], [], []) defs

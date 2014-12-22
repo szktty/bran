@@ -35,8 +35,10 @@ let create (start : Position.t) (end_ : Position.t) =
 let zero =
   create Position.zero Position.zero
 
-let union start end_ =
+let _union start end_ =
   create start.start end_.end_
+
+let union = _union
 
 let contains_pos loc (pos : Position.t) =
   loc.start.offset <= pos.offset && pos.offset < loc.end_.offset
@@ -49,37 +51,20 @@ let to_string loc =
     loc.start.line loc.start.col loc.start.offset
     loc.end_.line loc.end_.col loc.end_.offset
 
-module With = struct
+type _t = t
 
-  type with_ = t
+module Tag_base = Tagging.Make(struct type t = _t end)
 
-  type 'a t = {
-    with_ : with_;
-    desc : 'a;
-  }
+module Tag = struct
+  include Tag_base
 
-  let create with_ desc = { with_; desc }
+  let from_range start_loc end_loc value =
+    create (_union start_loc end_loc) value
 
-  let range start_loc end_loc desc =
-    create (union start_loc end_loc) desc
+  let tag_of_list es =
+    _union (tag & List.hd es) (tag & List.last es)
 
-  let of_list es =
-    union (List.hd es).with_ (List.last es).with_
-
-  let with_ lx = lx.with_
-  let desc lx = lx.desc
-
-  let set lx x = { lx with desc = x }
-
-  let concat es =
-    let (with_, es') =
-      List.fold_left
-        (fun (with_, accu) e -> (union with_ e.with_, e.desc :: accu))
-        (zero, []) es
-    in
-    create with_ & List.rev es'
-
-  let values es =
-    List.rev & List.fold_left (fun accu e -> e.desc :: accu) [] es
+  let union es =
+    concat (fun t1 t2 -> _union t1 t2) es
 
 end
