@@ -3,9 +3,9 @@
 open KNormal_t
 open Base
 
-let find x ids = try M.find x ids with Not_found -> x
-let genid x ids = if (M.mem x ids) then Id.genid x else x
-let add x y ids = M.add x y ids
+let find x ids = try Id.Map.find x ids with Not_found -> x
+let genid x ids = if (Id.Map.mem x ids) then Id.genid x else x
+let add x y ids = Id.Map.add x y ids
 let add_list xs ids = List.fold_left (fun ids x -> add x (genid x ids) ids) ids xs
 
 let rec h ids (e, t) =
@@ -102,4 +102,4 @@ let f =
         let ys = List.map fst yts in
         let ids' = add_list ys ids in
         ids, RecDef({ name = (x, t); args = List.map (fun (y, t) -> (find y ids', t)) yts; body = g ids' e1 }) :: defs in
-  KNormal.fold f' M.empty
+  KNormal.fold f' Id.Map.empty

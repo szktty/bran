@@ -1,16 +1,16 @@
 open Base
 
 type t = {
-  venv   : Type_t.t M.t;
-  tenv   : Type_t.t M.t;
-  tycons : Type_t.tycon M.t;
+  venv   : Type_t.t Id.Map.t;
+  tenv   : Type_t.t Id.Map.t;
+  tycons : Type_t.tycon Id.Map.t;
   mods : Module.t list;
 }
 
 let empty = ref { 
-  venv   = M.empty; 
-  tenv   = M.empty;
-  tycons = M.empty;
+  venv   = Id.Map.empty; 
+  tenv   = Id.Map.empty;
+  tycons = Id.Map.empty;
   mods = [];
 }
 
@@ -18,21 +18,21 @@ let empty = ref {
 let () =
   empty := List.fold_left 
     (fun { venv = venv; tenv = tenv; tycons = tycons; mods = mods } (x, t) ->
-      { venv = M.add_list (Type.Tycon.vars t) venv;
-        tenv = M.add_list (Type.Tycon.types t) tenv;
-        tycons = M.add x t tycons;
+      { venv = Id.Map.add_alist (Type.Tycon.vars t) venv;
+        tenv = Id.Map.add_alist (Type.Tycon.types t) tenv;
+        tycons = Id.Map.add x t tycons;
         mods = mods }) !empty Library.builtin_tycons
     
-let add_tycon env x t = { env with tycons = M.add x t env.tycons }
-let add_var env x t = { env with venv = M.add x t env.venv }
+let add_tycon env x t = { env with tycons = Id.Map.add x t env.tycons }
+let add_var env x t = { env with venv = Id.Map.add x t env.venv }
 let add_vars env xys = List.fold_left (fun env (x, y) -> add_var env x y) env xys
-let find_var { venv = venv } x = M.find x venv
-let exists_tycon { tycons = tycons } x = M.mem x tycons
-let find_tycon { tycons = tycons } x = M.find x tycons
+let find_var { venv = venv } x = Id.Map.find x venv
+let exists_tycon { tycons = tycons } x = Id.Map.mem x tycons
+let find_tycon { tycons = tycons } x = Id.Map.find x tycons
 
 let find_var_opt { venv = venv } x =
-  if M.mem x venv then
-    Some (M.find x venv)
+  if Id.Map.mem x venv then
+    Some (Id.Map.find x venv)
   else
     None
 

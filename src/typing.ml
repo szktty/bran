@@ -20,12 +20,12 @@ let find_topdef_opt t =
 
 let rec subst ({ Env.tycons = tycons } as env) tyvars reached t =
   Log.debug "# Typing.subst %s\n" (Type.to_string t);
-  let rec subst' reached ty : Type_t.t M.t * Type_t.t =
+  let rec subst' reached ty : Type_t.t Id.Map.t * Type_t.t =
     Log.debug "#    Typing.subst' %s\n" (Type.to_string ty);
     let subst'_add x t = snd & subst' (S.add x reached) t in
     let tagloc = create ty.tag in
     tyvars, (match ty.desc with
-    | Type_t.Var(x) when M.mem x tyvars -> M.find x tyvars
+    | Type_t.Var(x) when Id.Map.mem x tyvars -> Id.Map.find x tyvars
     | Type_t.Var(x) -> tagloc (Type_t.Var x)
     | Type_t.Field(tr, t) ->
       tagloc & Type_t.Field (snd & subst' reached tr, snd & subst' reached t)
@@ -40,17 +40,17 @@ let rec subst ({ Env.tycons = tycons } as env) tyvars reached t =
     | Type_t.App(Type_t.TyFun([], t), _) ->
       snd & subst' reached t
     | Type_t.App(Type_t.TyFun(xs, t), ys) ->
-      let tyvars', t' = (subst env (M.add_list2 xs ys M.empty) reached t) in
+      let tyvars', t' = (subst env (Id.Map.add_alist2 xs ys Id.Map.empty) reached t) in
       let _, t'' = subst' reached t' in
       Log.debug "#        Instantiate: %s -> %s\n" (Type.to_string ty) (Type.to_string t'');
-      let xts = List.map (fun x -> x, M.find x tyvars') xs in
+      let xts = List.map (fun x -> x, Id.Map.find x tyvars') xs in
       tagloc & Type_t.App (Type_t.Instance (xts, t'), ys)
     | Type_t.App(Type_t.NameTycon(x, _) as t, ys) when S.mem x reached ->
       tagloc & Type_t.App(t, List.map (snd ** subst' reached) ys)
     | Type_t.App(Type_t.NameTycon(x, { contents = Some(tycon) }), ys) ->
       snd & subst' reached (tagloc & Type_t.App(tycon, ys))
     | Type_t.App(Type_t.NameTycon(x, _), ys) ->
-      snd & subst' reached (tagloc & Type_t.App(M.find x tycons, ys))
+      snd & subst' reached (tagloc & Type_t.App(Id.Map.find x tycons, ys))
     | Type_t.App(x, ys) ->
       tagloc & Type_t.App(x, (List.map (snd ** subst' reached) ys))
     | Type_t.Poly([], t) -> snd & subst' reached t
@@ -108,16 +108,16 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
           List.iter2 unify' ts ts') constrs constrs';
       List.iter2 unify' xs ys;
     | Type_t.App(Type_t.TyFun(xs, u), ys), _ ->
-      unify' (snd & subst env (M.add_list2 xs ys M.empty) u) t2
+      unify' (snd & subst env (Id.Map.add_alist2 xs ys Id.Map.empty) u) t2
     | _, Type_t.App(Type_t.TyFun(xs, u), ys) ->
-      unify' t1 (snd & subst env (M.add_list2 xs ys M.empty) u)
+      unify' t1 (snd & subst env (Id.Map.add_alist2 xs ys Id.Map.empty) u)
     | Type_t.App(Type_t.NameTycon(x, _), xs),
       Type_t.App(Type_t.NameTycon(y, _), ys) when x = y ->
       List.iter2 unify' xs ys
     | Type_t.App(Type_t.NameTycon(x, { contents = None }), ys), _ ->
-      unify' (create t1.tag & Type_t.App(M.find x tycons, ys)) t2
+      unify' (create t1.tag & Type_t.App(Id.Map.find x tycons, ys)) t2
     | _, Type_t.App(Type_t.NameTycon(x, { contents = None }), ys) ->
-      unify' t1 (create t2.tag & Type_t.App(M.find x tycons, ys))
+      unify' t1 (create t2.tag & Type_t.App(Id.Map.find x tycons, ys))
     | Type_t.App(Type_t.NameTycon(x, { contents = Some(t1') }), xs), _ ->
       unify' (create t1.tag & Type_t.App(t1', xs)) t2
     | __, Type_t.App(Type_t.NameTycon(x, { contents = Some(t2') }), ys) ->
@@ -125,10 +125,10 @@ let unify ({ Env.tycons = tycons } as env) ty1 ty2 = (* 型が合うように、
     | Type_t.Poly([], u1), _ -> unify' u1 t2
     | _, Type_t.Poly([], u2) -> unify' t1 u2
     | Type_t.Poly(xs, u1), Type_t.Poly(ys, u2) ->
-      let reached = M.add_list2 ys
+      let reached = Id.Map.add_alist2 ys
                       (List.map
                          (fun x -> create t1.tag & Type_t.Var(x)) xs)
-                      M.empty
+                      Id.Map.empty
       in
       unify' u1 (snd & subst env reached u2)
     | Type_t.Var(x), Type_t.Var(y) when x = y -> ()
@@ -159,9 +159,9 @@ let test_unify =
 (*        
 let rec expand tenv = 
   function
-  | Type_t.App(Type_t.TyFun(xs, u), ys) -> expand tenv (subst ((M.add_list2 xs ys M.empty), tenv) u)
+  | Type_t.App(Type_t.TyFun(xs, u), ys) -> expand tenv (subst ((Id.Map.add_alist2 xs ys Id.Map.empty), tenv) u)
   | Type_t.Meta{ contents = Some(t) } -> expand tenv t
-  | Type_t.NameTy(x, _) -> expand tenv (M.find x tenv)
+  | Type_t.NameTy(x, _) -> expand tenv (Id.Map.find x tenv)
   | t -> t
 *)      
 let generalize { Env.venv = venv; tycons = tycons } ty = 
@@ -172,7 +172,7 @@ let generalize { Env.venv = venv; tycons = tycons } ty =
     | Type_t.App(Type_t.NameTycon(_, { contents = Some(tycon) }), ts) ->
       exists v (tagloc & Type_t.App(tycon, ts))
     | Type_t.App(Type_t.NameTycon(x, { contents = None }), ts) ->
-      exists v (tagloc & Type_t.App(M.find x tycons, ts))
+      exists v (tagloc & Type_t.App(Id.Map.find x tycons, ts))
     | Type_t.App(Type_t.TyFun(_, u), ts) ->
       exists v u || List.exists (exists v) ts
     | Type_t.App(_, ts) -> List.exists (exists v) ts
@@ -192,7 +192,7 @@ let generalize { Env.venv = venv; tycons = tycons } ty =
     | Type_t.App(_, ts) -> List.fold_left metavars vs ts
     | Type_t.Poly(_, t) -> metavars vs t
     | Type_t.Meta{ contents = Some(t') } -> metavars vs t'
-    | Type_t.Meta(x) when M.exists (fun _ t' -> exists x t') venv -> vs
+    | Type_t.Meta(x) when Id.Map.exists (fun _ t' -> exists x t') venv -> vs
     | Type_t.Meta(x) -> if (List.memq x vs) then vs else x :: vs
   in
   let ms = metavars [] ty in
@@ -214,9 +214,9 @@ let instantiate env ty =
   let t = 
     match ty.desc with
     | Type_t.Poly (xs, t) -> 
-      snd & subst env (M.add_list
+      snd & subst env (Id.Map.add_alist
                    (List.map (fun x -> (x, Type.Meta.create t.tag)) xs)
-                   M.empty) t
+                   Id.Map.empty) t
     | _ -> ty
   in
   Log.debug "  => %s\n" (Type.to_string t);
@@ -230,8 +230,8 @@ let rec deref_tycon ({ Env.tycons = tycons } as env) reached tycon =
   | Type_t.Arrow | Type_t.Tuple | Type_t.List | Type_t.Array
   | Type_t.Module _ as tycon ->
     tycon, reached
-  | Type_t.Record(x, _) as tycon -> tycon, M.add x tycon reached
-  | Type_t.Variant(x, _) when M.mem x reached -> 
+  | Type_t.Record(x, _) as tycon -> tycon, Id.Map.add x tycon reached
+  | Type_t.Variant(x, _) when Id.Map.mem x reached -> 
       tycon, reached
   | Type_t.Variant(x, constrs) ->
       let constrs', reached = 
@@ -245,19 +245,19 @@ let rec deref_tycon ({ Env.tycons = tycons } as env) reached tycon =
       let tycon' = Type_t.Variant(x, constrs') in
       tycon', reached
   | Type_t.NameTycon(x, { contents = Some(tycon) }) ->       
-      tycon, M.add x tycon reached
+      tycon, Id.Map.add x tycon reached
   | Type_t.NameTycon(x, { contents = None })
     when List.mem x ["unit"; "int"; "float"; "bool"; "atom"; "char"; "string";
                      "bitstring"; "binary"; "list"] ->
-    M.find x tycons, reached
-  | Type_t.NameTycon(x, r) when M.mem x reached -> 
-      let tycon = M.find x reached in 
+    Id.Map.find x tycons, reached
+  | Type_t.NameTycon(x, r) when Id.Map.mem x reached -> 
+      let tycon = Id.Map.find x reached in 
       r := Some(tycon);
       tycon, reached
   | Type_t.NameTycon(x, { contents = None }) -> assert false
   | Type_t.TyFun(xs, { tag = loc;
                        desc = Type_t.App(Type_t.Variant(x, constrs), ys) }) -> 
-      let reached = M.add x tycon reached in
+      let reached = Id.Map.add x tycon reached in
       let constrs', reached = 
         List.fold_left (fun (constrs, reached) (c, ys) -> 
           let ys', reached = 
@@ -300,7 +300,7 @@ and deref_type env reached t = (* 型変数を中身でおきかえる関数 (ca
                         y' :: ys', reached)
         ([], reached) (List.rev ys)
     in
-    snd & subst env M.empty (tagloc & Type_t.App(x', ys')), reached
+    snd & subst env Id.Map.empty (tagloc & Type_t.App(x', ys')), reached
   | Type_t.Poly(xs, t) -> 
     let t', reached' = deref_type env reached t in
     tagloc & Type_t.Poly(xs, t'), reached'
@@ -311,9 +311,9 @@ and deref_type env reached t = (* 型変数を中身でおきかえる関数 (ca
     r := Some(t');
     t', reached'
 
-let deref_tycon env tycon = fst & deref_tycon env M.empty tycon
+let deref_tycon env tycon = fst & deref_tycon env Id.Map.empty tycon
 
-let deref_type env ty = fst & deref_type env M.empty ty
+let deref_type env ty = fst & deref_type env Id.Map.empty ty
 
 let rec deref_pattern env lp =
   let (d, env) = match desc lp with
@@ -380,7 +380,7 @@ and deref_expr ({ Env.venv = venv } as env) = function
   | LetRec({ name = (x, t); args = yts; body = e1 }, e2) ->
       LetRec({ name = deref_id_type env (x, t);
                args = List.map (deref_id_type env) yts;
-               body = deref_typed_expr { env with Env.venv = M.add_list yts (M.add x t venv) } e1 },
+               body = deref_typed_expr { env with Env.venv = Id.Map.add_alist yts (Id.Map.add x t venv) } e1 },
              deref_typed_expr (Env.add_var env x t) e2)
   | App(e, es) -> App(deref_typed_expr env e, List.map (deref_typed_expr env) es)
   | Constr(x, es) -> Constr(x, List.map (deref_typed_expr env) es)
@@ -433,7 +433,7 @@ let rec pattern ({ Env.venv = venv; tenv = tenv } as env) p : Env.t * Type_t.t =
   | PtRecord(xps) -> 
     let env', ts' = List.fold_left (fun (env, ts) (_, p) -> let env', t' = pattern env p in env', t' :: ts) (env, []) (List.rev xps) in
     begin
-      let t = M.find (fst (List.hd xps)) tenv in
+      let t = Id.Map.find (fst (List.hd xps)) tenv in
       match t.desc with
       | Type_t.Poly(xs, { desc = Type_t.Field(t, _) }) ->
         let t' = instantiate env (create t.tag & Type_t.Poly(xs, t)) in
@@ -496,7 +496,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
                (x, { e with desc = (e', t') }) :: xets, t' :: ts)
             ([], []) (List.rev xets)
         in 
-        let t = M.find (fst (List.hd xets)) tenv in
+        let t = Id.Map.find (fst (List.hd xets)) tenv in
         begin match t.desc with
           | Type_t.Poly(xs, { desc = Type_t.Field(t, _) }) -> 
             let t' = instantiate env (create t.tag & Type_t.Poly(xs, t)) in
@@ -514,7 +514,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
         end
       | Field(et, x) ->
         let _, ty_rec' as et' = g env et in
-        let ty_f = instantiate env (M.find x tenv) in
+        let ty_f = instantiate env (Id.Map.find x tenv) in
         let ty_f' = Type.Meta.create et.tag in
         unify env ty_f (tagloc & Type_t.Field(ty_rec', ty_f'));
         Field({ e with desc = et' }, x), ty_f'
@@ -599,8 +599,8 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
           unify env t t1';
           let e2', t2' = g (Env.add_var env x t1') et2 in
           LetVar((x, t1'), set et1 (e1', t1'), set et2 (e2', t2')), t2'
-      | Var (`Local x) when M.mem x venv ->
-        expr, instantiate env (M.find x venv)
+      | Var (`Local x) when Id.Map.mem x venv ->
+        expr, instantiate env (Id.Map.find x venv)
       | Var _ -> assert false
       | Constr(x, []) -> 
         let t = instantiate env ty in
@@ -638,7 +638,7 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) (e : Ast_t.t) : Ast_t.expr *
       | LetRec({ name = (x, ty_f); args = yts; body = et1 }, et2) -> (* let recの型推論 (caml2html: typing_letrec) *)
         let t2 = Type.Meta.create et2.tag in
         let ty_f' = create et2.tag & Type_t.App (Type_t.Arrow, ((List.map snd yts) @ [t2])) in
-        let e1', t1' = g { env with Env.venv = M.add_list yts (M.add x ty_f' venv) } et1 in
+        let e1', t1' = g { env with Env.venv = Id.Map.add_alist yts (Id.Map.add x ty_f' venv) } et1 in
         unify env ty_f ty_f';
         unify env t2 t1';
         let t'' = generalize env ty_f' in
@@ -711,9 +711,9 @@ let f defs =
       let env', def' = 
         match def.desc with
         | TypeDef(x, t) -> 
-            { Env.venv = M.add_list (Type.Tycon.vars t) venv;
-              Env.tenv = M.add_list (Type.Tycon.types t) tenv;
-              Env.tycons = M.add x t tycons;
+            { Env.venv = Id.Map.add_alist (Type.Tycon.vars t) venv;
+              Env.tenv = Id.Map.add_alist (Type.Tycon.types t) tenv;
+              Env.tycons = Id.Map.add x t tycons;
               Env.mods = mods },
           TypeDef(x, t)
         | VarDef((x, t), et) -> 
@@ -722,11 +722,11 @@ let f defs =
         | RecDef({ name = (x, ty_f); args = yts; body = et }) -> 
           let ty_r = Type.Meta.create def.tag in
           let ty_f' = create def.tag & Type_t.App(Type_t.Arrow, ((List.map snd yts) @ [ty_r])) in
-          let et' = f' { env with Env.venv = M.add_list yts (M.add x ty_f' env.Env.venv) } (et, ty_r) in
+          let et' = f' { env with Env.venv = Id.Map.add_alist yts (Id.Map.add x ty_f' env.Env.venv) } (et, ty_r) in
           unify env ty_f ty_f';
           let t'' = (generalize env ty_f') in
           add_topdef x t'';
-          { env with Env.venv = M.add x t'' venv }, 
+          { env with Env.venv = Id.Map.add x t'' venv }, 
           RecDef({ name = (x, t''); 
                    args = yts;
                    body = set et et' })
@@ -737,9 +737,9 @@ let f defs =
 
   (* deref_def の中で未解決なメタ変数を型変数に置き換えてしまうので、すべての式の型推論が終わってから deref を呼ぶこと *)
   let { Env.venv = venv; tenv = tenv; tycons = tycons; mods = mods } as env = !Env.empty in
-  Env.empty := { Env.venv = M.map (deref_type env) venv;
-                 Env.tenv = M.map (deref_type env) tenv; 
-                 Env.tycons = M.map (deref_tycon env) tycons;
+  Env.empty := { Env.venv = Id.Map.map (deref_type env) venv;
+                 Env.tenv = Id.Map.map (deref_type env) tenv; 
+                 Env.tycons = Id.Map.map (deref_tycon env) tycons;
                  Env.mods = mods };
 
   Ast.fold (fun (env, defs) def -> deref_def env def :: defs) (List.rev defs') (Sig.create_env ())

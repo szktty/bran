@@ -3,7 +3,7 @@ exception Topdef_error of (Id.t * Type_t.t) * Type_t.t * Type_t.t
 exception Error of Ast_t.expr With.Loc.t * Type_t.t * Type_t.t
 exception Invalid_constr_arguments of Location.t * Binding.t * int * int
 
-val subst : Env.t -> Type_t.t M.t -> Type_t.t -> Type_t.t M.t * Type_t.t
+val subst : Env.t -> Type_t.t Id.Map.t -> Type_t.t -> Type_t.t Id.Map.t * Type_t.t
 val occur : Type_t.t option ref -> Type_t.t -> bool
 val unify : Env.t -> Type_t.t -> Type_t.t -> unit
 val test_unify : unit

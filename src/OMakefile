@@ -176,7 +176,6 @@ FILES[] =
 	library
 	location
 	log
-	m
 	main
 	module
 	naming

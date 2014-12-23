@@ -95,16 +95,16 @@ let fold f defs env =
       (fun ({ Env.venv = venv; tenv = tenv; tycons = tycons; mods = mods } as env, defs) def -> 
         match With.Loc.desc def with
         | TypeDef(x, t) -> 
-            { Env.venv = M.add_list (Type.Tycon.vars t) venv;
-              Env.tenv = M.add_list (Type.Tycon.types t) tenv;
-              Env.tycons = M.add x t tycons;
+            { Env.venv = Id.Map.add_alist (Type.Tycon.vars t) venv;
+              Env.tenv = Id.Map.add_alist (Type.Tycon.types t) tenv;
+              Env.tycons = Id.Map.add x t tycons;
               Env.mods = mods },
           f (env, defs) def
         | VarDef((x, t), e) -> 
             Env.add_var env x t, f (env, defs) def
         | RecDef({ name = (x, ty_f); args = yts; body = e }) -> 
-            let env' = { env with Env.venv = M.add_list yts (M.add x ty_f venv) } in
-            { env with Env.venv = M.add x ty_f venv }, f (env', defs) def
+            let env' = { env with Env.venv = Id.Map.add_alist yts (Id.Map.add x ty_f venv) } in
+            { env with Env.venv = Id.Map.add x ty_f venv }, f (env', defs) def
         | _ -> assert false)
       (env, []) defs in
   List.rev defs'

@@ -139,10 +139,10 @@ let rec pattern env =
   | KNormal_t.PtFloat v -> env, PtFloat v
   | KNormal_t.PtAtom v -> env, PtAtom v
   | KNormal_t.PtString v -> env, PtString v
-  | KNormal_t.PtVar(x, t) -> M.add x t env, PtVar(x, t)
+  | KNormal_t.PtVar(x, t) -> Id.Map.add x t env, PtVar(x, t)
   | KNormal_t.PtAlias (p, x, t) ->
     let env', p' = pattern env p in
-    M.add x t env', PtAlias (p', x, t)
+    Id.Map.add x t env', PtAlias (p', x, t)
   | KNormal_t.PtTuple(ps) -> 
       let env, ps' = List.fold_left 
         (fun (env, ps) p -> 
@@ -229,15 +229,15 @@ let rec g venv known (expr, ty) = (* クロージャ変換ルーチン本体 (ca
     | KNormal_t.Exp(e) -> Exp(h venv known e)
     | KNormal_t.If(e, e1, e2) -> If(h venv known e, g venv known e1, g venv known e2)
     | KNormal_t.Match(x, pes) -> Match(x, (List.map (fun (p, e) -> let env', p' = pattern venv p in p', (g env' known e)) pes))
-    | KNormal_t.Let((x, t), e1, e2) -> Let((x, t), g venv known e1, g (M.add x t venv) known e2)
+    | KNormal_t.Let((x, t), e1, e2) -> Let((x, t), g venv known e1, g (Id.Map.add x t venv) known e2)
     | KNormal_t.LetRec({ KNormal_t.name = (x, ty_f); KNormal_t.args = yts; KNormal_t.body = e1 }, e2) -> (* 関数定義の場合 (caml2html: closure_letrec) *)
         (* 関数定義let rec x y1 ... yn = e1 in e2の場合は、
 	       xに自由変数がない(closureを介さずdirectに呼び出せる)
 	       と仮定し、knownに追加してe1をクロージャ変換してみる *)
         let toplevel_backup = !toplevel in
-        let venv' = M.add x ty_f venv in
+        let venv' = Id.Map.add x ty_f venv in
         let known' = S.add x known in
-        let e1' = g (M.add_list yts venv') known' e1 in
+        let e1' = g (Id.Map.add_alist yts venv') known' e1 in
         (* 本当に自由変数がなかったか、変換結果e1'を確認する *)
         (* 注意: e1'にx自身が変数として出現する場合はclosureが必要!
            (thanks to nuevo-namasute and azounoman; test/cls-bug2.ml参照) *)
@@ -248,10 +248,10 @@ let rec g venv known (expr, ty) = (* クロージャ変換ルーチン本体 (ca
           else (Log.debug "free variable(s) %s found in function %s@.\n" (Id.pp_list (S.elements zs)) x;
 	            Log.debug "function %s cannot be directly applied in fact@.\n" x;
 	            toplevel := toplevel_backup;
-	            let e1' = g (M.add_list yts venv') known e1 in
+	            let e1' = g (Id.Map.add_alist yts venv') known e1 in
 	            known, e1') in
         let zs = S.elements (S.diff (fv e1') (S.add x (S.of_list ((List.map fst yts) @ (ids_of_defs !toplevel))))) in
-        let zts = List.map (fun z -> z, M.find z venv') zs in (* ここで自由変数zの型を引くために引数venvが必要 *)
+        let zts = List.map (fun z -> z, Id.Map.find z venv') zs in (* ここで自由変数zの型を引くために引数venvが必要 *)
         toplevel := FunDef{ name = (Id.L(x), ty_f); args = yts; formal_fv = zts; body = e1' } :: !toplevel; (* トップレベル関数を追加 *)
         let e2' = g venv' known' e2 in
         if S.mem x (fv e2') then (* xが変数としてe2'に出現するか。ただし、自由変数がないときはクロージャをつくらず関数ポイントとして使用する *)
@@ -261,7 +261,7 @@ let rec g venv known (expr, ty) = (* クロージャ変換ルーチン本体 (ca
   (expr', ty)
     
 let f' { Env.venv = venv } e = 
-  let known = M.fold (fun x _ known -> S.add x known) venv S.empty in
+  let known = Id.Map.fold (fun x _ known -> S.add x known) venv S.empty in
   g venv known e
 
 let f defs =
@@ -272,8 +272,8 @@ let f defs =
                 match def with 
                 | KNormal_t.TypeDef(x, t) -> 
                     { env with 
-                      Env.venv = M.add_list (Type.Tycon.vars t) venv; 
-                      Env.tenv = M.add_list (Type.Tycon.types t) tenv }, 
+                      Env.venv = Id.Map.add_alist (Type.Tycon.vars t) venv; 
+                      Env.tenv = Id.Map.add_alist (Type.Tycon.types t) tenv }, 
                   TypeDef(x, t)
                 | KNormal_t.VarDef((x, t), e) -> 
                     Env.add_var env x t, (VarDef((x, t), f' env e))
