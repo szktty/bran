@@ -193,6 +193,7 @@ FILES[] =
 	version
 	xbase
 	xlist
+	xmap
 	xstring
 	with
 

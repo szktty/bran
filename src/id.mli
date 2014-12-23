@@ -8,3 +8,5 @@ val counter : int ref
 val genid : string -> string
 
 val gentmp : string -> string
+
+module Map : Xmap.S with type key = t

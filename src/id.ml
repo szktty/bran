@@ -12,3 +12,11 @@ let genid s =
   Printf.sprintf "%s%d" s !counter
 
 let gentmp s = "_" ^ (genid s)
+
+type _t = t
+
+module Map =
+  Xmap.Make(struct
+    type t = _t
+    let compare = compare
+  end)
