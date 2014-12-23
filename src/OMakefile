@@ -194,6 +194,7 @@ FILES[] =
 	xbase
 	xlist
 	xmap
+	xset
 	xstring
 	with
 

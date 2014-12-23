@@ -20,3 +20,9 @@ module Map =
     type t = _t
     let compare = compare
   end)
+
+module Set =
+  Xset.Make(struct
+    type t = _t
+    let compare = compare
+  end)

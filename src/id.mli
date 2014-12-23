@@ -10,3 +10,4 @@ val genid : string -> string
 val gentmp : string -> string
 
 module Map : Xmap.S with type key = t
+module Set : Xset.S with type elt = t
