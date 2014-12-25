@@ -1,3 +1,5 @@
+open Base
+
 let debug = ref false
 let verbose = ref false
 
@@ -11,9 +13,7 @@ let add_load_path path = load_paths := !load_paths @ [path]
 let gen_sig_file = ref false
 let gen_spec = ref true
 
-let get_env_libs () =
-  try Some (Sys.getenv "BRAN_LIBS")
-  with Not_found -> None
+let get_env_libs () = opt_of_find Sys.getenv "BRAN_LIBS"
 
 let print_tycon = ref None
 let print_type = ref None

@@ -24,10 +24,7 @@ let find_val_opt m x =
   List.find_map_opt
     (fun (ex, et) -> if x = ex then Some et else None) m.vals
 
-let find_val m x =
-  match find_val_opt m x with
-  | None -> raise Not_found
-  | Some t -> t
+let find_val m x = find_of_opt & find_val_opt m x
 
 let find_ext_opt m x =
   List.find_map_opt
