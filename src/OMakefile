@@ -181,7 +181,6 @@ FILES[] =
 	naming
 	parser
 	position
-	s
 	sig
 	source
 	tagging

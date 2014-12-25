@@ -22,7 +22,7 @@ let rec subst ({ Env.tycons = tycons } as env) tyvars reached t =
   Log.debug "# Typing.subst %s\n" (Type.to_string t);
   let rec subst' reached ty : Type_t.t Id.Map.t * Type_t.t =
     Log.debug "#    Typing.subst' %s\n" (Type.to_string ty);
-    let subst'_add x t = snd & subst' (S.add x reached) t in
+    let subst'_add x t = snd & subst' (Id.Set.add x reached) t in
     let tagloc = create ty.tag in
     tyvars, (match ty.desc with
     | Type_t.Var(x) when Id.Map.mem x tyvars -> Id.Map.find x tyvars
@@ -45,7 +45,7 @@ let rec subst ({ Env.tycons = tycons } as env) tyvars reached t =
       Log.debug "#        Instantiate: %s -> %s\n" (Type.to_string ty) (Type.to_string t'');
       let xts = List.map (fun x -> x, Id.Map.find x tyvars') xs in
       tagloc & Type_t.App (Type_t.Instance (xts, t'), ys)
-    | Type_t.App(Type_t.NameTycon(x, _) as t, ys) when S.mem x reached ->
+    | Type_t.App(Type_t.NameTycon(x, _) as t, ys) when Id.Set.mem x reached ->
       tagloc & Type_t.App(t, List.map (snd ** subst' reached) ys)
     | Type_t.App(Type_t.NameTycon(x, { contents = Some(tycon) }), ys) ->
       snd & subst' reached (tagloc & Type_t.App(tycon, ys))
@@ -60,7 +60,7 @@ let rec subst ({ Env.tycons = tycons } as env) tyvars reached t =
   in
   subst' reached t
 
-let subst env tyvars = subst env tyvars S.empty
+let subst env tyvars = subst env tyvars Id.Set.empty
     
 let rec occur x t =
   match t.desc with

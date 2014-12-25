@@ -40,8 +40,8 @@ and string_of_tycon reached =
   | Array -> "Array"
   | Module x -> "Module(" ^ x ^ ")"
   | Record(x, fs) -> "Record(" ^ x ^ ", {" ^ (String.concat ", " fs) ^ "})"
-  | Variant(x, constrs) when S.mem x reached -> "Variant(" ^ x ^ ")"
-  | Variant(x, constrs) -> "Variant(" ^ x ^ ", [" ^ (String.concat " | " (List.map (string_of_constr (S.add x reached)) constrs)) ^ "])"
+  | Variant(x, constrs) when Id.Set.mem x reached -> "Variant(" ^ x ^ ")"
+  | Variant(x, constrs) -> "Variant(" ^ x ^ ", [" ^ (String.concat " | " (List.map (string_of_constr (Id.Set.add x reached)) constrs)) ^ "])"
   | TyFun(xs, t) ->
     Printf.sprintf "TyFun([%s], %s)" (String.concat ", " xs) (string_of_t reached t)
   | Instance (xts, t) ->
@@ -50,7 +50,7 @@ and string_of_tycon reached =
          (List.map (fun (x, t) ->
                       Printf.sprintf "('%s, %s)" x (string_of_t reached t)) xts))
       (string_of_t reached t)
-  | NameTycon(x, { contents = None }) when S.mem x reached -> "NameTycon(" ^ x ^ ", None)"
+  | NameTycon(x, { contents = None }) when Id.Set.mem x reached -> "NameTycon(" ^ x ^ ", None)"
   | NameTycon(x, { contents = None }) -> "NameTycon(" ^ x ^ ", None)"
   | NameTycon(x, { contents = Some(t) }) -> "NameTycon(" ^ x ^ ", Some(" ^ (string_of_tycon reached t) ^ "))"
 
@@ -59,9 +59,9 @@ and string_of_constr reached =
   | (x, []) -> x
   | (x, ts) -> x ^ " of " ^ (String.concat " * " (List.map (string_of_t reached) ts))
 
-let string_of_t = string_of_t S.empty
-let string_of_tycon = string_of_tycon S.empty
-let string_of_constr = string_of_constr S.empty
+let string_of_t = string_of_t Id.Set.empty
+let string_of_tycon = string_of_tycon Id.Set.empty
+let string_of_constr = string_of_constr Id.Set.empty
       
 let rec prefix t =
   match With.Loc.desc t with
