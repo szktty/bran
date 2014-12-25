@@ -1,7 +1,7 @@
 open Ast_t
 open Base
 
-let rec string_of_pattern { Locating.desc = p } =
+let rec string_of_pattern { With.Loc.desc = p } =
   match p with
   | PtUnit -> "PtUnit"
   | PtBool(b) -> "PtBool(" ^ (string_of_bool b) ^ ")"
@@ -23,7 +23,7 @@ let rec string_of_pattern { Locating.desc = p } =
       (String.concat_map "; " string_of_pattern ps)
       (Type.to_string t)
 
-let rec string_of_typed_expr { Locating.desc = (e, t) } =
+let rec string_of_typed_expr { With.Loc.desc = (e, t) } =
   (string_of_expr e) ^ " : " ^ (Type.to_string t)
 
 and string_of_expr = 
@@ -81,7 +81,7 @@ let string_of_sigdef { sig_name = (x, t); sig_ext = ext } =
   | None -> Printf.sprintf "%s : %s" x typ
   | Some f -> Printf.sprintf "external %s : %s = %s" x typ f
 
-let string_of_def { Locating.desc = def } =
+let string_of_def { With.Loc.desc = def } =
   match def with
   | Nop -> "Nop"
   | TypeDef(x, t) -> "TypeDef(" ^ x ^ ", " ^ (Type.Tycon.to_string t) ^ ")"
@@ -93,18 +93,18 @@ let fold f defs env =
   let _, defs' =
     List.fold_left
       (fun ({ Env.venv = venv; tenv = tenv; tycons = tycons; mods = mods } as env, defs) def -> 
-        match Locating.desc def with
+        match With.Loc.desc def with
         | TypeDef(x, t) -> 
-            { Env.venv = M.add_list (Type.Tycon.vars t) venv;
-              Env.tenv = M.add_list (Type.Tycon.types t) tenv;
-              Env.tycons = M.add x t tycons;
+            { Env.venv = Id.Map.add_alist (Type.Tycon.vars t) venv;
+              Env.tenv = Id.Map.add_alist (Type.Tycon.types t) tenv;
+              Env.tycons = Id.Map.add x t tycons;
               Env.mods = mods },
           f (env, defs) def
         | VarDef((x, t), e) -> 
             Env.add_var env x t, f (env, defs) def
         | RecDef({ name = (x, ty_f); args = yts; body = e }) -> 
-            let env' = { env with Env.venv = M.add_list yts (M.add x ty_f venv) } in
-            { env with Env.venv = M.add x ty_f venv }, f (env', defs) def
+            let env' = { env with Env.venv = Id.Map.add_alist yts (Id.Map.add x ty_f venv) } in
+            { env with Env.venv = Id.Map.add x ty_f venv }, f (env', defs) def
         | _ -> assert false)
       (env, []) defs in
   List.rev defs'

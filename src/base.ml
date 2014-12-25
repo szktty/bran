@@ -13,6 +13,10 @@ module List = struct
   include Xlist
 end
 
+module Map = Xmap
+
+module Set = Xset
+
 module Filename = struct
   include Filename
   include Spotlib.Xfilename

@@ -45,7 +45,7 @@ let print_error fpath loc msg =
 let bprint_type_error oc fpath t1 t2 =
   let open Printf in
   let print_type oc t =
-    let (sl1, sc1, el1, ec1) = Location.values1 t.Locating.loc in
+    let (sl1, sc1, el1, ec1) = Location.values1 t.With.Loc.tag in
     let lc = sprintf "(%d:%d-%d:%d)" sl1 sc1 el1 ec1 in
     let name = Type.to_repr t in
     bprintf oc "    %s    %s"
@@ -54,11 +54,11 @@ let bprint_type_error oc fpath t1 t2 =
   in
   print_type oc t2;
   bprintf oc "    <- actual type\n\n";
-  bprint_text_of_loc oc fpath t2.loc 4;
+  bprint_text_of_loc oc fpath t2.tag 4;
   bprintf oc "\n";
   print_type oc t1;
   bprintf oc "    <- expected type\n\n";
-  bprint_text_of_loc oc fpath t1.loc 4
+  bprint_text_of_loc oc fpath t1.tag 4
 
 let print_exc fpath e =
   let open Printf in
@@ -101,11 +101,11 @@ let print_exc fpath e =
     bprintf oc "Type mismatch: This expression has type `%s', but the expression was expected of type `%s'\n\n"
       (Type.to_repr t2) (Type.to_repr t1);
   bprint_type_error oc fpath t1 t2;
-    print_error fpath e.loc (Buffer.contents oc)
+    print_error fpath e.tag (Buffer.contents oc)
   | Typing.Topdef_error ((x, t), t1, t2) ->
     let oc = Buffer.create 16 in
     bprintf oc "Type mismatch: The argument of function `%s':(%s) should be `%s' instead of `%s'\n\n"
       x (Type.to_repr t) (Type.to_repr t1) (Type.to_repr t2);
     bprint_type_error oc fpath t1 t2;
-    print_error fpath t2.loc (Buffer.contents oc)
+    print_error fpath t2.tag (Buffer.contents oc)
   | e -> raise e

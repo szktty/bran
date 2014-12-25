@@ -1,7 +1,6 @@
 type t = Type_t.t
 
 val newtyvar : unit -> Id.t
-val newmetavar : unit -> t option ref
 
 val to_string : t -> Id.t
 val to_repr : t -> string
@@ -31,5 +30,11 @@ module Constr : sig
   type t = Type_t.constr
 
   val to_string : t -> string
+
+end
+
+module Meta : sig
+
+  val create : Location.t -> t
 
 end

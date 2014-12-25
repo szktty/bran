@@ -2,7 +2,7 @@
 (* 変換後のコードをなるべくオリジナルに近いものにするため、実際にはほとんどK正規形にはしない。 *)
 
 open KNormal_t
-open Locating
+open With.Loc
 open Base
 
 let rec ocaml_of_pattern =
@@ -109,7 +109,7 @@ let rec pattern env p =
   | Ast_t.PtConstr(x, ps, _) -> 
     fold (fun ps' -> PtConstr (x, ps')) pattern env ps
 
-let rec g ({ Env.venv = venv; tenv = tenv } as env) { loc = loc; desc = (e, t) } = (* K正規化ルーチン本体 (caml2html: knormal_g) *)
+let rec g ({ Env.venv = venv; tenv = tenv } as env) { tag = loc; desc = (e, t) } = (* K正規化ルーチン本体 (caml2html: knormal_g) *)
   Log.debug "kNormal.g %s\n" (Ast.string_of_expr e);
   let insert_lets es k =
     let rec insert_lets' es k args =
@@ -185,9 +185,9 @@ let rec g ({ Env.venv = venv; tenv = tenv } as env) { loc = loc; desc = (e, t) }
         let e2' = g (Env.add_var env x t) e2 in
         Let((x, t), e1', e2')
     | Ast_t.LetRec({ Ast_t.name = (x, t); Ast_t.args = yts; Ast_t.body = e1 }, e2) ->
-        let venv' = M.add x t venv in
+        let venv' = Id.Map.add x t venv in
         let e2' = g { env with Env.venv = venv' } e2 in
-        let e1' = g { env with Env.venv = M.add_list yts venv' } e1 in
+        let e1' = g { env with Env.venv = Id.Map.add_alist yts venv' } e1 in
         LetRec({ name = (x, t); args = yts; body = e1' }, e2')
           (*
     | Ast_t.App({ desc = (Ast_t.Var(f), _) }, e2s)
@@ -237,8 +237,8 @@ let map f defs =
       match def with 
       | TypeDef(x, t) -> 
           let env' = { env with 
-            Env.venv = M.add_list (Type.Tycon.vars t) venv;
-            Env.tenv = M.add_list (Type.Tycon.types t) tenv } in
+            Env.venv = Id.Map.add_alist (Type.Tycon.vars t) venv;
+            Env.tenv = Id.Map.add_alist (Type.Tycon.types t) tenv } in
           env', f env' def
       | VarDef((x, t), e) ->  
           Env.add_var env x t, f env def

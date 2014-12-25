@@ -174,18 +174,16 @@ FILES[] =
 	kNormal_t
 	lexer
 	library
-	locating
 	location
 	log
-	m
 	main
 	module
 	naming
 	parser
 	position
-	s
 	sig
 	source
+	tagging
 	type
 	type_t
 	typing
@@ -193,7 +191,10 @@ FILES[] =
 	version
 	xbase
 	xlist
+	xmap
+	xset
 	xstring
+	with
 
 BINDIR = ../bin
 PROGRAM = bran

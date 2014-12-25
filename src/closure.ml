@@ -82,43 +82,43 @@ let string_of_def =
 
 let rec vars_of_pattern = 
   function
-  | PtUnit | PtBool _ | PtInt _ | PtFloat _ | PtAtom _ | PtString _ -> S.empty
-  | PtVar(x, _) -> S.singleton x
-  | PtAlias (p, x, _) -> S.add x & S.union S.empty & vars_of_pattern p
+  | PtUnit | PtBool _ | PtInt _ | PtFloat _ | PtAtom _ | PtString _ -> Id.Set.empty
+  | PtVar(x, _) -> Id.Set.singleton x
+  | PtAlias (p, x, _) -> Id.Set.add x & Id.Set.union Id.Set.empty & vars_of_pattern p
   | PtTuple(ps) | PtList ps | PtConstr(_, ps) ->
-    List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty ps
+    List.fold_left (fun s p -> Id.Set.union s (vars_of_pattern p)) Id.Set.empty ps
   | PtCons (p1, p2) -> 
-    List.fold_left (fun s p -> S.union s (vars_of_pattern p)) S.empty [p1; p2]
-  | PtRecord(xps) -> List.fold_left (fun s (_, p) -> S.union s (vars_of_pattern p)) S.empty xps
+    List.fold_left (fun s p -> Id.Set.union s (vars_of_pattern p)) Id.Set.empty [p1; p2]
+  | PtRecord(xps) -> List.fold_left (fun s (_, p) -> Id.Set.union s (vars_of_pattern p)) Id.Set.empty xps
       
 let rec fv_of_expr (e, _) = 
   match e with
-  | Bool(_) | Int(_) | Float _ | Char _ | String _ | Atom _ | Bitstring _ -> S.empty
-  | Record(xes) -> List.fold_left (fun s (_, e) -> S.union s (fv_of_expr e)) S.empty xes
+  | Bool(_) | Int(_) | Float _ | Char _ | String _ | Atom _ | Bitstring _ -> Id.Set.empty
+  | Record(xes) -> List.fold_left (fun s (_, e) -> Id.Set.union s (fv_of_expr e)) Id.Set.empty xes
   | Field(e, _) -> fv_of_expr e
   | Tuple(es) | List(es) | Array(es) ->
-    List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
+    List.fold_left (fun s e -> Id.Set.union s (fv_of_expr e)) Id.Set.empty es
   | Not(e) | Neg(e) -> fv_of_expr e
   | And(e1, e2) | Or(e1, e2) 
   | Add(e1, e2) | Sub(e1, e2) | Mul(e1, e2) | Div(e1, e2) | Concat(e1, e2)
   | Eq(e1, e2) | LE(e1, e2) | Get(e1, e2) ->
-    S.union (fv_of_expr e1) (fv_of_expr e2)
-  | Var(`Local x) -> S.singleton x
-  | Var (`Module _) -> S.empty
-  | Constr(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
-  | AppCls(e, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty (e :: es)
-  | AppDir(_, es) -> List.fold_left (fun s e -> S.union s (fv_of_expr e)) S.empty es
+    Id.Set.union (fv_of_expr e1) (fv_of_expr e2)
+  | Var(`Local x) -> Id.Set.singleton x
+  | Var (`Module _) -> Id.Set.empty
+  | Constr(_, es) -> List.fold_left (fun s e -> Id.Set.union s (fv_of_expr e)) Id.Set.empty es
+  | AppCls(e, es) -> List.fold_left (fun s e -> Id.Set.union s (fv_of_expr e)) Id.Set.empty (e :: es)
+  | AppDir(_, es) -> List.fold_left (fun s e -> Id.Set.union s (fv_of_expr e)) Id.Set.empty es
   | Put(e1, e2, e3) ->
-    S.union (fv_of_expr e3) & S.union (fv_of_expr e1) (fv_of_expr e2)
+    Id.Set.union (fv_of_expr e3) & Id.Set.union (fv_of_expr e1) (fv_of_expr e2)
       
 let rec fv (e, _) = 
   match e with
-  | Unit -> S.empty
+  | Unit -> Id.Set.empty
   | Exp(e) -> fv_of_expr e
-  | If(e, e1, e2) -> S.union (fv_of_expr e) (S.union (fv e1) (fv e2))
-  | Match(x, pes) -> (List.fold_left (fun s (p, e) -> S.diff (S.union s (fv e)) (vars_of_pattern p)) S.empty pes)
-  | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
-  | MakeCls((x, t), { entry = l; actual_fv = ys }, e) -> S.remove x (S.union (S.of_list ys) (fv e))
+  | If(e, e1, e2) -> Id.Set.union (fv_of_expr e) (Id.Set.union (fv e1) (fv e2))
+  | Match(x, pes) -> (List.fold_left (fun s (p, e) -> Id.Set.diff (Id.Set.union s (fv e)) (vars_of_pattern p)) Id.Set.empty pes)
+  | Let((x, t), e1, e2) -> Id.Set.union (fv e1) (Id.Set.remove x (fv e2))
+  | MakeCls((x, t), { entry = l; actual_fv = ys }, e) -> Id.Set.remove x (Id.Set.union (Id.Set.of_list ys) (fv e))
       
 let toplevel : def list ref = ref []
 
@@ -139,10 +139,10 @@ let rec pattern env =
   | KNormal_t.PtFloat v -> env, PtFloat v
   | KNormal_t.PtAtom v -> env, PtAtom v
   | KNormal_t.PtString v -> env, PtString v
-  | KNormal_t.PtVar(x, t) -> M.add x t env, PtVar(x, t)
+  | KNormal_t.PtVar(x, t) -> Id.Map.add x t env, PtVar(x, t)
   | KNormal_t.PtAlias (p, x, t) ->
     let env', p' = pattern env p in
-    M.add x t env', PtAlias (p', x, t)
+    Id.Map.add x t env', PtAlias (p', x, t)
   | KNormal_t.PtTuple(ps) -> 
       let env, ps' = List.fold_left 
         (fun (env, ps) p -> 
@@ -205,7 +205,7 @@ let rec h env known (expr, ty) =
     | KNormal_t.LE(e1, e2)  -> LE(h env known e1, h env known e2)
     | KNormal_t.Var(x) -> Var(x)
     | KNormal_t.Constr(x, es) -> Constr(x, List.map (h env known) es)
-    | KNormal_t.App((KNormal_t.Var(`Local x), ft), ys) when S.mem x known ->
+    | KNormal_t.App((KNormal_t.Var(`Local x), ft), ys) when Id.Set.mem x known ->
       Log.debug "directly applying %s\n" x;
       AppDir(Binding.of_string x, List.map (h env known) ys)
     | KNormal_t.App((KNormal_t.Var(`Module x), ft), ys) ->
@@ -229,39 +229,39 @@ let rec g venv known (expr, ty) = (* クロージャ変換ルーチン本体 (ca
     | KNormal_t.Exp(e) -> Exp(h venv known e)
     | KNormal_t.If(e, e1, e2) -> If(h venv known e, g venv known e1, g venv known e2)
     | KNormal_t.Match(x, pes) -> Match(x, (List.map (fun (p, e) -> let env', p' = pattern venv p in p', (g env' known e)) pes))
-    | KNormal_t.Let((x, t), e1, e2) -> Let((x, t), g venv known e1, g (M.add x t venv) known e2)
+    | KNormal_t.Let((x, t), e1, e2) -> Let((x, t), g venv known e1, g (Id.Map.add x t venv) known e2)
     | KNormal_t.LetRec({ KNormal_t.name = (x, ty_f); KNormal_t.args = yts; KNormal_t.body = e1 }, e2) -> (* 関数定義の場合 (caml2html: closure_letrec) *)
         (* 関数定義let rec x y1 ... yn = e1 in e2の場合は、
 	       xに自由変数がない(closureを介さずdirectに呼び出せる)
 	       と仮定し、knownに追加してe1をクロージャ変換してみる *)
         let toplevel_backup = !toplevel in
-        let venv' = M.add x ty_f venv in
-        let known' = S.add x known in
-        let e1' = g (M.add_list yts venv') known' e1 in
+        let venv' = Id.Map.add x ty_f venv in
+        let known' = Id.Set.add x known in
+        let e1' = g (Id.Map.add_alist yts venv') known' e1 in
         (* 本当に自由変数がなかったか、変換結果e1'を確認する *)
         (* 注意: e1'にx自身が変数として出現する場合はclosureが必要!
            (thanks to nuevo-namasute and azounoman; test/cls-bug2.ml参照) *)
-        let zs = S.diff (fv e1') (S.of_list ((List.map fst yts) @ (ids_of_defs !toplevel))) in
+        let zs = Id.Set.diff (fv e1') (Id.Set.of_list ((List.map fst yts) @ (ids_of_defs !toplevel))) in
         let known', e1' =
-	      if S.is_empty zs then (Log.debug "function %s doesn't have free variables.\n" x; known', e1')
+	      if Id.Set.is_empty zs then (Log.debug "function %s doesn't have free variables.\n" x; known', e1')
           (* 駄目だったら状態(toplevelの値)を戻して、クロージャ変換をやり直す *)
-          else (Log.debug "free variable(s) %s found in function %s@.\n" (Id.pp_list (S.elements zs)) x;
+          else (Log.debug "free variable(s) %s found in function %s@.\n" (Id.pp_list (Id.Set.elements zs)) x;
 	            Log.debug "function %s cannot be directly applied in fact@.\n" x;
 	            toplevel := toplevel_backup;
-	            let e1' = g (M.add_list yts venv') known e1 in
+	            let e1' = g (Id.Map.add_alist yts venv') known e1 in
 	            known, e1') in
-        let zs = S.elements (S.diff (fv e1') (S.add x (S.of_list ((List.map fst yts) @ (ids_of_defs !toplevel))))) in
-        let zts = List.map (fun z -> z, M.find z venv') zs in (* ここで自由変数zの型を引くために引数venvが必要 *)
+        let zs = Id.Set.elements (Id.Set.diff (fv e1') (Id.Set.add x (Id.Set.of_list ((List.map fst yts) @ (ids_of_defs !toplevel))))) in
+        let zts = List.map (fun z -> z, Id.Map.find z venv') zs in (* ここで自由変数zの型を引くために引数venvが必要 *)
         toplevel := FunDef{ name = (Id.L(x), ty_f); args = yts; formal_fv = zts; body = e1' } :: !toplevel; (* トップレベル関数を追加 *)
         let e2' = g venv' known' e2 in
-        if S.mem x (fv e2') then (* xが変数としてe2'に出現するか。ただし、自由変数がないときはクロージャをつくらず関数ポイントとして使用する *)
+        if Id.Set.mem x (fv e2') then (* xが変数としてe2'に出現するか。ただし、自由変数がないときはクロージャをつくらず関数ポイントとして使用する *)
 	    MakeCls((x, ty_f), { entry = Id.L(x); actual_fv = zs }, e2') (* 出現していたら削除しない *)
         else (Log.debug "eliminating closure(s) %s@.\n" x;
 	          fst e2') (* 出現しなければMakeClsを削除 *) in
   (expr', ty)
     
 let f' { Env.venv = venv } e = 
-  let known = M.fold (fun x _ known -> S.add x known) venv S.empty in
+  let known = Id.Map.fold (fun x _ known -> Id.Set.add x known) venv Id.Set.empty in
   g venv known e
 
 let f defs =
@@ -272,8 +272,8 @@ let f defs =
                 match def with 
                 | KNormal_t.TypeDef(x, t) -> 
                     { env with 
-                      Env.venv = M.add_list (Type.Tycon.vars t) venv; 
-                      Env.tenv = M.add_list (Type.Tycon.types t) tenv }, 
+                      Env.venv = Id.Map.add_alist (Type.Tycon.vars t) venv; 
+                      Env.tenv = Id.Map.add_alist (Type.Tycon.types t) tenv }, 
                   TypeDef(x, t)
                 | KNormal_t.VarDef((x, t), e) -> 
                     Env.add_var env x t, (VarDef((x, t), f' env e))

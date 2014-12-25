@@ -8,10 +8,7 @@ let register m =
 let find_module_opt x =
   List.find_opt (fun m -> Module.path m = x) !modules
 
-let find_module x =
-  match find_module_opt x with
-  | None -> raise Not_found
-  | Some m -> m
+let find_module x = find_of_opt & find_module_opt x
 
 let path_name path =
   match Binding.path_name path with
@@ -28,15 +25,12 @@ let find_val_opt path =
   let path, x = path_name path in
   Module.find_val_opt (find_module path) x
 
-let find_val path =
-  match find_val_opt path with
-  | None -> raise Not_found
-  | Some t -> t
+let find_val path = find_of_opt & find_val_opt path
 
 (* builtin types *)
 
 let predefloc x =
-  Locating.create Location.zero x
+  With.Loc.create Location.zero x
 
 let app tycon ts =
   predefloc (Type_t.App (tycon, ts))

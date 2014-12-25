@@ -30,3 +30,14 @@ val contains_pos : t -> Position.t -> bool
 val contains_offset : t -> int -> bool
 
 val to_string : t -> string
+
+module Tag_base : Tagging.S with type tag = t
+
+module Tag : sig
+  include module type of Tag_base
+
+  val from_range : tag -> tag -> 'a -> 'a t
+  val tag_of_list : 'a t list -> tag
+  val union : 'a t list -> 'a list t
+
+end
