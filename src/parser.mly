@@ -129,6 +129,7 @@ let rev_combine_list = function
 %right LAND
 %right LOR
 %right UARROW
+%nonassoc prec_pattern_constr_name
 %right CONS
 %left PLUS MINUS PLUS_DOT MINUS_DOT
 %left AST SLASH MOD AST_DOT SLASH_DOT
@@ -545,8 +546,10 @@ pattern:
     | LBRACE field_patterns RBRACE
       { from_range $1 $3 (PtRecord $2) }
     | constr_name
+      %prec prec_pattern_constr_name
       { create (tag_of_list $1) (PtConstr(Binding.of_list & descs $1, [], Type.Meta.create (tag_of_list $1))) }
     | constr_name pattern
+      %prec prec_pattern_constr_name
       { from_range (tag_of_list $1) $2.tag (PtConstr(Binding.of_list & descs $1, constr_pattern_args $2, Type.Meta.create (tag_of_list $1))) }
     | LBRACK list_pattern RBRACK
       { from_range $1 $3 (PtList $2) }
